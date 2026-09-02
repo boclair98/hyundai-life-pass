@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.idea/
+*.iml
+backend/.gradle/
+backend/build/
+.gradle-tools/
+*.png
+!public/*.png
