@@ -3,7 +3,6 @@ spring:
     name: hyundai-life-pass-api
   datasource:
     url: jdbc:h2:mem:lifepass;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:

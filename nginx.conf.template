@@ -1,3 +1,11 @@
+resolver ${NGINX_RESOLVER} valid=30s ipv6=off;
+
+client_header_buffer_size 16k;
+large_client_header_buffers 8 32k;
+proxy_buffer_size 32k;
+proxy_buffers 8 32k;
+proxy_busy_buffers_size 64k;
+
 server {
     listen 80;
     server_name _;
@@ -5,12 +13,17 @@ server {
     index index.html;
 
     location /api/ {
-        proxy_pass ${BACKEND_URL};
+        set $backend "${BACKEND_URL}";
+        proxy_pass $backend;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_pass_request_headers on;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 90s;
+        proxy_read_timeout 90s;
     }
 
     location / {
