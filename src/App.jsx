@@ -41,6 +41,7 @@ import {
 import {
   hyundaiAuthorizationPath,
   loadAuditLogs,
+  loadChargingStations,
   loadPassport,
   loadPlatform,
   loadReleases,
@@ -61,7 +62,7 @@ const navigation = [
   { id: 'settings', label: '설정', icon: Settings2 },
 ];
 
-const validPages = new Set([...navigation.map((item) => item.id), 'lab', 'privacy', 'terms']);
+const validPages = new Set([...navigation.map((item) => item.id), 'lab', 'privacy', 'terms', 'guide']);
 
 const hyundaiStatusLabel = (provider) => {
   if (!provider) return '상태 확인 중';
@@ -172,9 +173,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function notify(message) {
-    setToast(message);
-  }
+  const notify = useCallback((message) => setToast(message), []);
 
   async function transact(work, message) {
     setBusy(true);
@@ -238,6 +237,7 @@ export default function App() {
         {page === 'lab' && <CanaryLab {...shared} />}
         {page === 'privacy' && <LegalPage type="privacy" />}
         {page === 'terms' && <LegalPage type="terms" />}
+        {page === 'guide' && <GuidePage navigate={navigate} />}
       </main>
 
       <SiteFooter navigate={navigate} />
@@ -417,23 +417,88 @@ function HomePage({ vehicle, navigate, setModal }) {
 }
 
 function ChargePage({ vehicle, notify, platform, actions, busy }) {
-  const stationList = useMemo(() => (platform.stations ?? []).map((item) => ({ ...item, distance: `${item.distanceKm}km`, speed: `${item.speedKw}kW`, price: `${item.pricePerKwh}원/kWh`, eta: `${item.etaMinutes}분` })), [platform.stations]);
+  const [chargerFeed, setChargerFeed] = useState(() => ({
+    stations: platform.stations ?? [],
+    provider: platform.providers?.find((provider) => provider.id === 'ev-charger') ?? null,
+    search: { latitude: 37.5446, longitude: 127.0559, locationLabel: '서울 성수 기본 위치', radiusKm: 30 },
+  }));
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
+  const stationList = useMemo(() => (chargerFeed.stations ?? []).map((item) => ({ ...item, distance: `${item.distanceKm.toFixed(1)}km`, speed: `${item.speedKw}kW`, price: `${item.pricePerKwh}원/kWh`, eta: `${item.etaMinutes}분` })), [chargerFeed.stations]);
   const [selectedStation, setSelectedStation] = useState(null);
   const [search, setSearch] = useState('');
   const visibleStations = useMemo(() => stationList.filter((station) => `${station.name} ${station.address} ${station.operator}`.toLowerCase().includes(search.trim().toLowerCase())), [stationList, search]);
   const activeStation = visibleStations.find((station) => station.id === selectedStation?.id) ?? visibleStations[0] ?? null;
-  const chargerProvider = platform.providers?.find((provider) => provider.id === 'ev-charger');
+  const chargerProvider = chargerFeed.provider ?? platform.providers?.find((provider) => provider.id === 'ev-charger');
   const chargerLive = chargerProvider?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(chargerProvider.state);
-  const activeReservation = platform.chargingReservations?.find((item) => item.vehicleExternalId === vehicle?.id && item.status === 'CONFIRMED');
+
+  useEffect(() => {
+    if (usingCurrentLocation || !(platform.stations?.length)) return;
+    setChargerFeed({
+      stations: platform.stations,
+      provider: platform.providers?.find((provider) => provider.id === 'ev-charger') ?? null,
+      search: { latitude: 37.5446, longitude: 127.0559, locationLabel: '서울 성수 기본 위치', radiusKm: 30 },
+    });
+  }, [platform.stations, platform.providers, usingCurrentLocation]);
+
+  const loadFromCoordinates = useCallback(async ({ latitude, longitude }) => {
+    setLocationBusy(true);
+    try {
+      const result = await loadChargingStations({ latitude, longitude, radiusKm: 30 });
+      setChargerFeed(result);
+      setSelectedStation(null);
+      setUsingCurrentLocation(true);
+      if (result.provider?.state === 'ERROR') notify(result.provider.message);
+    } catch (error) {
+      setUsingCurrentLocation(false);
+      notify(error.message || '현재 위치 주변 충전소를 불러오지 못했습니다.');
+    } finally {
+      setLocationBusy(false);
+    }
+  }, [notify]);
+
+  const findFromCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      notify('이 기기에서는 위치 기능을 사용할 수 없습니다.');
+      return;
+    }
+    setLocationBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => loadFromCoordinates({ latitude: coords.latitude, longitude: coords.longitude }),
+      (error) => {
+        setLocationBusy(false);
+        setUsingCurrentLocation(false);
+        const message = error.code === 1
+          ? '위치 권한이 꺼져 있습니다. 브라우저 설정에서 이 사이트의 위치 권한을 허용해 주세요.'
+          : '현재 위치를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+        notify(message);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 120000 },
+    );
+  }, [loadFromCoordinates, notify]);
+
+  useEffect(() => {
+    let active = true;
+    if (!navigator.permissions?.query) return undefined;
+    navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
+      if (active && permission.state === 'granted') findFromCurrentLocation();
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [findFromCurrentLocation]);
+
   return (
     <div className="page container">
-      <PageIntro eyebrow="SMART CHARGE" title="기다리지 않는 충전" description="내 위치, 예상 도착시간, 실시간 충전 가능 여부를 함께 계산합니다." />
+      <PageIntro eyebrow="SMART CHARGE" title="내 주변 충전소" description="현재 위치에서 가까운 충전소와 실시간 사용 가능 충전기를 확인합니다." actions={<button className="button primary location-button" onClick={findFromCurrentLocation} disabled={locationBusy}>{locationBusy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}{locationBusy ? '위치 확인 중' : '내 위치로 찾기'}</button>} />
+      <section className={`location-status ${usingCurrentLocation ? 'current' : 'default'}`} aria-live="polite">
+        <div><MapPin size={18} /><span><small>{usingCurrentLocation ? '현재 위치 기준' : '기본 위치 기준'}</small><strong>{chargerFeed.search?.locationLabel ?? '서울 성수'} · 반경 {Math.round(chargerFeed.search?.radiusKm ?? 30)}km</strong></span></div>
+        <p>{usingCurrentLocation ? '기기의 현재 좌표를 서버에 일시 전달해 거리만 계산하며 브라우저에 저장하지 않습니다.' : '내 위치로 찾기를 누르고 위치 권한을 허용하면 실제 현재 위치 기준으로 바뀝니다.'}</p>
+      </section>
       {chargerProvider && <div className={`provider-inline ${chargerLive ? 'live' : 'sample'}`}><span>{chargerLive ? 'LIVE DATA' : chargerProvider.mode === 'LIVE' ? 'LIVE ERROR' : 'SAMPLE DATA'}</span><strong>{chargerProvider.source}</strong><small>{chargerProvider.message}</small></div>}
       <OperationBanner tone={chargerLive ? 'ready' : 'active'} icon={BatteryCharging} label="실시간 충전소 탐색" title={chargerLive ? '사용 가능한 충전기를 확인하고 바로 길찾기 하세요.' : '충전소 데이터를 불러오지 못했습니다.'} detail={chargerLive ? '공공데이터는 위치와 충전기 상태를 제공하며 예약·결제는 지원하지 않습니다.' : '잠시 후 새로고침하거나 공급자 상태를 확인해 주세요.'} />
       <div className="charge-layout">
         <section className="charge-map panel">
           <div className="map-search"><Search size={18} /><input value={search} placeholder="충전소명·주소·운영기관 검색" onChange={(event) => setSearch(event.target.value)} aria-label="충전소 검색" /><button aria-label="검색어 지우기" onClick={() => setSearch('')}><X size={17} /></button></div>
-          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} notify={notify} />
+          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} notify={notify} userLocation={usingCurrentLocation ? chargerFeed.search : null} />
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 충전소</span><small>{chargerLive ? '공공데이터 실시간' : '연결 확인 중'}</small></div>
@@ -474,7 +539,7 @@ function loadKakaoSdk(key) {
   return kakaoSdkPromise;
 }
 
-function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, notify }) {
+function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, notify, userLocation }) {
   const mapElement = useRef(null);
   const notifyRef = useRef(notify);
   const [mapReady, setMapReady] = useState(false);
@@ -492,14 +557,23 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
         center: new kakao.maps.LatLng(centerStation.latitude, centerStation.longitude),
         level: 5,
       });
+      const bounds = new kakao.maps.LatLngBounds();
       stationItems.forEach((station) => {
-        const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(station.latitude, station.longitude), map });
+        const position = new kakao.maps.LatLng(station.latitude, station.longitude);
+        bounds.extend(position);
+        const marker = new kakao.maps.Marker({ position, map });
         kakao.maps.event.addListener(marker, 'click', () => onSelect(station));
       });
+      if (userLocation) {
+        const current = new kakao.maps.LatLng(userLocation.latitude, userLocation.longitude);
+        bounds.extend(current);
+        new kakao.maps.Circle({ center: current, radius: 80, strokeWeight: 3, strokeColor: '#00aad2', strokeOpacity: 1, fillColor: '#00aad2', fillOpacity: .28, map });
+      }
+      if (stationItems.length > 1) map.setBounds(bounds, 48, 48, 48, 48);
       setMapReady(true);
     }).catch(() => notifyRef.current('카카오 지도 키 또는 허용 도메인을 확인해 주세요.'));
     return () => { cancelled = true; };
-  }, [key, stationItems, selectedStation?.id, onSelect]);
+  }, [key, stationItems, selectedStation?.id, onSelect, userLocation?.latitude, userLocation?.longitude]);
 
   if (key) return <div ref={mapElement} className={`map-surface kakao-map ${mapReady ? 'ready' : ''}`} aria-label="카카오 실지도 기반 충전소 지도" />;
   return (
@@ -621,13 +695,15 @@ function SettingsPage({ vehicle, platform, actions, busy, navigate, notify }) {
         <section className="panel settings-card">
           <div className="settings-icon"><UserRound size={22} /></div><span>현대 통합계정</span><h2>{hyundaiStatusLabel(hyundai)}</h2><p>{hyundai?.message ?? '연결 상태를 확인하고 있습니다.'}</p>
           {connected ? <div className="settings-actions"><button className="button primary" disabled={busy} onClick={actions.syncHyundai}><RefreshCcw size={16} /> 차량 새로고침</button><button className="button danger" disabled={busy} onClick={removeConnection}><Trash2 size={16} /> 연결 해제·데이터 삭제</button></div> : <button className="button primary" disabled={busy} onClick={actions.connectHyundai}>현대 계정 연결 <ArrowRight size={16} /></button>}
+          {!connected && <div className="oauth-flow" aria-label="현대 계정 연결 순서"><span><b>1</b>공식 로그인</span><span><b>2</b>차량 접근 동의</span><span><b>3</b>데이터 제공 동의</span><span><b>4</b>차량 동기화</span></div>}
+          {!connected && <small>버튼을 누르면 현대자동차 통합 로그인 도메인으로 이동합니다. Life Pass는 아이디와 비밀번호를 받지 않습니다.</small>}
           {vehicle && <small>연결 차량: {vehicle.name} · 마지막 동기화 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '확인 중'}</small>}
         </section>
         <section className="panel settings-card">
           <div className="settings-icon"><Smartphone size={22} /></div><span>모바일 앱</span><h2>홈 화면에 설치</h2><p>브라우저 메뉴의 ‘홈 화면에 추가’를 선택하면 앱처럼 전체 화면으로 사용할 수 있습니다.</p><InstallButton notify={notify} />
         </section>
       </div>
-      <section className="panel policy-links"><button onClick={() => navigate('privacy')}><LockKeyhole size={18} /><span><strong>개인정보 처리 안내</strong><small>수집·보관·철회 및 삭제 정책</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('terms')}><FileCheck2 size={18} /><span><strong>서비스 이용안내</strong><small>외부 데이터와 제공 기능 범위</small></span><ChevronRight size={17} /></button><a href="https://github.com/boclair98/hyundai-life-pass/issues" target="_blank" rel="noreferrer"><Wrench size={18} /><span><strong>지원 및 오류 신고</strong><small>GitHub Issues</small></span><ChevronRight size={17} /></a></section>
+      <section className="panel policy-links"><button onClick={() => navigate('guide')}><Route size={18} /><span><strong>처음 사용하는 방법</strong><small>무슨 서비스이고 무엇을 연결해야 하는지</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('privacy')}><LockKeyhole size={18} /><span><strong>개인정보 처리 안내</strong><small>수집·보관·철회 및 삭제 정책</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('terms')}><FileCheck2 size={18} /><span><strong>서비스 이용안내</strong><small>외부 데이터와 제공 기능 범위</small></span><ChevronRight size={17} /></button><a href="https://github.com/boclair98/hyundai-life-pass/issues" target="_blank" rel="noreferrer"><Wrench size={18} /><span><strong>지원 및 오류 신고</strong><small>GitHub Issues</small></span><ChevronRight size={17} /></a></section>
     </div>
   );
 }
@@ -740,10 +816,34 @@ function SiteFooter({ navigate }) {
     <footer className="site-footer">
       <div className="container">
         <div><strong>HYUNDAI LIFE PASS</strong><span>현대자동차 오픈 API 활용 포트폴리오 파일럿</span></div>
-        <nav aria-label="서비스 정책"><button onClick={() => navigate('settings')}>계정·설정</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>서비스 이용안내</button><button onClick={() => navigate('lab')}>기술 데모</button><a href="https://github.com/boclair98/hyundai-life-pass" target="_blank" rel="noreferrer">GitHub</a></nav>
+        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>사용 가이드</button><button onClick={() => navigate('settings')}>계정·설정</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>서비스 이용안내</button><button onClick={() => navigate('lab')}>기술 데모</button><a href="https://github.com/boclair98/hyundai-life-pass" target="_blank" rel="noreferrer">GitHub</a></nav>
         <small>현대자동차 공식 운영 서비스가 아니며, 실차 데이터는 사용자의 명시적 동의 후에만 조회됩니다.</small>
       </div>
     </footer>
+  );
+}
+
+function GuidePage({ navigate }) {
+  return (
+    <div className="page container guide-page">
+      <PageIntro eyebrow="START HERE" title="현대차 오너의 카라이프 허브" description="충전·정비 탐색은 로그인 없이, 내 차 상태와 차량 여권은 현대 계정 연결 후 사용하는 모바일 웹앱입니다." />
+      <section className="guide-steps">
+        <article className="panel"><span>01 · 로그인 없이</span><div><BatteryCharging size={22} /><h2>내 주변 충전</h2></div><p>위치 권한을 허용하면 현재 시·도의 실제 충전소 상태를 가까운 순으로 찾고 카카오맵 길찾기로 이동합니다.</p><button className="button outline" onClick={() => navigate('charge')}>충전소 찾기 <ArrowRight size={15} /></button></article>
+        <article className="panel"><span>02 · 로그인 없이</span><div><Wrench size={22} /><h2>가까운 블루핸즈</h2></div><p>현재 위치 주변 현대자동차 서비스 거점을 찾고 전화하거나 카카오맵 상세 화면을 엽니다.</p><button className="button outline" onClick={() => navigate('care')}>서비스 거점 찾기 <ArrowRight size={15} /></button></article>
+        <article className="panel"><span>03 · 현대 계정 연결</span><div><CarFront size={22} /><h2>내 차와 차량 여권</h2></div><p>현대 공식 로그인과 데이터 제공 동의를 마치면 동의 범위의 차량 상태와 Life Pass에서 생성된 서명 기록을 확인합니다.</p><button className="button primary" onClick={() => navigate('settings')}>계정 연결 안내 <ArrowRight size={15} /></button></article>
+      </section>
+      <section className="panel capability-table">
+        <div><span>지금 실제로 작동</span><strong>충전소 상태·거리, 지도·길찾기, 블루핸즈 검색·전화, 현대 OAuth 시작, 동의 데이터 동기화·삭제</strong></div>
+        <div><span>현대 승인 필요</span><strong>일반 고객의 실차 데이터는 Hyundai Developers 상용화 심사 승인 후 제공</strong></div>
+        <div><span>파트너 계약 필요</span><strong>충전 예약·결제, 블루핸즈 예약, 디지털 키 이전, 실제 OTA 제어</strong></div>
+      </section>
+      <section className="guide-stack">
+        <div><span>FRONTEND</span><strong>React + Vite PWA</strong><p>휴대폰 브라우저와 홈 화면 설치</p></div>
+        <div><span>BACKEND</span><strong>Kotlin + Spring Boot + JPA</strong><p>OAuth, 외부 API, 보안 세션과 비즈니스 로직</p></div>
+        <div><span>DATA</span><strong>PostgreSQL + Flyway</strong><p>계정 연결·차량 이벤트·감사 기록</p></div>
+        <div><span>LIVE APIs</span><strong>Hyundai + KECO + Kakao</strong><p>차량·충전소·지도와 장소 검색</p></div>
+      </section>
+    </div>
   );
 }
 

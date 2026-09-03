@@ -63,7 +63,7 @@ Life Pass는 브라우저에 토큰을 저장하지 않는다. OAuth state는 10
 - Web 플랫폼 사이트 도메인: `https://hyundai-life-pass.coders.kr`
 - 필요한 값: 배포 런타임 `KAKAO_JAVASCRIPT_KEY`, 로컬 개발 `VITE_KAKAO_JAVASCRIPT_KEY`, 서버 검색용 `KAKAO_REST_API_KEY`
 
-JavaScript 키를 넣으면 충전 화면이 실제 Kakao 지도와 충전소 마커로 전환된다. 키가 없으면 `SAMPLE DATA` 도식 지도로 유지된다. REST API 장소검색은 다음 단계의 서버 검색용이며 현재 화면은 공공데이터 좌표를 사용한다.
+JavaScript 키를 넣으면 충전 화면이 실제 Kakao 지도와 충전소 마커로 전환된다. REST API 키는 서비스 거점 검색뿐 아니라 현재 좌표를 행정구역 코드로 바꿔 한국환경공단의 해당 시·도 충전소를 조회하는 데 사용한다. 키가 없으면 실데이터 위치 검색을 오류 상태로 명확히 중지한다.
 
 ## 4. 충전 예약·결제 — 제휴 필수
 

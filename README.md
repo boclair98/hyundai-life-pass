@@ -93,6 +93,7 @@ npm run dev
 | GET | `/api/v1/releases` | OTA 릴리스 목록 |
 | POST | `/api/v1/releases/{id}/start` | Canary 배포 시작 |
 | GET | `/api/v1/platform/snapshot` | 사용자별 예약·알림·이전 상태 |
+| GET | `/api/v1/charging-stations` | 위도·경도 기준 전국 충전소 실시간 검색 |
 | POST | `/api/v1/integrations/hyundai/authorize` | 현대 통합계정 OAuth 시작 |
 | GET | `/api/v1/integrations/hyundai/agreement` | 개인정보 제3자 제공 동의 연결 |
 | GET | `/api/v1/service-centers` | 위도·경도 기준 주변 현대자동차 서비스 거점 검색 |
@@ -113,3 +114,5 @@ npm run dev
 발급 위치와 필요한 환경변수는 [`docs/API_KEYS.md`](docs/API_KEYS.md)에 정리했습니다.
 
 내일 출시 범위, 사용자 여정, 기능 우선순위와 출시 게이트는 [`docs/PRODUCT_RELEASE_PLAN.md`](docs/PRODUCT_RELEASE_PLAN.md)에 정리했습니다.
+
+휴대폰에서 쓰는 순서와 실제/제휴 기능 구분은 [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)에 정리했습니다.

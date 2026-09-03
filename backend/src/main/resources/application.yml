@@ -80,4 +80,5 @@ lifepass:
       mode: ${LIFEPASS_KAKAO_LOCAL_MODE:live}
       rest-api-key: ${KAKAO_REST_API_KEY:}
       base-url: ${KAKAO_LOCAL_API_URL:https://dapi.kakao.com/v2/local/search/keyword.json}
+      region-url: ${KAKAO_REGION_API_URL:https://dapi.kakao.com/v2/local/geo/coord2regioncode.json}
       cache-seconds: ${LIFEPASS_KAKAO_LOCAL_CACHE_SECONDS:300}

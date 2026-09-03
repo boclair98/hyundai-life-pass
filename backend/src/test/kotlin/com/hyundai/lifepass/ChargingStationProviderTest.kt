@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 class ChargingStationProviderTest {
     @Test
     fun `reports a missing production key instead of falling back to samples`() {
-        val provider = ChargingStationProvider("live", "", "https://example.invalid/chargers", "11", 37.5, 127.0, 347, 300)
+        val provider = ChargingStationProvider("live", "", "https://example.invalid/chargers", "11", 37.5, 127.0, 347, 300, "", "https://example.invalid/region")
 
         val feed = provider.getStations()
 
@@ -32,6 +32,12 @@ class ChargingStationProviderTest {
             exchange.sendResponseHeaders(200, payload.toByteArray().size.toLong())
             exchange.responseBody.use { it.write(payload.toByteArray()) }
         }
+        server.createContext("/region") { exchange ->
+            val payload = """{"documents":[{"region_type":"H","code":"1120069000","region_1depth_name":"서울특별시","region_2depth_name":"성동구"}]}"""
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, payload.toByteArray().size.toLong())
+            exchange.responseBody.use { it.write(payload.toByteArray()) }
+        }
         server.start()
 
         try {
@@ -44,9 +50,11 @@ class ChargingStationProviderTest {
                 centerLongitude = 127.0559,
                 defaultPricePerKwh = 347,
                 cacheSeconds = 300,
+                kakaoRestApiKey = "test-kakao-key",
+                kakaoRegionUrl = "http://127.0.0.1:${server.address.port}/region",
             )
 
-            val feed = provider.getStations()
+            val feed = provider.getStations(37.5446, 127.0559, 10.0)
 
             assertEquals("CONNECTED", feed.provider.state)
             assertEquals(1, feed.stations.size)
@@ -55,7 +63,10 @@ class ChargingStationProviderTest {
             assertEquals("KECO_LIVE", feed.stations.single().source)
             assertFalse(feed.stations.single().reservable)
             assertTrue(feed.stations.single().statusUpdatedAt != null)
+            assertEquals("11", feed.search.regionCode)
+            assertEquals("서울특별시 성동구", feed.search.locationLabel)
             assertTrue(requestedQuery.get().contains("serviceKey=test%2Bkey%3D"))
+            assertTrue(requestedQuery.get().contains("zcode=11"))
             assertFalse(requestedQuery.get().contains("%252B"))
         } finally {
             server.stop(0)

@@ -45,6 +45,10 @@ export async function loadVehicles() {
 }
 
 export const loadPlatform = () => request('/api/v1/platform/snapshot');
+export const loadChargingStations = ({ latitude = 37.5446, longitude = 127.0559, radiusKm = 30 } = {}) => {
+  const query = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), radiusKm: String(radiusKm) });
+  return request(`/api/v1/charging-stations?${query}`);
+};
 export const loadReleases = () => request('/api/v1/releases');
 export const loadAuditLogs = () => request('/api/v1/platform/audit-logs').catch(() => []);
 export const loadPassport = (vehicleDatabaseId) => request(`/api/v1/vehicles/${vehicleDatabaseId}/passport`);
