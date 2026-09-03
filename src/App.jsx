@@ -430,7 +430,7 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
           <div className="hero-copy">
             <div className="overline"><i /> MY HYUNDAI CAR LIFE</div>
             <h1>내 차를 이해하고<br /><em>다음 행동까지.</em></h1>
-            <p>내 차의 오늘을 살피고, 필요한 순간 바로 움직이세요.<br />차량 상태부터 충전·정비·차량 기록까지 한곳에서 챙겨드립니다.</p>
+            <p>내 차의 오늘을 살피고, 필요한 순간 바로 움직이세요.<br /> 차량 상태부터 충전·정비·차량 기록까지 한곳에서 챙겨드립니다.</p>
             <div className="hero-service-pills" aria-label="차량 생활 주요 기능"><span>내 차 상태</span><span>충전소</span><span>블루핸즈</span><span>차량 기록</span></div>
             <div className="hero-buttons">
               <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 새로고침' : '현대차 연결하기'} <ArrowRight size={17} /></button>
