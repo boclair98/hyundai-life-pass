@@ -26,6 +26,8 @@ class VehicleApiIntegrationTest(
                 jsonPath("$[0].externalId") { value("ioniq6-0318") }
                 jsonPath("$[0].source") { value("SAMPLE") }
                 jsonPath("$[0].rangeKm") { value(386) }
+                jsonPath("$[0].healthChecks", hasSize<Any>(7))
+                jsonPath("$[0].warningCount") { value(0) }
             }
     }
 

@@ -38,6 +38,7 @@ class HyundaiIntegrationService(
     @Value("\${lifepass.providers.hyundai.redirect-uri:}") private val redirectUri: String,
     @Value("\${lifepass.providers.hyundai.authorize-url:https://prd.kr-ccapi.hyundai.com/api/v1/user/oauth2/authorize}") private val authorizeUrl: String,
     @Value("\${lifepass.providers.hyundai.token-url:https://prd.kr-ccapi.hyundai.com/api/v1/user/oauth2/token}") private val tokenUrl: String,
+    @Value("\${lifepass.providers.hyundai.profile-url:https://prd.kr-ccapi.hyundai.com/api/v1/user/profile}") private val profileUrl: String,
     @Value("\${lifepass.providers.hyundai.data-api-base-url:https://dev.kr-ccapi.hyundai.com}") private val dataApiBaseUrl: String,
     @Value("\${lifepass.providers.hyundai.agreement-url:https://dev.kr-ccapi.hyundai.com/api/v1/car-service/terms/agreement}") private val agreementUrl: String,
     @Value("\${lifepass.providers.hyundai.reject-url:https://dev.kr-ccapi.hyundai.com/api/v1/car-service/terms/reject}") private val rejectUrl: String,
@@ -68,6 +69,8 @@ class HyundaiIntegrationService(
         ) else ProviderStatusResponse(
             "hyundai-connected-car", "현대 커넥티드카", "LIVE", connection.status, "Hyundai Developers", connection.updatedAt,
             if (connection.status == "CONNECTED") "사용자가 동의한 Bluelink 차량 데이터를 동기화합니다." else "개인정보 제3자 제공 동의를 완료해 주세요.",
+            accountName = connection.displayName,
+            accountEmailMasked = connection.emailMasked,
         )
     }
 
@@ -85,7 +88,7 @@ class HyundaiIntegrationService(
     }
 
     @Transactional
-    fun completeAuthorization(actor: String, code: String, stateToken: String) {
+    fun completeAuthorization(actor: String, code: String, stateToken: String): String {
         requireLiveConfiguration()
         val state = stateRepository.findByStateToken(stateToken)
             ?.takeIf { !it.consumed && it.actorId == actor && it.expiresAt.isAfter(Instant.now()) }
@@ -107,13 +110,27 @@ class HyundaiIntegrationService(
             ?: throw UpstreamUnavailableException("현대 사용자 토큰을 발급받지 못했습니다.", IllegalStateException())
         val refreshToken = token.path("refresh_token").asText()
         val now = Instant.now()
-        val connection = connectionRepository.findByActorId(actor) ?: HyundaiConnection(actorId = actor)
+        val profile = safeGetAbsolute(profileUrl, accessToken)
+        val hyundaiUserId = profile?.path("id")?.asText()?.takeIf(String::isNotBlank)
+        val stableActor = hyundaiUserId?.let(::stableActorId) ?: actor
+        val connection = hyundaiUserId?.let(connectionRepository::findByHyundaiUserId)
+            ?: connectionRepository.findByActorId(actor)
+            ?: HyundaiConnection(actorId = stableActor)
+        val previousActor = connection.actorId
+        connection.actorId = stableActor
         connection.accessTokenEncrypted = encrypt(accessToken)
         connection.refreshTokenEncrypted = encrypt(refreshToken)
         connection.expiresAt = now.plusSeconds(token.path("expires_in").asLong(3600))
         connection.status = "CONSENT_REQUIRED"
         connection.updatedAt = now
+        profile?.let {
+            connection.hyundaiUserId = hyundaiUserId ?: connection.hyundaiUserId
+            connection.displayName = profile.path("name").asText().takeIf(String::isNotBlank)
+            connection.emailMasked = profile.path("email").asText().takeIf(String::isNotBlank)?.let(::maskEmail)
+        }
         connectionRepository.save(connection)
+        if (previousActor != stableActor) moveOwnedVehicles(previousActor, stableActor)
+        return stableActor
     }
 
     @Transactional
@@ -126,17 +143,33 @@ class HyundaiIntegrationService(
     }
 
     @Transactional
-    fun completeAgreement(actor: String, userId: String, stateToken: String) {
+    fun completeAgreement(actor: String, userId: String, stateToken: String): String {
         val state = stateRepository.findByStateToken(stateToken)
             ?.takeIf { !it.consumed && it.actorId == actor && it.expiresAt.isAfter(Instant.now()) }
             ?: throw IllegalArgumentException("유효하지 않거나 만료된 개인정보 동의 state입니다.")
         state.consumed = true
         stateRepository.save(state)
-        val connection = connectionRepository.findByActorId(actor) ?: throw OperationNotSupportedException("현대 계정 연결 정보가 없습니다.")
+        var connection = connectionRepository.findByActorId(actor) ?: throw OperationNotSupportedException("현대 계정 연결 정보가 없습니다.")
+        val stableActor = stableActorId(userId)
+        val previousConnection = connectionRepository.findByHyundaiUserId(userId)
+        if (previousConnection != null && previousConnection.id != connection.id) {
+            previousConnection.accessTokenEncrypted = connection.accessTokenEncrypted
+            previousConnection.refreshTokenEncrypted = connection.refreshTokenEncrypted
+            previousConnection.expiresAt = connection.expiresAt
+            previousConnection.displayName = connection.displayName ?: previousConnection.displayName
+            previousConnection.emailMasked = connection.emailMasked ?: previousConnection.emailMasked
+            connectionRepository.delete(connection)
+            connection = previousConnection
+        }
+        val previousActor = connection.actorId
+        connection.actorId = stableActor
         connection.hyundaiUserId = userId
         connection.status = "CONNECTED"
         connection.updatedAt = Instant.now()
         connectionRepository.save(connection)
+        if (previousActor != stableActor) moveOwnedVehicles(previousActor, stableActor)
+        if (actor != stableActor) moveOwnedVehicles(actor, stableActor)
+        return stableActor
     }
 
     @Transactional
@@ -244,20 +277,43 @@ class HyundaiIntegrationService(
             else -> Powertrain.ICE
         }
         vehicle.plate = vehicle.plate.ifBlank { "현대 계정 연동" }
-        vehicle.batterySoc = safeGet("/api/v1/car/status/$carId/ev/battery", accessToken)?.path("soc")?.asInt(vehicle.batterySoc) ?: vehicle.batterySoc
-        vehicle.rangeKm = safeGet("/api/v1/car/status/$carId/dte", accessToken)?.path("value")?.asDouble(vehicle.rangeKm.toDouble())?.toInt() ?: vehicle.rangeKm
-        vehicle.odometerKm = safeGet("/api/v1/car/status/$carId/odometer", accessToken)?.path("odometers")?.firstOrNull()?.path("value")?.asInt(vehicle.odometerKm) ?: vehicle.odometerKm
+        val battery = safeGet("/api/v1/car/status/$carId/ev/battery", accessToken)?.path("soc")
+        vehicle.batteryStatusAvailable = battery?.isNumber == true
+        if (vehicle.batteryStatusAvailable) vehicle.batterySoc = battery!!.asInt()
+        val range = safeGet("/api/v1/car/status/$carId/dte", accessToken)?.path("value")
+        vehicle.rangeStatusAvailable = range?.isNumber == true
+        if (vehicle.rangeStatusAvailable) vehicle.rangeKm = range!!.asDouble().toInt()
+        val odometer = safeGet("/api/v1/car/status/$carId/odometer", accessToken)?.path("odometers")?.firstOrNull()?.path("value")
+        vehicle.odometerStatusAvailable = odometer?.isNumber == true
+        if (vehicle.odometerStatusAvailable) vehicle.odometerKm = odometer!!.asInt()
         val charging = safeGet("/api/v1/car/status/$carId/ev/charging", accessToken)
+        vehicle.chargingStatusAvailable = charging != null
         vehicle.chargingState = when {
             charging == null -> "상태 조회 불가"
             charging.path("batteryCharge").asBoolean(false) -> "충전 중"
             charging.path("batteryPlugin").asInt(0) > 0 -> "충전기 연결"
             else -> "연결 안 됨"
         }
-        vehicle.location = "위치정보 동의 시 표시"
-        vehicle.softwareVersion = "제조사 OTA 연동 필요"
+        vehicle.lowFuelWarning = warningStatus("/api/v1/car/status/warning/$carId/lowFuel", accessToken)
+        vehicle.tirePressureWarning = warningStatus("/api/v1/car/status/warning/$carId/tirePressure", accessToken)
+        vehicle.lampWireWarning = warningStatus("/api/v1/car/status/warning/$carId/lampWire", accessToken)
+        vehicle.smartKeyBatteryWarning = warningStatus("/api/v1/car/status/warning/$carId/smartKeyBattery", accessToken)
+        vehicle.washerFluidWarning = warningStatus("/api/v1/car/status/warning/$carId/washerFluid", accessToken)
+        vehicle.brakeOilWarning = warningStatus("/api/v1/car/status/warning/$carId/breakOil", accessToken)
+        vehicle.engineOilWarning = warningStatus("/api/v1/car/status/warning/$carId/engineOil", accessToken)
+        safeGet("/api/v1/car/profile/$carId/contract", accessToken)?.let { contract ->
+            vehicle.connectedServiceStart = contract.path("subscribeDate").asText().takeIf(String::isNotBlank)
+            vehicle.connectedServiceEnd = contract.path("endDate").asText().takeIf(String::isNotBlank)
+        }
+        vehicle.location = ""
+        vehicle.softwareVersion = ""
         vehicle.updatedAt = Instant.now()
         vehicleRepository.save(vehicle)
+    }
+
+    private fun warningStatus(path: String, accessToken: String): Boolean? {
+        val status = safeGet(path, accessToken)?.path("status")
+        return status?.takeIf(JsonNode::isBoolean)?.asBoolean()
     }
 
     private fun get(path: String, accessToken: String): JsonNode = client.get().uri(dataApiBaseUrl.trimEnd('/') + path)
@@ -265,6 +321,33 @@ class HyundaiIntegrationService(
         ?: throw UpstreamUnavailableException("현대 차량 데이터 응답이 비어 있습니다.", IllegalStateException())
 
     private fun safeGet(path: String, accessToken: String): JsonNode? = runCatching { get(path, accessToken) }.getOrNull()
+
+    private fun safeGetAbsolute(url: String, accessToken: String): JsonNode? = runCatching {
+        client.get().uri(url).headers { it.setBearerAuth(accessToken) }.retrieve().body(JsonNode::class.java)
+    }.getOrNull()
+
+    private fun moveOwnedVehicles(fromActor: String, toActor: String) {
+        if (fromActor == toActor) return
+        vehicleRepository.findByOwnerIdAndSource(fromActor, "HYUNDAI_DEVELOPERS").forEach { vehicle ->
+            vehicle.ownerId = toActor
+            vehicleRepository.save(vehicle)
+        }
+    }
+
+    private fun stableActorId(hyundaiUserId: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+            .digest("hyundai:$hyundaiUserId".toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        return "hyundai-${digest.take(32)}"
+    }
+
+    private fun maskEmail(email: String): String {
+        val parts = email.split('@', limit = 2)
+        if (parts.size != 2) return "연결된 계정"
+        val local = parts[0]
+        val visible = local.take(2)
+        return "$visible${"*".repeat((local.length - visible.length).coerceAtLeast(2))}@${parts[1]}"
+    }
 
     private fun requireLiveConfiguration() {
         if (mode.lowercase() != "live") throw OperationNotSupportedException("Hyundai Developers 공급자가 아직 simulation 모드입니다.")

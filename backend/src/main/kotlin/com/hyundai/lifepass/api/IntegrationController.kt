@@ -36,14 +36,20 @@ class IntegrationController(private val service: HyundaiIntegrationService, priv
         return when {
             !error.isNullOrBlank() -> RedirectView("/?hyundai=cancelled#settings")
             !code.isNullOrBlank() -> {
-                service.completeAuthorization(userSession.actor(request), code, state)
-                RedirectView("/api/v1/integrations/hyundai/agreement")
+                runCatching {
+                    val actor = service.completeAuthorization(userSession.actor(request), code, state)
+                    userSession.bind(request, actor)
+                    RedirectView("/api/v1/integrations/hyundai/agreement")
+                }.getOrElse { RedirectView("/?hyundai=oauth-error#settings") }
             }
             !userId.isNullOrBlank() -> {
-                val actor = userSession.actor(request)
-                service.completeAgreement(actor, userId, state)
-                val synced = runCatching { service.syncVehicles(actor) }.isSuccess
-                RedirectView(if (synced) "/?hyundai=connected#home" else "/?hyundai=sync-required#settings")
+                runCatching {
+                    val actor = userSession.actor(request)
+                    val connectedActor = service.completeAgreement(actor, userId, state)
+                    userSession.bind(request, connectedActor)
+                    val synced = runCatching { service.syncVehicles(connectedActor) }.isSuccess
+                    RedirectView(if (synced) "/?hyundai=connected#home" else "/?hyundai=sync-required#settings")
+                }.getOrElse { RedirectView("/?hyundai=consent-error#settings") }
             }
             else -> throw IllegalArgumentException("현대 계정 콜백에 code 또는 userId가 없습니다.")
         }

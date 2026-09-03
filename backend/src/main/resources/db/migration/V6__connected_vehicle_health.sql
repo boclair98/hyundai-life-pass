@@ -1,0 +1,16 @@
+ALTER TABLE hyundai_connections ADD COLUMN IF NOT EXISTS display_name VARCHAR(120);
+ALTER TABLE hyundai_connections ADD COLUMN IF NOT EXISTS email_masked VARCHAR(200);
+
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS battery_status_available BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS range_status_available BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS odometer_status_available BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS charging_status_available BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS low_fuel_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS tire_pressure_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS lamp_wire_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS smart_key_battery_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS washer_fluid_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS brake_oil_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS engine_oil_warning BOOLEAN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS connected_service_start VARCHAR(8);
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS connected_service_end VARCHAR(8);

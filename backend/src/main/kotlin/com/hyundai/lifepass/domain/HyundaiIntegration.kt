@@ -32,6 +32,10 @@ class HyundaiConnection(
     var actorId: String = "",
     @Column(length = 160)
     var hyundaiUserId: String? = null,
+    @Column(length = 120)
+    var displayName: String? = null,
+    @Column(length = 200)
+    var emailMasked: String? = null,
     @Column(nullable = false, length = 2048)
     var accessTokenEncrypted: String = "",
     @Column(nullable = false, length = 2048)

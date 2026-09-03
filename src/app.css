@@ -279,6 +279,21 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .live-summary-metrics .metric { color: var(--ink); border-color: var(--line); }
 .live-summary-metrics .metric span, .live-summary-metrics .metric small { color: var(--muted); }
 .vehicle-live-summary > small { display: block; margin-top: 17px; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.health-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.health-section-heading .section-heading { margin-bottom: 22px; }
+.health-result { min-width: 164px; padding: 14px 16px; border-radius: 13px; display: flex; flex-direction: column; gap: 4px; background: #f1f5f8; color: var(--muted); }
+.health-result strong { font-size: 11px; }.health-result span { font-size: 8px; }
+.health-result.clear { background: #e7f5ef; color: var(--green); }.health-result.warning { background: #fff0e4; color: #b45a16; }
+.health-check-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.health-check-card { min-height: 88px; padding: 17px; display: grid; grid-template-columns: 39px 1fr auto; align-items: center; gap: 12px; }
+.health-check-icon { width: 39px; height: 39px; border-radius: 12px; display: grid; place-items: center; background: #eef3f7; color: #8494a5; }
+.health-check-card > div { min-width: 0; display: flex; flex-direction: column; gap: 5px; }.health-check-card > div strong { color: var(--navy); font-size: 11px; }.health-check-card > div small { color: var(--muted); font-size: 8px; }
+.health-check-card > b { padding: 6px 8px; border-radius: 8px; background: #eef3f7; color: #7c8d9f; font-size: 8px; }
+.health-check-card.clear .health-check-icon { background: #e5f5ee; color: var(--green); }.health-check-card.clear > b { background: #e5f5ee; color: var(--green); }
+.health-check-card.warning { border-color: #f0c49e; background: #fffaf6; }.health-check-card.warning .health-check-icon { background: #ffead9; color: #bb5b12; }.health-check-card.warning > b { background: #ffead9; color: #a84d0b; }
+.connected-service-card { min-height: 104px; margin-top: 10px; padding: 19px 21px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.connected-service-card > div { display: flex; align-items: center; gap: 12px; color: var(--blue); }.connected-service-card > div > span { display: flex; flex-direction: column; gap: 4px; }.connected-service-card small { color: var(--blue); font: 600 7px 'DM Mono',monospace; }.connected-service-card strong { color: var(--navy); font-size: 13px; }
+.connected-service-card dl { margin: 0; display: flex; gap: 35px; }.connected-service-card dl > div { display: flex; flex-direction: column; gap: 5px; }.connected-service-card dt { color: var(--muted); font-size: 8px; }.connected-service-card dd { margin: 0; color: var(--navy); font-size: 11px; font-weight: 700; }
 .station-empty, .empty-records { min-height: 180px; padding: 28px; display: grid; place-items: center; align-content: center; gap: 8px; color: var(--muted); text-align: center; }
 .station-empty strong, .empty-records strong { color: var(--navy); font-size: 13px; }
 .station-empty span, .empty-records span { font-size: 9px; line-height: 1.6; }
@@ -367,6 +382,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .vehicle-connect-panel h2 { font-size: 21px; }
   .vehicle-connect-panel .button { width: 100%; }
   .vehicle-live-summary { padding: 23px 20px; }
+  .health-section-heading { display: block; }.health-result { width: 100%; margin: -8px 0 15px; }.health-check-grid { grid-template-columns: 1fr; }.health-check-card { min-height: 82px; padding: 15px; }.connected-service-card { align-items: flex-start; flex-direction: column; }.connected-service-card dl { width: 100%; justify-content: space-between; gap: 12px; }
   .live-summary-metrics { grid-template-columns: 1fr; }
   .live-summary-metrics .metric { border-right: 0; border-bottom: 1px solid var(--line); }
   .live-summary-metrics .metric:last-child { border-bottom: 0; }

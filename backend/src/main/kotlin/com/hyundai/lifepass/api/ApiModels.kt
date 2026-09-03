@@ -13,16 +13,31 @@ data class VehicleSummary(
     val trim: String,
     val plate: String,
     val powertrain: Powertrain,
-    val batterySoc: Int,
-    val batterySoh: Int,
-    val healthScore: Int,
-    val rangeKm: Int,
-    val odometerKm: Int,
-    val nextServiceKm: Int,
-    val location: String,
-    val softwareVersion: String,
+    val batterySoc: Int?,
+    val batterySoh: Int?,
+    val healthScore: Int?,
+    val rangeKm: Int?,
+    val odometerKm: Int?,
+    val nextServiceKm: Int?,
+    val location: String?,
+    val softwareVersion: String?,
     val chargingState: String,
+    val healthChecks: List<VehicleHealthCheckResponse>,
+    val checkedWarnings: Int,
+    val warningCount: Int,
+    val connectedService: ConnectedServiceResponse?,
     val updatedAt: Instant,
+)
+
+data class VehicleHealthCheckResponse(
+    val id: String,
+    val label: String,
+    val state: String,
+)
+
+data class ConnectedServiceResponse(
+    val subscribeDate: String?,
+    val endDate: String?,
 )
 
 data class VehicleEventResponse(
@@ -55,10 +70,10 @@ data class ReleaseResponse(
 
 data class PassportResponse(
     val vehicle: VehicleSummary,
-    val trustScore: Int,
+    val trustScore: Int?,
     val signedEvents: Int,
-    val batterySoh: Int,
-    val software: String,
+    val batterySoh: Int?,
+    val software: String?,
     val handoverReady: Boolean,
     val hash: String,
     val events: List<VehicleEventResponse>,

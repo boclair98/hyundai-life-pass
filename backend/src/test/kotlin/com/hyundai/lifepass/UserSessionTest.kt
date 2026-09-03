@@ -20,4 +20,15 @@ class UserSessionTest {
         assertNotEquals("spoofed-user", actor)
         assertEquals(actor, resolver.actor(nextRequest))
     }
+
+    @Test
+    fun `binds the browser session to a verified Hyundai identity`() {
+        val resolver = UserSession(trustedUserHeaderEnabled = false)
+        val request = MockHttpServletRequest()
+        resolver.actor(request)
+
+        resolver.bind(request, "hyundai-stable-user")
+
+        assertEquals("hyundai-stable-user", resolver.actor(request))
+    }
 }

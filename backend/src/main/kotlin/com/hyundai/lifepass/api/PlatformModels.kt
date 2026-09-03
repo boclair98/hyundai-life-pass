@@ -38,6 +38,8 @@ data class ProviderStatusResponse(
     val source: String,
     val refreshedAt: Instant?,
     val message: String,
+    val accountName: String? = null,
+    val accountEmailMasked: String? = null,
 )
 
 data class ServiceCenterResponse(

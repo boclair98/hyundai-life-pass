@@ -1,8 +1,10 @@
 package com.hyundai.lifepass.service
 
 import com.hyundai.lifepass.api.CreateEventRequest
+import com.hyundai.lifepass.api.ConnectedServiceResponse
 import com.hyundai.lifepass.api.PassportResponse
 import com.hyundai.lifepass.api.VehicleEventResponse
+import com.hyundai.lifepass.api.VehicleHealthCheckResponse
 import com.hyundai.lifepass.api.VehicleSummary
 import com.hyundai.lifepass.domain.Vehicle
 import com.hyundai.lifepass.domain.VehicleEvent
@@ -86,16 +88,43 @@ class VehicleService(
         trim = vehicle.trim,
         plate = vehicle.plate,
         powertrain = vehicle.powertrain,
-        batterySoc = vehicle.batterySoc,
-        batterySoh = vehicle.batterySoh,
-        healthScore = vehicle.healthScore,
-        rangeKm = vehicle.rangeKm,
-        odometerKm = vehicle.odometerKm,
-        nextServiceKm = vehicle.nextServiceKm,
-        location = vehicle.location,
-        softwareVersion = vehicle.softwareVersion,
+        batterySoc = vehicle.batterySoc.takeIf { vehicle.source == "SAMPLE" || vehicle.batteryStatusAvailable },
+        batterySoh = vehicle.batterySoh.takeIf { vehicle.source == "SAMPLE" },
+        healthScore = vehicle.healthScore.takeIf { vehicle.source == "SAMPLE" },
+        rangeKm = vehicle.rangeKm.takeIf { vehicle.source == "SAMPLE" || vehicle.rangeStatusAvailable },
+        odometerKm = vehicle.odometerKm.takeIf { vehicle.source == "SAMPLE" || vehicle.odometerStatusAvailable },
+        nextServiceKm = vehicle.nextServiceKm.takeIf { vehicle.source == "SAMPLE" },
+        location = vehicle.location.takeIf { vehicle.source == "SAMPLE" && it.isNotBlank() },
+        softwareVersion = vehicle.softwareVersion.takeIf { vehicle.source == "SAMPLE" && it.isNotBlank() },
         chargingState = vehicle.chargingState,
+        healthChecks = healthChecks(vehicle),
+        checkedWarnings = healthChecks(vehicle).count { it.state != "UNAVAILABLE" },
+        warningCount = healthChecks(vehicle).count { it.state == "WARNING" },
+        connectedService = if (vehicle.connectedServiceStart != null || vehicle.connectedServiceEnd != null) ConnectedServiceResponse(
+            subscribeDate = vehicle.connectedServiceStart,
+            endDate = vehicle.connectedServiceEnd,
+        ) else null,
         updatedAt = vehicle.updatedAt,
+    )
+
+    private fun healthChecks(vehicle: Vehicle) = listOf(
+        healthCheck("LOW_FUEL", "연료 부족", vehicle.lowFuelWarning),
+        healthCheck("TIRE_PRESSURE", "타이어 공기압", vehicle.tirePressureWarning),
+        healthCheck("LAMP_WIRE", "등화 장치", vehicle.lampWireWarning),
+        healthCheck("SMART_KEY_BATTERY", "스마트키 배터리", vehicle.smartKeyBatteryWarning),
+        healthCheck("WASHER_FLUID", "워셔액", vehicle.washerFluidWarning),
+        healthCheck("BRAKE_OIL", "브레이크액", vehicle.brakeOilWarning),
+        healthCheck("ENGINE_OIL", "엔진오일", vehicle.engineOilWarning),
+    )
+
+    private fun healthCheck(id: String, label: String, warning: Boolean?) = VehicleHealthCheckResponse(
+        id = id,
+        label = label,
+        state = when (warning) {
+            true -> "WARNING"
+            false -> "CLEAR"
+            null -> "UNAVAILABLE"
+        },
     )
 
     private fun toEvent(event: VehicleEvent) = VehicleEventResponse(

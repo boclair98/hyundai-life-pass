@@ -21,8 +21,8 @@ HYUNDAI LIFE PASS는 현대차 오너가 흩어진 충전·정비·차량 기록
 |---|---|---|
 | 충전소 | 현재 위치 기준 시·도 조회, 반경 30km 거리순 정렬, 충전기 상태, 지도, 길찾기 | 한국환경공단 + Kakao Local/Maps |
 | 서비스센터 | 현재 위치 주변 현대자동차·블루핸즈 검색, 전화, 길찾기 | Kakao Local/Maps |
-| 계정 | 현대 통합계정 OAuth 시작, 콜백, 동의 상태, 철회·삭제 | Hyundai Developers |
-| 내 차 | 동의 차량 목록, 배터리, 주행 가능 거리, 누적 주행거리, 충전 상태 | Hyundai Developers 승인 범위 |
+| 계정 | 현대 통합계정 OAuth, 프로필 식별, 기기 간 동일 계정 연결, 동의 상태, 철회·삭제 | Hyundai Developers |
+| 내 차 | 동의 차량 목록, 배터리, 주행 가능 거리, 누적 주행거리, 충전 상태, 7종 차량 경고, 커넥티드 서비스 계약일 | Hyundai Developers 승인 범위 |
 | 차량 여권 | Life Pass가 실제로 받은 차량 데이터 이벤트의 해시 서명 | Life Pass PostgreSQL |
 | CanaryDrive | OTA 운영 구조를 보여주는 읽기 전용 시뮬레이터 | Life Pass 데모 데이터 |
 
@@ -46,6 +46,8 @@ HYUNDAI LIFE PASS는 현대차 오너가 흩어진 충전·정비·차량 기록
 
 로그인 화면이 열려도 Redirect URL이 콘솔 등록값과 다르거나 프로젝트/차량이 활성화되지 않으면 로그인 후 데이터 동의 또는 차량 조회가 완료되지 않습니다.
 
+차량 경고는 저연료, 타이어 공기압, 등화 장치, 스마트키 배터리, 워셔액, 브레이크액, 엔진오일 7개 항목입니다. 차량이나 API 권한에 따라 제공되지 않는 항목은 `0` 또는 정상으로 추정하지 않고 **미제공**으로 표시합니다.
+
 ## 별도 제휴 전에는 할 수 없는 기능
 
 - 충전 예약, 충전 시작, 결제와 실제 사업자별 요금
@@ -62,4 +64,3 @@ HYUNDAI LIFE PASS는 현대차 오너가 흩어진 충전·정비·차량 기록
 - Database: PostgreSQL, Flyway
 - Deployment: Docker 기반 Coders standalone 서비스
 - Security: 서버 세션, HttpOnly/Secure 쿠키, OAuth state, AES-256-GCM 토큰 암호화, 요청 속도 제한
-

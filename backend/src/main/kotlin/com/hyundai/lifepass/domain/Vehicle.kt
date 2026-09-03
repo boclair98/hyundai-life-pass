@@ -71,6 +71,38 @@ class Vehicle(
     var chargingState: String = "연결 안 됨",
 
     @Column(nullable = false)
+    var batteryStatusAvailable: Boolean = false,
+
+    @Column(nullable = false)
+    var rangeStatusAvailable: Boolean = false,
+
+    @Column(nullable = false)
+    var odometerStatusAvailable: Boolean = false,
+
+    @Column(nullable = false)
+    var chargingStatusAvailable: Boolean = false,
+
+    var lowFuelWarning: Boolean? = null,
+
+    var tirePressureWarning: Boolean? = null,
+
+    var lampWireWarning: Boolean? = null,
+
+    var smartKeyBatteryWarning: Boolean? = null,
+
+    var washerFluidWarning: Boolean? = null,
+
+    var brakeOilWarning: Boolean? = null,
+
+    var engineOilWarning: Boolean? = null,
+
+    @Column(length = 8)
+    var connectedServiceStart: String? = null,
+
+    @Column(length = 8)
+    var connectedServiceEnd: String? = null,
+
+    @Column(nullable = false)
     var updatedAt: Instant = Instant.now(),
 
     @OneToMany(mappedBy = "vehicle", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)

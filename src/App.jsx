@@ -161,6 +161,8 @@ export default function App() {
       connected: '현대 계정과 차량 연결이 완료되었습니다.',
       'sync-required': '계정 연결은 완료됐습니다. 설정에서 차량 새로고침을 눌러 주세요.',
       cancelled: '현대 계정 연결을 취소했습니다. 차량 데이터는 저장되지 않았습니다.',
+      'oauth-error': '현대 계정 인증을 완료하지 못했습니다. Redirect URL과 프로젝트 상태를 확인해 주세요.',
+      'consent-error': '차량 정보 제공 동의를 완료하지 못했습니다. 현대 Developers 프로젝트의 데이터 API 설정을 확인해 주세요.',
     };
     notify(messages[result] ?? '현대 계정 연결 상태를 확인해 주세요.');
     window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash || '#home'}`);
@@ -312,7 +314,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
             <button className="header-icon" onClick={() => setAlertsOpen((value) => !value)} aria-label={`알림 ${platform.unreadNotifications ?? 0}개`}><Bell size={18} />{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
             {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{platform.environment === 'LIVE' ? '실데이터 동기화' : platform.environment === 'HYBRID' ? '일부 실데이터 연결' : '샘플 데이터 환경'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
           </div>
-          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>현대 통합계정</small><strong>{hyundaiStatusLabel(hyundai)}</strong></span></button>
+          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>현대 통합계정</small><strong>{connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</strong></span></button>
           <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}>{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
         </div>
       </div>
@@ -320,7 +322,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
       {menuOpen && (
         <div className="mobile-drawer">
           <div className="mobile-vehicle"><span>{vehicle?.name ?? '연결된 차량 없음'}</span><strong>{vehicle?.plate ?? '현대 계정 연결 필요'}</strong><small>{dataSource === 'platform' ? '실차 데이터 연결' : dataSource === 'error' ? '서버 연결 점검 필요' : '게스트 모드'}</small></div>
-          <div className={`mobile-account ${connected ? 'connected' : ''}`}><div><UserRound size={19} /><span><small>현대 통합계정</small><strong>{hyundaiStatusLabel(hyundai)}</strong></span></div><button disabled={busy} onClick={accountAction}>{connected ? '새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '연결하기'}</button></div>
+          <div className={`mobile-account ${connected ? 'connected' : ''}`}><div><UserRound size={19} /><span><small>현대 통합계정</small><strong>{connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</strong></span></div><button disabled={busy} onClick={accountAction}>{connected ? '새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '연결하기'}</button></div>
           {navigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
         </div>
       )}
@@ -330,6 +332,9 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
 
 function HomePage({ vehicle, navigate, setModal }) {
   const connected = Boolean(vehicle);
+  const careSummary = connected ? vehicle.warningCount > 0
+    ? `확인이 필요한 차량 경고 ${vehicle.warningCount}건`
+    : vehicle.checkedWarnings > 0 ? `${vehicle.checkedWarnings}개 상태 항목 이상 없음` : '차량 상태를 새로고침해 주세요' : '전화와 카카오맵 길찾기';
   return (
     <>
       <section className="home-hero">
@@ -354,9 +359,9 @@ function HomePage({ vehicle, navigate, setModal }) {
         <div className={`hero-status container ${connected ? '' : 'guest'}`}>
           {connected ? <>
             <div><span className="status-dot" /><p>현재 연결 차량</p><strong>{vehicle.name}</strong></div>
-            <div><BatteryCharging size={20} /><p>배터리</p><strong>{vehicle.batterySoc}%</strong></div>
-            <div><Navigation size={20} /><p>주행 가능</p><strong>{vehicle.range}km</strong></div>
-            <div><Gauge size={20} /><p>누적 주행</p><strong>{vehicle.odometer.toLocaleString()}km</strong></div>
+            <div><BatteryCharging size={20} /><p>배터리</p><strong>{formatMetric(vehicle.batterySoc, '%')}</strong></div>
+            <div><Navigation size={20} /><p>주행 가능</p><strong>{formatMetric(vehicle.range, 'km')}</strong></div>
+            <div><Gauge size={20} /><p>누적 주행</p><strong>{formatMetric(vehicle.odometer, 'km')}</strong></div>
             <button onClick={() => setModal('connect')}>차량 동기화 <RefreshCcw size={16} /></button>
           </> : <>
             <div className="guest-status-copy"><UserRound size={20} /><p>현재 게스트 모드</p><strong>차량 정보 없이 충전소와 블루핸즈를 먼저 찾아보세요.</strong></div>
@@ -370,7 +375,7 @@ function HomePage({ vehicle, navigate, setModal }) {
         <div className="service-grid">
           <ServiceCard number="01" icon={BatteryCharging} title="실시간 충전" description="공공데이터로 충전기 사용 가능 상태를 확인하고 카카오맵 길찾기로 이어집니다." action="충전소 찾기" onClick={() => navigate('charge')} tone="blue" />
           <ServiceCard number="02" icon={Activity} title="서비스 케어" description="실제 현대자동차·블루핸즈 거점을 현재 위치에서 가까운 순서로 찾습니다." action="서비스 거점 찾기" onClick={() => navigate('care')} tone="sky" />
-          <ServiceCard number="03" icon={CloudCog} title="차량 상태" description="현대 계정이 제공하는 배터리, 주행 가능 거리와 누적 주행 정보를 한눈에 봅니다." action="내 차 연결하기" onClick={() => navigate('care')} tone="navy" />
+          <ServiceCard number="03" icon={CloudCog} title="차량 상태" description="배터리·주행 정보와 타이어·오일 등 7종 차량 경고를 현대 계정에서 확인합니다." action="내 차 연결하기" onClick={() => navigate('care')} tone="navy" />
           <ServiceCard number="04" icon={FileCheck2} title="연결 기록" description="Life Pass에서 실제로 생성된 차량 이벤트와 무결성 서명을 확인합니다." action="차량 기록 열기" onClick={() => navigate('passport')} tone="ice" />
         </div>
       </section>
@@ -382,18 +387,18 @@ function HomePage({ vehicle, navigate, setModal }) {
             {connected ? <div className="vehicle-summary-card">
               <div className="vehicle-summary-top"><div><span className="connected"><i /> 현대 커넥티드카 연결</span><h3>{vehicle.name}</h3><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="health-score"><span>SYNC</span><strong>LIVE</strong></div></div>
               <div className="summary-metrics">
-                <Metric icon={BatteryCharging} label="배터리" value={`${vehicle.batterySoc}%`} detail={`${vehicle.range}km 주행 가능`} />
-                <Metric icon={Gauge} label="누적 주행" value={`${vehicle.odometer.toLocaleString()}km`} detail="현대차 데이터 동기화" />
-                <Metric icon={CloudCog} label="소프트웨어" value={vehicle.softwareVersion} detail="제조사 제공 범위" />
+                <Metric icon={BatteryCharging} label="배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.range == null ? '주행 가능 거리 미제공' : `${vehicle.range.toLocaleString()}km 주행 가능`} />
+                <Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail="현대차 데이터 동기화" />
+                <Metric icon={ShieldCheck} label="차량 경고" value={vehicle.warningCount > 0 ? `${vehicle.warningCount}건` : vehicle.checkedWarnings > 0 ? '이상 없음' : '미제공'} detail={`${vehicle.checkedWarnings ?? 0}/7개 항목 확인`} />
               </div>
-              <div className="vehicle-location"><MapPin size={15} /><span>{vehicle.location}</span><small>동의 기반 갱신</small></div>
+              <div className="vehicle-location"><RefreshCcw size={15} /><span>현대 통합계정에서 동기화됨</span><small>{vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '갱신 확인 중'}</small></div>
             </div> : <VehicleConnectPanel onConnect={() => setModal('connect')} compact />}
           </div>
 
           <div className="next-actions">
             <div className="next-actions-head"><span>지금 필요한 일</span><strong>2</strong></div>
             <ActionRow icon={BatteryCharging} color="blue" title="가까운 충전소 찾기" detail="실시간 충전 가능 여부와 길찾기" badge="바로 사용" onClick={() => navigate('charge')} />
-            <ActionRow icon={Wrench} color="orange" title={connected ? '내 차 점검 상태 확인' : '가까운 블루핸즈 찾기'} detail={connected ? `권장 점검까지 ${vehicle.nextServiceKm.toLocaleString()}km` : '전화와 카카오맵 길찾기'} badge={connected ? '내 차' : '게스트'} onClick={() => navigate('care')} />
+            <ActionRow icon={Wrench} color="orange" title={connected ? '내 차 점검 상태 확인' : '가까운 블루핸즈 찾기'} detail={careSummary} badge={connected ? (vehicle.warningCount > 0 ? '확인 필요' : '내 차') : '게스트'} onClick={() => navigate('care')} />
             {connected && <ActionRow icon={ShieldCheck} color="green" title="차량 연결 기록 확인" detail="실제로 저장된 이벤트의 서명 검증" badge="기록" onClick={() => navigate('passport')} />}
           </div>
         </div>
@@ -620,12 +625,22 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
 
   return (
     <div className="page container">
-      <PageIntro eyebrow="PREDICTIVE CARE" title="고장 나기 전에 먼저" description="차량을 연결해 상태를 확인하거나, 로그인 없이 가까운 블루핸즈를 찾을 수 있습니다." actions={vehicle && <button className="button outline" onClick={() => navigator.share ? navigator.share({ title: `${vehicle.name} 케어`, text: `배터리 ${vehicle.batterySoc}% · 주행 가능 ${vehicle.range}km` }).catch(() => undefined) : notify('이 기기에서는 공유 기능을 지원하지 않습니다.')}><Share2 size={16} /> 상태 공유</button>} />
+      <PageIntro eyebrow="CONNECTED VEHICLE HEALTH" title="차가 보내는 신호를 바로" description="현대 통합계정의 실제 차량 상태와 가까운 블루핸즈를 한 화면에서 확인합니다." actions={vehicle && <button className="button outline" onClick={() => navigator.share ? navigator.share({ title: `${vehicle.name} 차량 상태`, text: `${vehicle.checkedWarnings ?? 0}개 항목 확인 · 경고 ${vehicle.warningCount ?? 0}건` }).catch(() => undefined) : notify('이 기기에서는 공유 기능을 지원하지 않습니다.')}><Share2 size={16} /> 상태 공유</button>} />
       {vehicle ? <>
       <section className="vehicle-live-summary panel">
         <div><span className="live-label"><i /> HYUNDAI CONNECTED DATA</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · 마지막 동기화 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '방금 전'}</p></div>
-        <div className="live-summary-metrics"><Metric icon={BatteryCharging} label="구동 배터리" value={`${vehicle.batterySoc}%`} detail={vehicle.chargingState} /><Metric icon={Navigation} label="주행 가능" value={`${vehicle.range}km`} detail="제조사 제공값" /><Metric icon={Gauge} label="누적 주행" value={`${vehicle.odometer.toLocaleString()}km`} detail="제조사 제공값" /></div>
-        <small>타이어 공기압, 배터리 SOH, 고장 예측과 정비 주기는 현재 공개 API 제공 범위가 아니므로 표시하지 않습니다.</small>
+        <div className="live-summary-metrics"><Metric icon={BatteryCharging} label="구동 배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '이 차량에서 미제공' : vehicle.chargingState} /><Metric icon={Navigation} label="주행 가능" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '이 차량에서 미제공' : '현대차 제공값'} /><Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '이 차량에서 미제공' : '현대차 제공값'} /></div>
+        <small>표시 값은 현대자동차가 해당 차량에 제공한 항목만 사용합니다. 응답이 없는 값은 0으로 꾸미지 않고 ‘미제공’으로 표시합니다.</small>
+      </section>
+      <section className="section-sub vehicle-health-section">
+        <div className="health-section-heading">
+          <SectionHeading eyebrow="7-POINT VEHICLE CHECK" title="차량 경고 상태" description="계기판에서 놓치기 쉬운 주요 경고를 현대 차량 데이터로 확인합니다." />
+          <div className={`health-result ${vehicle.warningCount > 0 ? 'warning' : vehicle.checkedWarnings > 0 ? 'clear' : 'unknown'}`}><strong>{vehicle.warningCount > 0 ? `${vehicle.warningCount}건 확인 필요` : vehicle.checkedWarnings > 0 ? '확인 항목 이상 없음' : '상태 미제공'}</strong><span>{vehicle.checkedWarnings ?? 0}/7개 응답</span></div>
+        </div>
+        <div className="health-check-grid">
+          {(vehicle.healthChecks ?? []).map((check) => <article className={`health-check-card panel ${check.state.toLowerCase()}`} key={check.id}><span className="health-check-icon">{check.state === 'WARNING' ? <Wrench size={19} /> : check.state === 'CLEAR' ? <CheckCircle2 size={19} /> : <CircleGauge size={19} />}</span><div><strong>{check.label}</strong><small>{check.state === 'WARNING' ? '차량 점검이 필요합니다' : check.state === 'CLEAR' ? '현재 경고 없음' : '이 차량에서 미제공'}</small></div><b>{check.state === 'WARNING' ? '확인 필요' : check.state === 'CLEAR' ? '정상' : '미제공'}</b></article>)}
+        </div>
+        {vehicle.connectedService && <div className="connected-service-card panel"><div><CloudCog size={21} /><span><small>BLUELINK CONTRACT</small><strong>커넥티드 서비스</strong></span></div><dl><div><dt>가입일</dt><dd>{formatHyundaiDate(vehicle.connectedService.subscribeDate)}</dd></div><div><dt>무료 서비스 종료일</dt><dd>{formatHyundaiDate(vehicle.connectedService.endDate)}</dd></div></dl></div>}
       </section>
       </> : <VehicleConnectPanel onConnect={() => setModal('connect')} />}
       <section className="section-sub service-center-section" id="service-centers">
@@ -654,10 +669,6 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
           {!centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel"><MapPin size={22} /><strong>서비스 거점을 찾지 못했습니다.</strong><span>위치 권한을 허용하거나 잠시 후 다시 시도해 주세요.</span></div>}
         </div>
       </section>
-      {vehicle && <section className="section-sub">
-        <SectionHeading eyebrow="SOFTWARE STATUS" title="내 차의 소프트웨어" description="업데이트가 어떻게 검증되었는지 소비자도 이해할 수 있게 보여드립니다." />
-        <div className="software-card panel"><div className="software-icon"><CloudCog size={25} /></div><div className="software-copy"><span>표시 버전 {vehicle.softwareVersion}</span><h3>제조사 제공 범위의 소프트웨어 상태</h3><p>제공되지 않은 OTA 정보는 임의로 생성하지 않습니다.</p></div><div className="software-proof"><ShieldCheck size={18} /><div><strong>데이터 출처 확인</strong><span>Hyundai Developers 동기화</span></div></div></div>
-      </section>}
     </div>
   );
 }
@@ -670,7 +681,7 @@ function PassportPage({ vehicle, notify, setModal, passport }) {
       <PageIntro eyebrow="DIGITAL VEHICLE PASSPORT" title="내 차의 연결 기록" description="Life Pass에서 확인된 차량 데이터 이벤트의 변경 여부를 서명으로 검증합니다." actions={<button className="button outline" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/#passport`).then(() => notify('현재 차량 여권 링크를 복사했습니다.')).catch(() => notify('현재 주소를 공유해 주세요.'))}><Share2 size={16} /> 링크 공유</button>} />
       <section className="passport-main panel">
         <div className="passport-head"><div><span className="verified"><ShieldCheck size={15} /> CONNECTED VEHICLE RECORD</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="passport-id"><span>PASS ID</span><strong>HLP-{vehicle.databaseId}</strong></div></div>
-        <div className="passport-scores"><PassportScore label="서명된 기록" value={passport?.signedEvents ?? 0} unit="건" note="무결성 확인" /><PassportScore label="배터리 상태" value={vehicle.batterySoc} unit="%" note="동기화 값" /><PassportScore label="주행 가능" value={vehicle.range} unit="km" note="동기화 값" /><PassportScore label="누적 주행" value={vehicle.odometer.toLocaleString()} unit="km" note="동기화 값" /></div>
+        <div className="passport-scores"><PassportScore label="서명된 기록" value={passport?.signedEvents ?? 0} unit="건" note="무결성 확인" /><PassportScore label="확인 경고" value={vehicle.warningCount ?? 0} unit="건" note={`${vehicle.checkedWarnings ?? 0}/7개 확인`} /><PassportScore label="배터리" value={vehicle.batterySoc ?? '—'} unit={vehicle.batterySoc == null ? '' : '%'} note={vehicle.batterySoc == null ? '미제공' : '동기화 값'} /><PassportScore label="누적 주행" value={vehicle.odometer == null ? '—' : vehicle.odometer.toLocaleString()} unit={vehicle.odometer == null ? '' : 'km'} note={vehicle.odometer == null ? '미제공' : '동기화 값'} /></div>
         <div className="passport-signature"><LockKeyhole size={16} /><span>현재 레코드 서명</span><code>sha256 · {passport?.hash ?? '불러오는 중'}</code><CheckCircle2 size={16} /></div>
       </section>
       <section className="section-sub">
@@ -693,10 +704,10 @@ function SettingsPage({ vehicle, platform, actions, busy, navigate, notify }) {
       <PageIntro eyebrow="ACCOUNT & APP" title="내 정보와 앱 설정" description="연결 상태, 데이터 동기화와 삭제 경로를 한곳에서 관리합니다." />
       <div className="settings-grid">
         <section className="panel settings-card">
-          <div className="settings-icon"><UserRound size={22} /></div><span>현대 통합계정</span><h2>{hyundaiStatusLabel(hyundai)}</h2><p>{hyundai?.message ?? '연결 상태를 확인하고 있습니다.'}</p>
+          <div className="settings-icon"><UserRound size={22} /></div><span>현대 통합계정</span><h2>{connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</h2><p>{connected && hyundai?.accountEmailMasked ? `${hyundai.accountEmailMasked} · ${hyundai.message}` : hyundai?.message ?? '연결 상태를 확인하고 있습니다.'}</p>
           {connected ? <div className="settings-actions"><button className="button primary" disabled={busy} onClick={actions.syncHyundai}><RefreshCcw size={16} /> 차량 새로고침</button><button className="button danger" disabled={busy} onClick={removeConnection}><Trash2 size={16} /> 연결 해제·데이터 삭제</button></div> : <button className="button primary" disabled={busy} onClick={actions.connectHyundai}>현대 계정 연결 <ArrowRight size={16} /></button>}
           {!connected && <div className="oauth-flow" aria-label="현대 계정 연결 순서"><span><b>1</b>공식 로그인</span><span><b>2</b>차량 접근 동의</span><span><b>3</b>데이터 제공 동의</span><span><b>4</b>차량 동기화</span></div>}
-          {!connected && <small>버튼을 누르면 현대자동차 통합 로그인 도메인으로 이동합니다. Life Pass는 아이디와 비밀번호를 받지 않습니다.</small>}
+          {!connected && <small>버튼을 누르면 현대자동차 공식 통합계정 화면으로 이동합니다. Life Pass는 아이디와 비밀번호를 받지 않습니다.</small>}
           {vehicle && <small>연결 차량: {vehicle.name} · 마지막 동기화 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '확인 중'}</small>}
         </section>
         <section className="panel settings-card">
@@ -753,6 +764,15 @@ function OperationBanner({ icon: Icon, label, title, detail, action, tone }) {
 
 function formatDateTime(value) {
   return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+}
+
+function formatMetric(value, unit) {
+  return value == null ? '미제공' : `${Number(value).toLocaleString()}${unit}`;
+}
+
+function formatHyundaiDate(value) {
+  if (!value || !/^\d{8}$/.test(value)) return '미제공';
+  return `${value.slice(0, 4)}.${value.slice(4, 6)}.${value.slice(6, 8)}`;
 }
 
 function formatDate(value) {
@@ -833,7 +853,7 @@ function GuidePage({ navigate }) {
         <article className="panel"><span>03 · 현대 계정 연결</span><div><CarFront size={22} /><h2>내 차와 차량 여권</h2></div><p>현대 공식 로그인과 데이터 제공 동의를 마치면 동의 범위의 차량 상태와 Life Pass에서 생성된 서명 기록을 확인합니다.</p><button className="button primary" onClick={() => navigate('settings')}>계정 연결 안내 <ArrowRight size={15} /></button></article>
       </section>
       <section className="panel capability-table">
-        <div><span>지금 실제로 작동</span><strong>충전소 상태·거리, 지도·길찾기, 블루핸즈 검색·전화, 현대 OAuth 시작, 동의 데이터 동기화·삭제</strong></div>
+        <div><span>지금 실제로 작동</span><strong>현재 위치 충전소, 지도·길찾기, 블루핸즈 검색·전화, 현대 통합계정 로그인, 차량 기본 상태·7종 경고·커넥티드 계약 동기화와 삭제</strong></div>
         <div><span>현대 승인 필요</span><strong>일반 고객의 실차 데이터는 Hyundai Developers 상용화 심사 승인 후 제공</strong></div>
         <div><span>파트너 계약 필요</span><strong>충전 예약·결제, 블루핸즈 예약, 디지털 키 이전, 실제 OTA 제어</strong></div>
       </section>
@@ -855,7 +875,7 @@ function LegalPage({ type }) {
       <section className="panel legal-card">
         <span>2026년 9월 3일 기준 · 파일럿</span>
         {privacy ? <>
-          <h2>수집과 이용</h2><p>현대 통합계정 연결 전에는 임의의 브라우저 세션 식별자만 사용합니다. 사용자가 현대자동차 화면에서 직접 동의한 경우에만 차량 식별자, 차종, 주행거리, 주행 가능 거리, EV 배터리 및 충전 상태를 처리합니다.</p>
+          <h2>수집과 이용</h2><p>현대 통합계정 연결 전에는 임의의 브라우저 세션 식별자만 사용합니다. 사용자가 현대자동차 화면에서 직접 동의한 경우에만 계정 표시 이름·마스킹 이메일, 차량 식별자·차종·주행거리·주행 가능 거리·EV 배터리·충전 상태·차량 경고와 커넥티드 서비스 계약일을 처리합니다.</p>
           <h2>보관과 보호</h2><p>접근·갱신 토큰은 서버에서 AES-256-GCM으로 암호화해 저장하며 브라우저에 전달하지 않습니다. 세션 쿠키는 Secure·HttpOnly로 설정합니다.</p>
           <h2>철회와 삭제</h2><p>설정의 ‘연결 해제·데이터 삭제’ 또는 현대자동차 데이터 제공 중단 콜백이 수신되면 연결 토큰과 해당 실차 데이터를 삭제합니다.</p>
           <h2>외부 제공자</h2><p>차량 데이터는 Hyundai Developers, 충전소 정보는 공공데이터포털, 지도와 주변 장소 검색은 Kakao API를 사용합니다.</p>
