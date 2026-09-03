@@ -1,5 +1,6 @@
 package com.hyundai.lifepass
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -8,11 +9,13 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.springframework.http.MediaType
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class VehicleApiIntegrationTest(
     @Autowired private val mockMvc: MockMvc,
+    @Autowired private val objectMapper: ObjectMapper,
 ) {
     @Test
     fun `lists Hyundai demo vehicles`() {
@@ -43,5 +46,72 @@ class VehicleApiIntegrationTest(
                 status { isOk() }
                 jsonPath("$.status") { value("ROLLING") }
             }
+    }
+
+    @Test
+    fun `creates charging reservation and exposes it in user snapshot`() {
+        mockMvc.post("/api/v1/platform/charging-reservations") {
+            header("X-Coders-User", "charge-test-user")
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"vehicleExternalId":"ioniq6-0318","stationId":1,"scheduledAt":"2030-09-03T12:00:00Z","targetSoc":80}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.status") { value("CONFIRMED") }
+            jsonPath("$.stationName") { value("현대 EV 스테이션 강동") }
+        }
+
+        mockMvc.get("/api/v1/platform/snapshot") {
+            header("X-Coders-User", "charge-test-user")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.chargingReservations", hasSize<Any>(1))
+            jsonPath("$.unreadNotifications") { value(1) }
+        }
+    }
+
+    @Test
+    fun `creates service booking with signed audit log`() {
+        mockMvc.post("/api/v1/platform/service-bookings") {
+            header("X-Coders-User", "service-test-user")
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"vehicleExternalId":"ioniq6-0318","centerName":"성수 현대서비스","serviceType":"타이어 점검","scheduledAt":"2030-09-07T01:30:00Z"}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.status") { value("CONFIRMED") }
+            jsonPath("$.estimatedCost") { value(84000) }
+        }
+
+        mockMvc.get("/api/v1/platform/audit-logs")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$[0].signature") { isNotEmpty() }
+            }
+    }
+
+    @Test
+    fun `advances handover state machine`() {
+        val response = mockMvc.post("/api/v1/platform/handovers") {
+            header("X-Coders-User", "handover-test-user")
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"vehicleExternalId":"ioniq6-0318","buyerEmail":"buyer@example.com"}"""
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.step") { value(1) }
+        }.andReturn().response.contentAsString
+        val id = objectMapper.readTree(response)["id"].asLong()
+
+        repeat(3) {
+            mockMvc.post("/api/v1/platform/handovers/$id/advance") {
+                header("X-Coders-User", "handover-test-user")
+            }.andExpect { status { isOk() } }
+        }
+
+        mockMvc.get("/api/v1/platform/snapshot") {
+            header("X-Coders-User", "handover-test-user")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.handovers[0].status") { value("COMPLETED") }
+            jsonPath("$.handovers[0].step") { value(4) }
+        }
     }
 }

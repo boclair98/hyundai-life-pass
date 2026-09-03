@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -18,6 +18,7 @@ import {
   Gauge,
   KeyRound,
   LocateFixed,
+  LoaderCircle,
   LockKeyhole,
   MapPin,
   Menu,
@@ -33,7 +34,24 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { loadVehicles } from './api';
+import {
+  advanceHandover,
+  advanceRelease,
+  bookService,
+  cancelCharging,
+  cancelService,
+  connectVehicle,
+  loadAuditLogs,
+  loadPassport,
+  loadPlatform,
+  loadReleases,
+  pauseRelease,
+  readNotification,
+  reserveCharging,
+  startHandover,
+  startRelease,
+  loadVehicles,
+} from './api';
 import { demoVehicles, passportEvents, releases, stations } from './data';
 import './app.css';
 
@@ -55,6 +73,11 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [platform, setPlatform] = useState({ stations: [], chargingReservations: [], serviceBookings: [], handovers: [], notifications: [], unreadNotifications: 0, environment: 'LOADING' });
+  const [liveReleases, setLiveReleases] = useState([]);
+  const [passport, setPassport] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
 
   const vehicle = vehicles.find((item) => item.id === selectedVehicleId) ?? vehicles[0];
 
@@ -67,6 +90,32 @@ export default function App() {
       }
     });
   }, []);
+
+  const refreshPlatform = useCallback(async () => {
+    const [snapshot, releaseItems, auditItems] = await Promise.all([
+      loadPlatform(),
+      loadReleases(),
+      loadAuditLogs(),
+    ]);
+    setPlatform(snapshot);
+    setLiveReleases(releaseItems);
+    setAuditLogs(auditItems);
+  }, []);
+
+  useEffect(() => {
+    refreshPlatform().catch(() => undefined);
+  }, [refreshPlatform]);
+
+  useEffect(() => {
+    if (!vehicle?.databaseId) return;
+    loadPassport(vehicle.databaseId).then(setPassport).catch(() => setPassport(null));
+  }, [vehicle?.databaseId]);
+
+  useEffect(() => {
+    if (page !== 'lab') return undefined;
+    const timer = window.setInterval(() => refreshPlatform().catch(() => undefined), 10000);
+    return () => window.clearInterval(timer);
+  }, [page, refreshPlatform]);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -94,7 +143,41 @@ export default function App() {
     setToast(message);
   }
 
-  const shared = { vehicle, navigate, notify, setModal };
+  async function transact(work, message) {
+    setBusy(true);
+    try {
+      await work();
+      await refreshPlatform();
+      const refreshedVehicles = await loadVehicles();
+      setVehicles(refreshedVehicles.vehicles);
+      setDataSource(refreshedVehicles.source);
+      if (vehicle?.databaseId) setPassport(await loadPassport(vehicle.databaseId));
+      notify(message);
+      setModal(null);
+      return true;
+    } catch (error) {
+      notify(error.message || '요청을 처리하지 못했습니다.');
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const actions = {
+    connectVehicle: () => transact(() => connectVehicle(vehicle.id), `${vehicle.name} 연결과 데이터 동기화가 완료됐습니다.`),
+    reserveCharge: (station) => transact(() => reserveCharging({ vehicleExternalId: vehicle.id, stationId: station.id, scheduledAt: new Date(Date.now() + 3600000).toISOString(), targetSoc: 80 }), `${station.name} 충전 예약이 확정됐습니다.`),
+    cancelCharge: (id) => transact(() => cancelCharging(id), '충전 예약을 취소했습니다.'),
+    bookService: () => transact(() => bookService({ vehicleExternalId: vehicle.id, centerName: '성수 현대서비스', serviceType: '타이어 위치 교환·차량 점검', scheduledAt: new Date(Date.now() + 4 * 86400000).toISOString() }), '블루핸즈 예약이 확정됐습니다.'),
+    cancelService: (id) => transact(() => cancelService(id), '정비 예약을 취소했습니다.'),
+    startHandover: () => transact(() => startHandover({ vehicleExternalId: vehicle.id, buyerEmail: 'next.owner@example.com' }), '차량 인수인계가 시작됐습니다.'),
+    advanceHandover: (id) => transact(() => advanceHandover(id), '인수인계 다음 단계가 완료됐습니다.'),
+    markNotification: (id) => transact(() => readNotification(id), '알림을 확인했습니다.'),
+    startRelease: (id) => transact(() => startRelease(id), 'Canary 배포가 시작됐습니다.'),
+    advanceRelease: (id) => transact(() => advanceRelease(id), '검증 통과 후 배포 범위를 확대했습니다.'),
+    pauseRelease: (id) => transact(() => pauseRelease(id), '이상 분석을 위해 배포를 일시 중지했습니다.'),
+  };
+
+  const shared = { vehicle, navigate, notify, setModal, platform, liveReleases, passport, auditLogs, actions, busy };
 
   return (
     <div className="app">
@@ -109,6 +192,8 @@ export default function App() {
         setSelectedVehicleId={setSelectedVehicleId}
         dataSource={dataSource}
         notify={notify}
+        platform={platform}
+        actions={actions}
       />
 
       <main>
@@ -120,13 +205,14 @@ export default function App() {
       </main>
 
       <MobileNav page={page} navigate={navigate} />
-      {modal && <Modal type={modal} vehicle={vehicle} close={() => setModal(null)} notify={notify} navigate={navigate} />}
+      {modal && <Modal type={modal} vehicle={vehicle} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
     </div>
   );
 }
 
-function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, dataSource, notify }) {
+function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, dataSource, platform, actions }) {
+  const [alertsOpen, setAlertsOpen] = useState(false);
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -150,15 +236,18 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
             </select>
             <ChevronDown size={14} />
           </label>
-          <button className="header-icon" onClick={() => notify('확인하지 않은 알림이 없습니다.')} aria-label="알림"><Bell size={18} /></button>
+          <div className="notification-wrap">
+            <button className="header-icon" onClick={() => setAlertsOpen((value) => !value)} aria-label={`알림 ${platform.unreadNotifications ?? 0}개`}><Bell size={18} />{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
+            {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{platform.environment === 'CODERS_IDENTITY' ? '계정 동기화' : '플랫폼 시뮬레이션'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
+          </div>
           <button className={`lab-button ${page === 'lab' ? 'active' : ''}`} onClick={() => navigate('lab')}><Code2 size={15} /><span>Developer Lab</span></button>
-          <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="메뉴 열기">{menuOpen ? <X size={21} /> : <Menu size={21} />}</button>
+          <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="메뉴 열기">{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
         </div>
       </div>
 
       {menuOpen && (
         <div className="mobile-drawer">
-          <div className="mobile-vehicle"><span>{vehicle.name}</span><strong>{vehicle.plate}</strong><small>{dataSource === 'api' ? '실차 API 연결' : '시연 데이터 연결'}</small></div>
+          <div className="mobile-vehicle"><span>{vehicle.name}</span><strong>{vehicle.plate}</strong><small>{dataSource === 'api' ? '플랫폼 API 연결' : '시연 데이터 연결'}</small></div>
           {navigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
           <button onClick={() => navigate('lab')}><Code2 size={18} />Developer Lab<ChevronRight size={16} /></button>
         </div>
@@ -244,25 +333,38 @@ function HomePage({ vehicle, navigate, setModal }) {
   );
 }
 
-function ChargePage({ vehicle, notify }) {
+function ChargePage({ vehicle, notify, platform, actions, busy }) {
+  const stationList = platform.stations?.length ? platform.stations.map((item) => ({ id: item.id, name: item.name, address: item.address, distance: `${item.distanceKm}km`, available: item.available, total: item.total, speed: `${item.speedKw}kW`, price: `${item.pricePerKwh}원/kWh`, eta: `${item.etaMinutes}분` })) : stations;
   const [selectedStation, setSelectedStation] = useState(stations[0]);
   const [search, setSearch] = useState('성수동');
+  const activeReservation = platform.chargingReservations?.find((item) => item.vehicleExternalId === vehicle.id && item.status === 'CONFIRMED');
+  useEffect(() => {
+    if (stationList.length && !stationList.some((item) => item.id === selectedStation.id)) setSelectedStation(stationList[0]);
+  }, [platform.stations]);
   return (
     <div className="page container">
       <PageIntro eyebrow="SMART CHARGE" title="기다리지 않는 충전" description="내 위치, 예상 도착시간, 실시간 충전 가능 여부를 함께 계산합니다." />
+      <OperationBanner
+        tone={activeReservation ? 'active' : 'ready'}
+        icon={BatteryCharging}
+        label={activeReservation ? '예약 확정' : '바로 예약 가능'}
+        title={activeReservation ? activeReservation.stationName : '충전소를 고르면 즉시 예약됩니다.'}
+        detail={activeReservation ? `${formatDateTime(activeReservation.scheduledAt)} · 목표 ${activeReservation.targetSoc}% · ₩${activeReservation.estimatedCost.toLocaleString()}` : '예약 결과는 차량 상태·알림·차량 여권에 동시에 기록됩니다.'}
+        action={activeReservation ? <button onClick={() => actions.cancelCharge(activeReservation.id)} disabled={busy}>예약 취소</button> : null}
+      />
       <div className="charge-layout">
         <section className="charge-map panel">
           <div className="map-search"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="충전소 검색" /><button onClick={() => notify(`${search} 주변 충전소를 찾았습니다.`)}><LocateFixed size={17} /></button></div>
           <div className="map-surface" aria-label="성수동 주변 충전소 지도">
             <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
             <div className="map-river" />
-            {stations.map((station, index) => <button key={station.id} className={`map-pin pin-${index + 1} ${selectedStation.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
+            {stationList.map((station, index) => <button key={station.id} className={`map-pin pin-${index + 1} ${selectedStation.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
             <div className="my-location"><Navigation size={14} fill="currentColor" /></div>
           </div>
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 충전소</span><small>실시간</small></div>
-          {stations.map((station) => (
+          {stationList.map((station) => (
             <button key={station.id} className={`station-row ${selectedStation.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className="station-availability"><strong>{station.available}</strong><span>/{station.total}</span></div>
               <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span></div>
@@ -272,30 +374,32 @@ function ChargePage({ vehicle, notify }) {
           <div className="station-detail">
             <div><span>선택한 충전소</span><strong>{selectedStation.name}</strong><p>{selectedStation.address}</p></div>
             <div className="charge-price"><span>예상 충전비</span><strong>₩8,420</strong><small>{selectedStation.price}</small></div>
-            <button className="button primary full" onClick={() => notify(`${selectedStation.name} 경로를 ${vehicle.name}에 전송했습니다.`)}>차량으로 경로 전송 <Navigation size={16} /></button>
+            <button className="button primary full" disabled={busy || !!activeReservation} onClick={() => actions.reserveCharge(selectedStation)}>{busy ? <LoaderCircle className="spin" size={16} /> : <Navigation size={16} />}{activeReservation ? '예약된 충전 일정 있음' : '경로 전송하고 예약'} </button>
           </div>
         </aside>
       </div>
       <div className="charge-plan-grid">
-        <div className="panel plan-card"><div className="plan-icon"><Clock3 size={20} /></div><div><span>가장 저렴한 시간</span><strong>오늘 23:00–02:00</strong><p>현재보다 약 18% 절약 · 예상 8,400원</p></div><button onClick={() => notify('오늘 밤 11시 충전 알림을 예약했습니다.')}>알림 받기</button></div>
+        <div className="panel plan-card"><div className="plan-icon"><Clock3 size={20} /></div><div><span>가장 저렴한 시간</span><strong>오늘 23:00–02:00</strong><p>현재보다 약 18% 절약 · 예상 8,400원</p></div><button onClick={() => actions.reserveCharge(selectedStation)} disabled={busy || !!activeReservation}>예약하기</button></div>
         <div className="panel plan-card"><div className="plan-icon"><Route size={20} /></div><div><span>내일 일정 기준</span><strong>오전 8시까지 80%</strong><p>예상 주행 64km · 출발 시 331km 가능</p></div><button onClick={() => notify('내일 일정에 맞춰 충전 계획을 저장했습니다.')}>계획 저장</button></div>
       </div>
     </div>
   );
 }
 
-function CarePage({ vehicle, notify, setModal }) {
+function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
   const bars = [62, 68, 65, 72, 76, 81, 84, 88, 92, vehicle.healthScore];
+  const activeBooking = platform.serviceBookings?.find((item) => item.vehicleExternalId === vehicle.id && item.status === 'CONFIRMED');
   return (
     <div className="page container">
       <PageIntro eyebrow="PREDICTIVE CARE" title="고장 나기 전에 먼저" description="차량 상태와 주행 패턴을 바탕으로 지금 필요한 관리만 알려드립니다." actions={<button className="button outline" onClick={() => notify('차량 케어 리포트를 준비했습니다.')}>리포트 받기 <Share2 size={16} /></button>} />
+      {activeBooking && <OperationBanner tone="active" icon={CalendarClock} label="정비 예약 확정" title={`${activeBooking.centerName} · ${activeBooking.serviceType}`} detail={`${formatDateTime(activeBooking.scheduledAt)} · 예상 ₩${activeBooking.estimatedCost.toLocaleString()}`} action={<button onClick={() => actions.cancelService(activeBooking.id)} disabled={busy}>예약 취소</button>} />}
       <section className="care-overview panel">
         <div className="care-score-block"><span>오늘의 차량 건강도</span><div className="score-ring" style={{ '--score': `${vehicle.healthScore * 3.6}deg` }}><strong>{vehicle.healthScore}</strong><small>/100</small></div><em>매우 좋음</em></div>
         <div className="care-copy"><span className="live-label"><i /> {vehicle.name} 실시간 분석</span><h2>지금은 안심하고<br />주행하셔도 좋아요.</h2><p>배터리, 구동계, 타이어에서 즉시 확인할 이상 신호가 없습니다.</p><div className="care-inline-metrics"><div><ThermometerSun size={18} /><span>배터리 온도</span><strong>24°C</strong></div><div><CircleGauge size={18} /><span>타이어 공기압</span><strong>정상</strong></div><div><Zap size={18} /><span>배터리 SOH</span><strong>{vehicle.batterySoh}%</strong></div></div></div>
       </section>
       <div className="care-content-grid">
         <section className="panel health-chart"><div className="panel-title"><div><span>최근 10회 건강도</span><h3>안정적으로 유지 중</h3></div><span className="positive">+2.8%</span></div><div className="bar-chart">{bars.map((bar, index) => <div key={index}><span style={{ height: `${bar}%` }} /><small>{index + 1}</small></div>)}</div><div className="chart-legend"><span><i /> 차량 건강도</span><small>최근 30일</small></div></section>
-        <section className="panel maintenance-card"><div className="panel-title"><div><span>다가오는 정비</span><h3>타이어 위치 교환</h3></div><div className="maintenance-icon"><Wrench size={19} /></div></div><div className="maintenance-distance"><strong>{vehicle.nextServiceKm.toLocaleString()}</strong><span>km 후 권장</span></div><p>주행 패턴을 기준으로 약 5주 뒤가 적당합니다.</p><div className="maintenance-meta"><span><CalendarClock size={15} /> 예상 2026.10.08</span><span>예상 비용 ₩84,000</span></div><button className="button primary full" onClick={() => setModal('service')}>블루핸즈 예약하기 <ArrowRight size={16} /></button></section>
+        <section className="panel maintenance-card"><div className="panel-title"><div><span>다가오는 정비</span><h3>타이어 위치 교환</h3></div><div className="maintenance-icon"><Wrench size={19} /></div></div><div className="maintenance-distance"><strong>{vehicle.nextServiceKm.toLocaleString()}</strong><span>km 후 권장</span></div><p>주행 패턴을 기준으로 약 5주 뒤가 적당합니다.</p><div className="maintenance-meta"><span><CalendarClock size={15} /> 예약 가능 일정 +4일</span><span>예상 비용 ₩84,000</span></div><button className="button primary full" disabled={!!activeBooking} onClick={() => setModal('service')}>{activeBooking ? '예약 완료' : '블루핸즈 예약하기'} <ArrowRight size={16} /></button></section>
       </div>
       <section className="section-sub">
         <SectionHeading eyebrow="SOFTWARE STATUS" title="내 차의 소프트웨어" description="업데이트가 어떻게 검증되었는지 소비자도 이해할 수 있게 보여드립니다." />
@@ -305,38 +409,71 @@ function CarePage({ vehicle, notify, setModal }) {
   );
 }
 
-function PassportPage({ vehicle, notify, setModal }) {
+function PassportPage({ vehicle, notify, setModal, platform, passport, actions, busy }) {
+  const activeHandover = platform.handovers?.find((item) => item.vehicleExternalId === vehicle.id && !['COMPLETED', 'CANCELLED'].includes(item.status));
+  const timelineEvents = passport?.events?.length ? passport.events : passportEvents;
   return (
     <div className="page container">
-      <PageIntro eyebrow="DIGITAL VEHICLE PASSPORT" title="내 차의 가치를 증명하는 기록" description="정비·배터리·소프트웨어 이력을 변경 여부까지 확인 가능한 차량 여권으로 남깁니다." actions={<button className="button outline" onClick={() => notify('검증 링크를 클립보드에 복사했습니다.')}><Share2 size={16} /> 검증 링크 공유</button>} />
+      <PageIntro eyebrow="DIGITAL VEHICLE PASSPORT" title="내 차의 가치를 증명하는 기록" description="정비·배터리·소프트웨어 이력을 변경 여부까지 확인 가능한 차량 여권으로 남깁니다." actions={<button className="button outline" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/#passport`).then(() => notify('검증 링크를 클립보드에 복사했습니다.')).catch(() => notify('현재 주소를 공유해 주세요.'))}><Share2 size={16} /> 검증 링크 공유</button>} />
+      {activeHandover && <OperationBanner tone="active" icon={KeyRound} label={`인수인계 ${activeHandover.step}/4단계`} title={handoverLabel(activeHandover.status)} detail={`구매자 ${activeHandover.buyerEmailMasked} · 전송 코드 ${activeHandover.transferCode}`} action={<button onClick={() => actions.advanceHandover(activeHandover.id)} disabled={busy}>{activeHandover.step === 3 ? '최종 전달' : '다음 단계'}</button>} />}
       <div className="passport-layout">
         <section className="passport-main panel">
           <div className="passport-head"><div><span className="verified"><ShieldCheck size={15} /> HYUNDAI LIFE PASS VERIFIED</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="passport-id"><span>PASS ID</span><strong>HMC-{vehicle.plate.replace(/\s/g, '')}-26</strong></div></div>
-          <div className="passport-scores"><PassportScore label="차량 신뢰도" value="98" unit="/100" note="검증 완료" /><PassportScore label="배터리 SOH" value={vehicle.batterySoh} unit="%" note="평균 이상" /><PassportScore label="정비 기록" value="12" unit="건" note="누락 없음" /><PassportScore label="OTA 무결성" value="100" unit="%" note="최신 상태" /></div>
-          <div className="passport-signature"><LockKeyhole size={16} /><span>마지막 기록 서명</span><code>sha256 · 8b1d5a2c…e42c</code><CheckCircle2 size={16} /></div>
+          <div className="passport-scores"><PassportScore label="차량 신뢰도" value={passport?.trustScore ?? 98} unit="/100" note="검증 완료" /><PassportScore label="배터리 SOH" value={vehicle.batterySoh} unit="%" note="평균 이상" /><PassportScore label="서명된 기록" value={passport?.signedEvents ?? 0} unit="건" note="DB 동기화" /><PassportScore label="OTA 무결성" value="100" unit="%" note="최신 상태" /></div>
+          <div className="passport-signature"><LockKeyhole size={16} /><span>현재 여권 서명</span><code>sha256 · {passport?.hash ?? '동기화 중'}</code><CheckCircle2 size={16} /></div>
         </section>
-        <aside className="handover-card panel"><div className="handover-visual"><KeyRound size={29} /></div><span>안전한 차량 인수인계</span><h3>개인정보는 지우고,<br />차량의 가치는 이어주세요.</h3><ul><li><Check size={14} /> 판매자 디지털 키 회수</li><li><Check size={14} /> 목적지·연락처·음성 기록 삭제</li><li><Check size={14} /> 검증 차량 이력 구매자 전달</li></ul><button className="button primary full" onClick={() => setModal('handover')}>인수인계 시작 <ArrowRight size={16} /></button></aside>
+        <aside className="handover-card panel"><div className="handover-visual"><KeyRound size={29} /></div><span>안전한 차량 인수인계</span><h3>개인정보는 지우고,<br />차량의 가치는 이어주세요.</h3><ul><li><Check size={14} /> 판매자 디지털 키 회수</li><li><Check size={14} /> 목적지·연락처·음성 기록 삭제</li><li><Check size={14} /> 검증 차량 이력 구매자 전달</li></ul><button className="button primary full" disabled={!!activeHandover} onClick={() => setModal('handover')}>{activeHandover ? `${activeHandover.step}/4단계 진행 중` : '인수인계 시작'} <ArrowRight size={16} /></button></aside>
       </div>
       <section className="section-sub">
         <SectionHeading eyebrow="TRUSTED TIMELINE" title="차량 생애주기 기록" description="각 이벤트는 출처와 무결성을 함께 확인할 수 있습니다." />
-        <div className="timeline panel">{passportEvents.map((event, index) => <div className="timeline-row" key={event.date}><div className="timeline-marker"><span>{index + 1}</span></div><time>{event.date}</time><div><span>{event.category}</span><strong>{event.title}</strong><p>{event.detail}</p></div><code>{event.hash}</code><span className="timeline-verified"><Check size={12} /> 검증</span></div>)}</div>
+        <div className="timeline panel">{timelineEvents.map((event, index) => <div className="timeline-row" key={event.id ?? `${event.date}-${index}`}><div className="timeline-marker"><span>{index + 1}</span></div><time>{event.occurredAt ? formatDate(event.occurredAt) : event.date}</time><div><span>{event.type ?? event.category}</span><strong>{event.title}</strong><p>{event.detail}</p></div><code>{event.signature ? `${event.signature.slice(0, 8)}…` : event.hash}</code><span className="timeline-verified"><Check size={12} /> 검증</span></div>)}</div>
       </section>
     </div>
   );
 }
 
-function CanaryLab({ notify, setModal }) {
+function CanaryLab({ notify, setModal, liveReleases, auditLogs, actions, busy }) {
   const [guard, setGuard] = useState(true);
+  const releaseList = liveReleases.length ? liveReleases : releases.map((item) => ({ ...item, target: item.cohort, status: item.status === '진행 중' ? 'ROLLING' : item.status === '완료' ? 'COMPLETE' : 'PAUSED', risk: item.anomaly }));
+  const activeRelease = releaseList.find((item) => item.status === 'ROLLING') ?? releaseList[0];
   return (
     <div className="lab-page">
       <div className="container lab-container">
         <div className="lab-intro"><div><span><Code2 size={15} /> DEVELOPER PORTFOLIO · OPERATIONS</span><h1>CanaryDrive Control</h1><p>소비자 앱과 분리된 SDV 차량 소프트웨어 안전 운영 콘솔입니다.</p></div><div className="lab-status"><i /> Fleet stream 정상</div></div>
-        <div className="lab-metrics"><LabMetric label="업데이트 중" value="14,820" unit="대" trend="37% rollout" /><LabMetric label="정상 차량" value="99.82" unit="%" trend="+0.11%" /><LabMetric label="이상 이벤트" value="0.18" unit="%" trend="guard threshold 1%" /><LabMetric label="자동 롤백" value="3" unit="건" trend="this month" /></div>
-        <section className="lab-release panel-dark"><div className="lab-release-head"><div><span>ACTIVE RELEASE</span><h2>v2.4.1 · ccNC 내비게이션 1.9</h2><p>IONIQ 6 · 2026 · 14,820 vehicles</p></div><button className="lab-new-button" onClick={() => setModal('release')}><Plus size={16} /> 새 배포</button></div><div className="rollout-track"><div style={{ width: '37%' }} /><span style={{ left: '37%' }}>37%</span></div><div className="rollout-steps"><span className="done"><Check size={12} /> 1%</span><span className="done"><Check size={12} /> 10%</span><span className="active">37% 현재</span><span>70%</span><span>100%</span></div><div className="guard-row"><div><ShieldCheck size={19} /><span><strong>자동 중지·롤백</strong><small>이상률 1% 초과 또는 치명 이벤트 발생 시</small></span></div><button className={`switch ${guard ? 'on' : ''}`} onClick={() => { setGuard((value) => !value); notify(`Canary Guard를 ${guard ? '해제' : '활성화'}했습니다.`); }} aria-label="Canary Guard 전환"><span /></button></div></section>
-        <div className="lab-grid"><section className="panel-dark"><div className="lab-panel-title"><span>RELEASE TRAINS</span><button onClick={() => notify('배포 목록을 새로고침했습니다.')}><RefreshCcw size={15} /></button></div>{releases.map((release) => <div className="release-row" key={release.id}><i className={release.tone} /><div><strong>{release.version}</strong><span>{release.title}</span><small>{release.cohort}</small></div><div><span>{release.status}</span><strong>{release.progress}%</strong></div><div><span>이상률</span><strong>{release.anomaly}</strong></div><ChevronRight size={16} /></div>)}</section><section className="panel-dark events-stream"><div className="lab-panel-title"><span>LIVE FLEET EVENTS</span><small><i /> LIVE</small></div><EventRow time="09:42:18" tone="good" title="Canary cohort passed" detail="IONIQ 6 · 1,480 vehicles" /><EventRow time="09:41:52" tone="warn" title="Thermal variance flagged" detail="KONA Electric · auto-review" /><EventRow time="09:39:08" tone="good" title="Passport record signed" detail="32가 0318 · verified" /><EventRow time="09:36:20" tone="info" title="Rollout expanded" detail="10% → 37% · policy approved" /></section></div>
+        <div className="lab-metrics"><LabMetric label="배포 진행률" value={activeRelease?.progress ?? 0} unit="%" trend="DB live state" /><LabMetric label="정상 차량" value="99.82" unit="%" trend="+0.11%" /><LabMetric label="감사 이벤트" value={auditLogs.length} unit="건" trend="signed actions" /><LabMetric label="활성 릴리스" value={releaseList.filter((item) => item.status === 'ROLLING').length} unit="개" trend="20s auto tick" /></div>
+        <section className="lab-release panel-dark"><div className="lab-release-head"><div><span>ACTIVE RELEASE</span><h2>{activeRelease?.version} · {activeRelease?.title}</h2><p>{activeRelease?.target}</p></div><div className="lab-release-actions"><button className="lab-ghost-button" disabled={busy} onClick={() => actions.pauseRelease(activeRelease.id)}>일시 중지</button><button className="lab-new-button" disabled={busy} onClick={() => actions.advanceRelease(activeRelease.id)}><Plus size={16} /> 범위 확대</button></div></div><div className="rollout-track"><div style={{ width: `${activeRelease?.progress ?? 0}%` }} /><span style={{ left: `${Math.min(activeRelease?.progress ?? 0, 92)}%` }}>{activeRelease?.progress ?? 0}%</span></div><div className="rollout-steps"><span className="done"><Check size={12} /> 1%</span><span className="done"><Check size={12} /> 10%</span><span className="active">{activeRelease?.progress ?? 0}% 현재</span><span>70%</span><span>100%</span></div><div className="guard-row"><div><ShieldCheck size={19} /><span><strong>자동 중지·롤백</strong><small>이상률 1% 초과 또는 치명 이벤트 발생 시</small></span></div><button className={`switch ${guard ? 'on' : ''}`} onClick={() => { setGuard((value) => !value); notify(`Canary Guard를 ${guard ? '해제' : '활성화'}했습니다.`); }} aria-label="Canary Guard 전환"><span /></button></div></section>
+        <div className="lab-grid"><section className="panel-dark"><div className="lab-panel-title"><span>RELEASE TRAINS</span><button onClick={() => notify('서버와 10초마다 자동 동기화됩니다.')}><RefreshCcw size={15} /></button></div>{releaseList.map((release) => <div className="release-row" key={release.id}><i className={releaseTone(release.status)} /><div><strong>{release.version}</strong><span>{release.title}</span><small>{release.target}</small></div><div><span>{releaseStatus(release.status)}</span><strong>{release.progress}%</strong></div><div><span>위험도</span><strong>{release.risk}</strong></div><ChevronRight size={16} /></div>)}</section><section className="panel-dark events-stream"><div className="lab-panel-title"><span>SIGNED AUDIT STREAM</span><small><i /> LIVE</small></div>{auditLogs.length ? auditLogs.slice(0, 5).map((event) => <EventRow key={event.id} time={formatTime(event.createdAt)} tone="good" title={event.action} detail={`${event.resourceType} · ${event.signature.slice(0, 8)}`} />) : <><EventRow time="LIVE" tone="good" title="Platform stream ready" detail="사용자 동작을 기다리는 중" /><EventRow time="SYSTEM" tone="info" title="Audit signing enabled" detail="SHA-256 event chain" /></>}</section></div>
       </div>
     </div>
   );
+}
+
+function OperationBanner({ icon: Icon, label, title, detail, action, tone }) {
+  return <section className={`operation-banner ${tone}`}><div><Icon size={20} /></div><div><span>{label}</span><strong>{title}</strong><small>{detail}</small></div>{action && <div>{action}</div>}</section>;
+}
+
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+}
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+}
+
+function formatTime(value) {
+  return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(value));
+}
+
+function handoverLabel(status) {
+  return { INITIATED: '디지털 키 회수 준비', PRIVACY_CLEARED: '개인정보 삭제 완료', PASSPORT_SIGNED: '차량 여권 서명 완료', COMPLETED: '인수인계 완료' }[status] ?? status;
+}
+
+function releaseStatus(status) {
+  return { ROLLING: '진행 중', COMPLETE: '완료', PAUSED: '일시 중지', DRAFT: '준비' }[status] ?? status;
+}
+
+function releaseTone(status) {
+  return { ROLLING: 'active', COMPLETE: 'done', PAUSED: 'paused', DRAFT: 'paused' }[status] ?? 'active';
 }
 
 function ServiceCard({ number, icon: Icon, title, description, action, onClick, tone }) {
@@ -379,7 +516,7 @@ function MobileNav({ page, navigate }) {
   return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{navigation.map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={20} /><span>{label}</span></button>)}<button className={page === 'lab' ? 'active' : ''} onClick={() => navigate('lab')}><Code2 size={20} /><span>Lab</span></button></nav>;
 }
 
-function Modal({ type, vehicle, close, notify, navigate }) {
+function Modal({ type, vehicle, close, navigate, actions, busy }) {
   const content = {
     connect: { icon: CarFront, eyebrow: '차량 연결', title: '내 현대차를 연결할까요?', description: '커넥티드 계정 동의 후 차량 상태와 이력을 안전하게 불러옵니다.', button: '현대 통합계정으로 연결', done: '차량 연결 시연이 완료되었습니다.' },
     service: { icon: Wrench, eyebrow: '블루핸즈 예약', title: '가까운 서비스센터를 찾았습니다.', description: '성수 현대서비스 · 2.1km · 가장 빠른 일정 9월 7일 10:30', button: '이 일정으로 예약', done: '9월 7일 오전 10시 30분으로 예약했습니다.' },
@@ -387,5 +524,10 @@ function Modal({ type, vehicle, close, notify, navigate }) {
     release: { icon: CloudCog, eyebrow: '새 Canary 배포', title: '1% 차량군부터 시작합니다.', description: 'IONIQ 6 · 2026 · 148대 · 자동 중지 및 롤백 활성화', button: 'Canary 배포 시작', done: 'Canary 배포가 1% 차량군에서 시작됐습니다.' },
   }[type];
   const Icon = content.icon;
-  return <div className="modal-backdrop" onMouseDown={(event) => event.currentTarget === event.target && close()}><div className="modal" role="dialog" aria-modal="true"><button className="modal-close" onClick={close} aria-label="닫기"><X size={19} /></button><div className="modal-icon"><Icon size={22} /></div><span>{content.eyebrow}</span><h2>{content.title}</h2><p>{content.description}</p>{type === 'connect' && <div className="connected-vehicle-preview"><CarFront size={20} /><div><strong>{vehicle.name}</strong><span>{vehicle.plate} · {vehicle.trim}</span></div><CheckCircle2 size={18} /></div>}<button className="button primary full" onClick={() => { close(); notify(content.done); if (type === 'handover') navigate('passport'); }}>{content.button}<ArrowRight size={16} /></button><small>포트폴리오 데모에서는 실제 계정 정보가 저장되지 않습니다.</small></div></div>;
+  const submit = async () => {
+    const task = { connect: actions.connectVehicle, service: actions.bookService, handover: actions.startHandover, release: () => actions.startRelease(3) }[type];
+    const completed = await task();
+    if (completed && type === 'handover') navigate('passport');
+  };
+  return <div className="modal-backdrop" onMouseDown={(event) => event.currentTarget === event.target && close()}><div className="modal" role="dialog" aria-modal="true"><button className="modal-close" onClick={close} aria-label="닫기"><X size={19} /></button><div className="modal-icon"><Icon size={22} /></div><span>{content.eyebrow}</span><h2>{content.title}</h2><p>{content.description}</p>{type === 'connect' && <div className="connected-vehicle-preview"><CarFront size={20} /><div><strong>{vehicle.name}</strong><span>{vehicle.plate} · {vehicle.trim}</span></div><CheckCircle2 size={18} /></div>}<button className="button primary full" disabled={busy} onClick={submit}>{busy ? <LoaderCircle className="spin" size={16} /> : null}{content.button}<ArrowRight size={16} /></button><small>작업 결과는 PostgreSQL, 차량 여권 이벤트와 감사 로그에 함께 기록됩니다.</small></div></div>;
 }

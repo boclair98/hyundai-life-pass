@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.Instant
 
-enum class EventType { HEALTH_SNAPSHOT, SOFTWARE_UPDATE, SERVICE, OWNERSHIP, ALERT }
+enum class EventType { HEALTH_SNAPSHOT, SOFTWARE_UPDATE, SERVICE, CHARGING, OWNERSHIP, ALERT }
 
 @Entity
 @Table(name = "vehicle_events")

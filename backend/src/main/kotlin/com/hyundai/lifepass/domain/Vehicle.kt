@@ -24,6 +24,9 @@ class Vehicle(
     @Column(nullable = false, unique = true, length = 80)
     var externalId: String = "",
 
+    @Column(length = 160)
+    var ownerId: String? = null,
+
     @Column(nullable = false, length = 80)
     var name: String = "",
 

@@ -1,5 +1,5 @@
 version: "1"
-mode: standalone
+mode: native
 
 services:
   web:
@@ -18,7 +18,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${db.host}:${db.port}/${db.name}
       SPRING_DATASOURCE_USERNAME: ${db.user}
       SPRING_DATASOURCE_PASSWORD: ${db.password}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      LIFEPASS_OPERATOR_USERS: boclair98@users.noreply.github.com
+      LIFEPASS_ALLOW_DEMO_OPERATOR: "false"
 
   db:
     type: postgres
