@@ -6,5 +6,6 @@ dist/
 backend/.gradle/
 backend/build/
 .gradle-tools/
+.coders/
 *.png
 !public/*.png
