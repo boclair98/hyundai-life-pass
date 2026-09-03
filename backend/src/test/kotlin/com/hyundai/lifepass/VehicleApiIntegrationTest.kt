@@ -24,8 +24,32 @@ class VehicleApiIntegrationTest(
                 status { isOk() }
                 jsonPath("$", hasSize<Any>(3))
                 jsonPath("$[0].externalId") { value("ioniq6-0318") }
+                jsonPath("$[0].source") { value("SAMPLE") }
                 jsonPath("$[0].rangeKm") { value(386) }
             }
+    }
+
+    @Test
+    fun `snapshot exposes provider provenance and never calls sample data live`() {
+        mockMvc.get("/api/v1/platform/snapshot")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.environment") { value("SIMULATION") }
+                jsonPath("$.providers[0].state") { value("SAMPLE") }
+                jsonPath("$.providers[1].state") { value("SAMPLE") }
+                jsonPath("$.stations[0].source") { value("SAMPLE") }
+            }
+    }
+
+    @Test
+    fun `Hyundai deletion callback is idempotent`() {
+        mockMvc.post("/api/v1/integrations/hyundai/callbacks/data-unavailable") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"type":"vehicle","action":"delete","carId":"already-removed"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.status") { value("DELETED") }
+        }
     }
 
     @Test

@@ -28,6 +28,7 @@ import com.hyundai.lifepass.repository.ServiceBookingRepository
 import com.hyundai.lifepass.repository.VehicleEventRepository
 import com.hyundai.lifepass.repository.VehicleRepository
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
@@ -44,20 +45,22 @@ class PlatformService(
     private val notificationRepository: NotificationRepository,
     private val auditRepository: AuditLogRepository,
     private val eventRepository: VehicleEventRepository,
+    private val chargingStationProvider: ChargingStationProvider,
+    private val hyundaiIntegrationService: HyundaiIntegrationService,
+    @Value("\${lifepass.sample-data-enabled:true}") private val sampleDataEnabled: Boolean,
 ) {
-    private val stations = listOf(
-        StationResponse(1, "현대 EV 스테이션 강동", "서울 강동구 천호대로 1221", 2.4, 7, 8, 350, 347, 8),
-        StationResponse(2, "성수 E-pit", "서울 성동구 아차산로 17길", 3.1, 3, 6, 200, 340, 11),
-        StationResponse(3, "서울숲 공영주차장", "서울 성동구 뚝섬로 273", 4.6, 11, 16, 100, 324, 14),
-    )
-
     @Transactional(readOnly = true)
     fun snapshot(actor: String): PlatformSnapshotResponse {
         val notifications = notificationRepository.findTop20ByActorIdOrderByCreatedAtDesc(actor).map(::toNotification)
+        val stationFeed = chargingStationProvider.getStations()
+        val vehicleProvider = hyundaiIntegrationService.providerStatus(actor)
+        val liveProviders = listOf(vehicleProvider, stationFeed.provider).count { it.mode == "LIVE" && it.state in setOf("CONNECTED", "STALE") }
+        val environment = when (liveProviders) { 2 -> "LIVE"; 1 -> "HYBRID"; else -> "SIMULATION" }
         return PlatformSnapshotResponse(
             actor = actor,
-            environment = if (actor == "demo-owner") "SIMULATION" else "CODERS_IDENTITY",
-            stations = stations,
+            environment = environment,
+            providers = listOf(vehicleProvider, stationFeed.provider),
+            stations = stationFeed.stations,
             chargingReservations = chargingRepository.findTop10ByActorIdOrderByCreatedAtDesc(actor).map(::toCharging),
             serviceBookings = serviceRepository.findTop10ByActorIdOrderByCreatedAtDesc(actor).map(::toService),
             handovers = handoverRepository.findTop10ByActorIdOrderByUpdatedAtDesc(actor).map(::toHandover),
@@ -68,7 +71,7 @@ class PlatformService(
 
     @Transactional
     fun connectVehicle(actor: String, externalId: String): Map<String, String> {
-        val vehicle = requireVehicle(externalId)
+        val vehicle = requireVehicle(actor, externalId)
         vehicle.ownerId = actor
         vehicle.updatedAt = Instant.now()
         vehicleRepository.save(vehicle)
@@ -79,15 +82,17 @@ class PlatformService(
 
     @Transactional
     fun reserveCharging(actor: String, request: CreateChargingReservationRequest): ChargingReservationResponse {
-        val vehicle = requireVehicle(request.vehicleExternalId)
-        val station = stations.find { it.id == request.stationId } ?: throw NoSuchElementException("Station ${request.stationId} was not found")
+        val vehicle = requireVehicle(actor, request.vehicleExternalId)
+        val station = chargingStationProvider.getStations().stations.find { it.id == request.stationId } ?: throw NoSuchElementException("Station ${request.stationId} was not found")
+        if (!station.reservable) throw OperationNotSupportedException("이 충전소는 실시간 조회만 가능합니다. 예약·결제를 위해 충전사업자 제휴 API를 연결해 주세요.")
         val estimate = ((request.targetSoc - vehicle.batterySoc).coerceAtLeast(5) * 0.72 * station.pricePerKwh).toInt()
         val saved = chargingRepository.save(ChargingReservation(actorId = actor, vehicle = vehicle, stationId = station.id, stationName = station.name, scheduledAt = request.scheduledAt, targetSoc = request.targetSoc, estimatedCost = estimate))
         vehicle.chargingState = "예약 완료 · ${station.name}"
         vehicle.updatedAt = Instant.now()
         vehicleRepository.save(vehicle)
-        recordEvent(vehicle.id, vehicle, EventType.CHARGING, "충전 예약 확정", "${station.name} · 목표 ${request.targetSoc}%", "sky")
-        notify(actor, "충전 예약이 확정됐어요", "${station.name} · ${request.targetSoc}%까지 충전", "CHARGING")
+        val sample = station.source == "SAMPLE"
+        recordEvent(vehicle.id, vehicle, EventType.CHARGING, if (sample) "충전 예약 사용 예시" else "충전 예약 확정", "${if (sample) "샘플 · " else ""}${station.name} · 목표 ${request.targetSoc}%", "sky")
+        notify(actor, if (sample) "샘플 충전 예약 흐름을 완료했어요" else "충전 예약이 확정됐어요", "${station.name} · ${request.targetSoc}%까지 충전", "CHARGING")
         audit(actor, "CHARGING_RESERVED", "ChargingReservation", saved.id.toString(), "${vehicle.externalId}|${station.id}|${request.scheduledAt}")
         return toCharging(saved)
     }
@@ -105,10 +110,11 @@ class PlatformService(
 
     @Transactional
     fun bookService(actor: String, request: CreateServiceBookingRequest): ServiceBookingResponse {
-        val vehicle = requireVehicle(request.vehicleExternalId)
+        if (!sampleDataEnabled) throw OperationNotSupportedException("블루핸즈 파트너 예약 API 연결 전에는 실제 예약을 생성할 수 없습니다.")
+        val vehicle = requireVehicle(actor, request.vehicleExternalId)
         val saved = serviceRepository.save(ServiceBooking(actorId = actor, vehicle = vehicle, centerName = request.centerName, serviceType = request.serviceType, scheduledAt = request.scheduledAt, estimatedCost = 84000))
-        recordEvent(vehicle.id, vehicle, EventType.SERVICE, "블루핸즈 예약 확정", "${request.centerName} · ${request.serviceType}", "mint")
-        notify(actor, "블루핸즈 예약이 확정됐어요", "${request.centerName} · ${request.serviceType}", "SERVICE")
+        recordEvent(vehicle.id, vehicle, EventType.SERVICE, "블루핸즈 예약 시나리오", "파트너 API 연결 전 샘플 · ${request.centerName} · ${request.serviceType}", "mint")
+        notify(actor, "샘플 정비 예약 흐름을 완료했어요", "파트너 연동 전 사용 예시 · ${request.centerName}", "SERVICE")
         audit(actor, "SERVICE_BOOKED", "ServiceBooking", saved.id.toString(), "${vehicle.externalId}|${request.scheduledAt}")
         return toService(saved)
     }
@@ -123,7 +129,8 @@ class PlatformService(
 
     @Transactional
     fun startHandover(actor: String, request: CreateHandoverRequest): HandoverResponse {
-        val vehicle = requireVehicle(request.vehicleExternalId)
+        if (!sampleDataEnabled) throw OperationNotSupportedException("디지털 키 회수·소유권 이전 제휴 API 연결 전에는 실제 인수인계를 시작할 수 없습니다.")
+        val vehicle = requireVehicle(actor, request.vehicleExternalId)
         val saved = handoverRepository.save(VehicleHandover(actorId = actor, vehicle = vehicle, transferCode = UUID.randomUUID().toString().replace("-", "").take(10).uppercase(), buyerEmailMasked = maskEmail(request.buyerEmail)))
         notify(actor, "차량 인수인계를 시작했어요", "개인정보 삭제 단계부터 안전하게 진행합니다.", "HANDOVER")
         audit(actor, "HANDOVER_STARTED", "VehicleHandover", saved.id.toString(), "${vehicle.externalId}|${saved.buyerEmailMasked}")
@@ -159,7 +166,13 @@ class PlatformService(
     @Transactional(readOnly = true)
     fun audits(): List<AuditLogResponse> = auditRepository.findTop30ByOrderByCreatedAtDesc().map { AuditLogResponse(it.id, it.actorId, it.action, it.resourceType, it.resourceId, it.detail, it.signature, it.createdAt) }
 
-    private fun requireVehicle(externalId: String) = vehicleRepository.findByExternalId(externalId) ?: throw NoSuchElementException("Vehicle $externalId was not found")
+    private fun requireVehicle(actor: String, externalId: String): com.hyundai.lifepass.domain.Vehicle {
+        val vehicle = vehicleRepository.findByExternalId(externalId) ?: throw NoSuchElementException("Vehicle $externalId was not found")
+        if ((vehicle.source == "SAMPLE" && !sampleDataEnabled) || (vehicle.source != "SAMPLE" && vehicle.ownerId != actor)) {
+            throw org.springframework.security.access.AccessDeniedException("이 차량 데이터에 접근할 권한이 없습니다.")
+        }
+        return vehicle
+    }
     private fun notify(actor: String, title: String, message: String, category: String) = notificationRepository.save(UserNotification(actorId = actor, title = title, message = message, category = category))
     private fun audit(actor: String, action: String, resourceType: String, resourceId: String, detail: String) = auditRepository.save(AuditLog(actorId = actor, action = action, resourceType = resourceType, resourceId = resourceId, detail = detail, signature = sign("$actor|$action|$resourceId|$detail|${Instant.now()}")))
     private fun recordEvent(vehicleId: Long, vehicle: com.hyundai.lifepass.domain.Vehicle, type: EventType, title: String, detail: String, tone: String) = eventRepository.save(VehicleEvent(vehicle = vehicle, type = type, title = title, detail = detail, tone = tone, signature = sign("$vehicleId|$title|$detail|${Instant.now()}")))

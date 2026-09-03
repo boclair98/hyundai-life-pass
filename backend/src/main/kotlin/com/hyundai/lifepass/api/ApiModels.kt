@@ -8,6 +8,7 @@ import java.time.Instant
 data class VehicleSummary(
     val id: Long,
     val externalId: String,
+    val source: String,
     val name: String,
     val trim: String,
     val plate: String,

@@ -16,8 +16,8 @@
 
 - Frontend: React, Vite, Lucide Icons
 - Backend: Kotlin, Spring Boot 3, Spring Data JPA
-- Database: H2 demo profile, PostgreSQL-ready runtime dependency
-- Integration: REST API with automatic demo-data fallback
+- Database: H2 local profile, PostgreSQL production runtime
+- Integration: Hyundai Developers OAuth/consent adapter, 한국환경공단 charger adapter, Kakao Maps runtime adapter
 - Identity: Coders native identity (`X-Coders-User`) + operator allow-list
 - Data lifecycle: Flyway migrations, signed audit log, transactional domain events
 - Operations: Actuator health/metrics, scheduled OTA rollout progression
@@ -30,13 +30,14 @@ React client
           │
           ▼
 Spring Boot REST API ── JPA/Flyway ── H2 or PostgreSQL
-          │
-          └─ future adapters: connected-car / charging / map APIs
+          ├─ Hyundai Developers: OAuth → 제3자 제공 동의 → 차량 상태 동기화
+          ├─ 한국환경공단: 충전소 위치·충전기 상태 + 5분 캐시
+          └─ 개인정보 철회/차량 삭제 callback → 실차 데이터 즉시 삭제
 ```
 
 ## 실행
 
-프론트만 실행하면 별도 키 없이 데모 데이터로 동작합니다.
+프론트만 실행하면 별도 키 없이 `SAMPLE DATA`로 명시된 사용 시나리오가 동작합니다.
 
 ```bash
 npm install
@@ -61,14 +62,14 @@ $env:VITE_API_BASE_URL='http://localhost:8080'
 npm run dev
 ```
 
-## 실제 서비스 전환 시 필요한 연동
+## 실제 서비스 전환
 
-- 커넥티드카 API: 사용자 동의 기반 차량 상태, 주행거리, 배터리, 경고등
-- 충전 인프라 API: 충전소 위치, 커넥터 상태, 요금
-- 지도·경로 API: 예상 도착 시간과 충전 경로
-- 인증·전자서명: 차량 여권 열람 및 소유권 이전
+- `LIFEPASS_HYUNDAI_MODE=live`: 현대 통합계정 OAuth, 개인정보 제3자 제공 동의, 차량 목록·주행거리·배터리·충전 상태
+- `LIFEPASS_EV_CHARGER_MODE=live`: 한국환경공단 충전소 위치·실시간 충전기 상태
+- `KAKAO_JAVASCRIPT_KEY`: 모바일 실지도 표시; 키가 없으면 사용 예시 지도만 표시
+- Hyundai Callback: 계정 탈퇴·차량 삭제·동의 철회 시 연결 차량과 토큰 즉시 삭제
 
-현재 외부 API 키가 없어도 전체 UX를 검토할 수 있으며, `src/api.js`의 adapter 경계를 통해 실제 공급자로 교체할 수 있습니다.
+화면은 공급자별 데이터 출처를 항상 표시합니다. API 키가 없는 데이터는 `SAMPLE DATA`로 명시하며, 한국환경공단 연동 시에만 충전소를 `LIVE DATA`로 표시합니다. 공공 API가 제공하지 않는 예약·결제는 CPO 제휴 전에는 활성화하지 않습니다.
 
 ## 실제 상태 변경 흐름
 
@@ -89,6 +90,11 @@ npm run dev
 | GET | `/api/v1/releases` | OTA 릴리스 목록 |
 | POST | `/api/v1/releases/{id}/start` | Canary 배포 시작 |
 | GET | `/api/v1/platform/snapshot` | 사용자별 예약·알림·이전 상태 |
+| POST | `/api/v1/integrations/hyundai/authorize` | 현대 통합계정 OAuth 시작 |
+| GET | `/api/v1/integrations/hyundai/agreement` | 개인정보 제3자 제공 동의 연결 |
+| POST | `/api/v1/integrations/hyundai/sync` | 동의 차량 데이터 동기화 |
+| POST | `/api/v1/integrations/hyundai/revoke` | 동의 철회 및 실차 데이터 삭제 |
+| POST | `/api/v1/integrations/hyundai/callbacks/data-unavailable` | 탈퇴·차량 삭제·철회 callback |
 | POST | `/api/v1/platform/charging-reservations` | 충전 예약 생성 |
 | POST | `/api/v1/platform/service-bookings` | 정비 예약 생성 |
 | POST | `/api/v1/platform/handovers` | 차량 인수인계 생성 |
@@ -97,3 +103,5 @@ npm run dev
 프로젝트에는 광고, 결제, 후원 UI가 없으며 Coders Donate도 사용하지 않습니다.
 
 배포·장애 대응·외부 API 전환 기준은 [`docs/OPERATIONS.md`](docs/OPERATIONS.md)에 정리했습니다.
+
+발급 위치와 필요한 환경변수는 [`docs/API_KEYS.md`](docs/API_KEYS.md)에 정리했습니다.

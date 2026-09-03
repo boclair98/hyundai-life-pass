@@ -1,0 +1,1 @@
+window.__LIFEPASS_CONFIG__ = { kakaoJavascriptKey: '${KAKAO_JAVASCRIPT_KEY}' };

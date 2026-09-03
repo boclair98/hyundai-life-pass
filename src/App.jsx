@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -41,6 +41,7 @@ import {
   cancelCharging,
   cancelService,
   connectVehicle,
+  createHyundaiAuthorization,
   loadAuditLogs,
   loadPassport,
   loadPlatform,
@@ -50,6 +51,7 @@ import {
   reserveCharging,
   startHandover,
   startRelease,
+  syncHyundaiVehicles,
   loadVehicles,
 } from './api';
 import { demoVehicles, passportEvents, releases, stations } from './data';
@@ -69,12 +71,12 @@ export default function App() {
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
   const [vehicles, setVehicles] = useState(demoVehicles);
   const [selectedVehicleId, setSelectedVehicleId] = useState(demoVehicles[0].id);
-  const [dataSource, setDataSource] = useState('demo');
+  const [dataSource, setDataSource] = useState('sample-loading');
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [platform, setPlatform] = useState({ stations: [], chargingReservations: [], serviceBookings: [], handovers: [], notifications: [], unreadNotifications: 0, environment: 'LOADING' });
+  const [platform, setPlatform] = useState({ stations: [], chargingReservations: [], serviceBookings: [], handovers: [], notifications: [], unreadNotifications: 0, environment: 'OFFLINE', providers: [{ id: 'platform', name: '플랫폼 API', mode: 'SIMULATION', state: 'OFFLINE', source: '클라이언트 샘플', message: '서버 연결 전에는 기능 사용 예시만 표시합니다.' }] });
   const [liveReleases, setLiveReleases] = useState([]);
   const [passport, setPassport] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -164,10 +166,21 @@ export default function App() {
   }
 
   const actions = {
+    connectHyundai: async () => {
+      setBusy(true);
+      try {
+        const result = await createHyundaiAuthorization();
+        window.location.assign(result.authorizeUrl);
+      } catch (error) {
+        notify(error.message || '현대 계정 연결을 시작하지 못했습니다.');
+        setBusy(false);
+      }
+    },
+    syncHyundai: () => transact(() => syncHyundaiVehicles(), '동의한 현대차 데이터를 동기화했습니다.'),
     connectVehicle: () => transact(() => connectVehicle(vehicle.id), `${vehicle.name} 연결과 데이터 동기화가 완료됐습니다.`),
-    reserveCharge: (station) => transact(() => reserveCharging({ vehicleExternalId: vehicle.id, stationId: station.id, scheduledAt: new Date(Date.now() + 3600000).toISOString(), targetSoc: 80 }), `${station.name} 충전 예약이 확정됐습니다.`),
+    reserveCharge: (station) => transact(() => reserveCharging({ vehicleExternalId: vehicle.id, stationId: station.id, scheduledAt: new Date(Date.now() + 3600000).toISOString(), targetSoc: 80 }), station.source === 'SAMPLE' || station.source === 'CLIENT_SAMPLE' ? `${station.name} 샘플 예약 흐름을 완료했습니다.` : `${station.name} 충전 예약이 확정됐습니다.`),
     cancelCharge: (id) => transact(() => cancelCharging(id), '충전 예약을 취소했습니다.'),
-    bookService: () => transact(() => bookService({ vehicleExternalId: vehicle.id, centerName: '성수 현대서비스', serviceType: '타이어 위치 교환·차량 점검', scheduledAt: new Date(Date.now() + 4 * 86400000).toISOString() }), '블루핸즈 예약이 확정됐습니다.'),
+    bookService: () => transact(() => bookService({ vehicleExternalId: vehicle.id, centerName: '성수 현대서비스', serviceType: '타이어 위치 교환·차량 점검', scheduledAt: new Date(Date.now() + 4 * 86400000).toISOString() }), '블루핸즈 연동 전 샘플 예약 흐름을 완료했습니다.'),
     cancelService: (id) => transact(() => cancelService(id), '정비 예약을 취소했습니다.'),
     startHandover: () => transact(() => startHandover({ vehicleExternalId: vehicle.id, buyerEmail: 'next.owner@example.com' }), '차량 인수인계가 시작됐습니다.'),
     advanceHandover: (id) => transact(() => advanceHandover(id), '인수인계 다음 단계가 완료됐습니다.'),
@@ -196,6 +209,8 @@ export default function App() {
         actions={actions}
       />
 
+      <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
+
       <main>
         {page === 'home' && <HomePage {...shared} />}
         {page === 'charge' && <ChargePage {...shared} />}
@@ -208,6 +223,25 @@ export default function App() {
       {modal && <Modal type={modal} vehicle={vehicle} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
     </div>
+  );
+}
+
+function DataProvenanceBar({ platform, actions, busy }) {
+  const providers = platform.providers ?? [];
+  if (!providers.length) return null;
+  const hyundai = providers.find((provider) => provider.id === 'hyundai-connected-car');
+  const isLive = (provider) => provider.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(provider.state);
+  return (
+    <aside className={`data-provenance ${platform.environment?.toLowerCase()}`} aria-label="데이터 연결 상태">
+      <div className="container">
+        <strong>{platform.environment === 'LIVE' ? '실데이터 운영' : platform.environment === 'HYBRID' ? '하이브리드 운영' : '시뮬레이션 환경'}</strong>
+        <div>{providers.map((provider) => <span key={provider.id} className={isLive(provider) ? 'live' : 'sample'} title={provider.message}><i />{provider.name}: {isLive(provider) ? (provider.state === 'STALE' ? '지연' : '실시간') : provider.state === 'OAUTH_REQUIRED' ? '연결 필요' : provider.state === 'CONSENT_REQUIRED' ? '동의 필요' : provider.state === 'MISCONFIGURED' ? '설정 필요' : provider.state === 'REVOKED' ? '철회됨' : provider.state === 'ERROR' ? '오류' : '샘플'}</span>)}</div>
+        <small>{platform.environment === 'LIVE' ? '연결된 공식 공급자에서 갱신됩니다.' : '현재 샘플은 기능의 사용 형태만 보여줍니다. API 키 연결 전에는 실제 데이터로 표시하지 않습니다.'}</small>
+        {hyundai?.mode === 'LIVE' && hyundai.state === 'OAUTH_REQUIRED' && <button disabled={busy} onClick={actions.connectHyundai}>현대 계정 연결</button>}
+        {hyundai?.mode === 'LIVE' && hyundai.state === 'REVOKED' && <button disabled={busy} onClick={actions.connectHyundai}>다시 연결</button>}
+        {hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED' && <button disabled={busy} onClick={actions.syncHyundai}>동의 완료 후 동기화</button>}
+      </div>
+    </aside>
   );
 }
 
@@ -238,7 +272,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
           </label>
           <div className="notification-wrap">
             <button className="header-icon" onClick={() => setAlertsOpen((value) => !value)} aria-label={`알림 ${platform.unreadNotifications ?? 0}개`}><Bell size={18} />{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
-            {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{platform.environment === 'CODERS_IDENTITY' ? '계정 동기화' : '플랫폼 시뮬레이션'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
+            {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{platform.environment === 'LIVE' ? '실데이터 동기화' : platform.environment === 'HYBRID' ? '일부 실데이터 연결' : '샘플 데이터 환경'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
           </div>
           <button className={`lab-button ${page === 'lab' ? 'active' : ''}`} onClick={() => navigate('lab')}><Code2 size={15} /><span>Developer Lab</span></button>
           <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="메뉴 열기">{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
@@ -247,7 +281,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
 
       {menuOpen && (
         <div className="mobile-drawer">
-          <div className="mobile-vehicle"><span>{vehicle.name}</span><strong>{vehicle.plate}</strong><small>{dataSource === 'api' ? '플랫폼 API 연결' : '시연 데이터 연결'}</small></div>
+          <div className="mobile-vehicle"><span>{vehicle.name}</span><strong>{vehicle.plate}</strong><small>{dataSource === 'platform' ? '플랫폼 서버 연결' : '오프라인 샘플'}</small></div>
           {navigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
           <button onClick={() => navigate('lab')}><Code2 size={18} />Developer Lab<ChevronRight size={16} /></button>
         </div>
@@ -257,6 +291,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
 }
 
 function HomePage({ vehicle, navigate, setModal }) {
+  const isSample = vehicle.source !== 'HYUNDAI_DEVELOPERS';
   return (
     <>
       <section className="home-hero">
@@ -297,21 +332,21 @@ function HomePage({ vehicle, navigate, setModal }) {
           <div>
             <SectionHeading eyebrow="TODAY'S VEHICLE" title="오늘의 내 차" description="복잡한 센서 정보 대신 지금 필요한 것만 보여드립니다." />
             <div className="vehicle-summary-card">
-              <div className="vehicle-summary-top"><div><span className="connected"><i /> 실시간 연결</span><h3>{vehicle.name}</h3><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="health-score"><span>HEALTH</span><strong>{vehicle.healthScore}</strong><small>/100</small></div></div>
+              <div className="vehicle-summary-top"><div><span className="connected"><i /> {isSample ? '샘플 차량 데이터' : '현대 커넥티드카 연결'}</span><h3>{vehicle.name}</h3><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="health-score"><span>HEALTH</span><strong>{vehicle.healthScore}</strong><small>/100</small></div></div>
               <div className="summary-metrics">
                 <Metric icon={BatteryCharging} label="배터리" value={`${vehicle.batterySoc}%`} detail={`${vehicle.range}km 주행 가능`} />
-                <Metric icon={Gauge} label="누적 주행" value={`${vehicle.odometer.toLocaleString()}km`} detail="최근 30일 842km" />
-                <Metric icon={CloudCog} label="소프트웨어" value={vehicle.softwareVersion} detail="최신 버전" />
+                <Metric icon={Gauge} label="누적 주행" value={`${vehicle.odometer.toLocaleString()}km`} detail={isSample ? '사용 예시 수치' : '현대차 데이터 동기화'} />
+                <Metric icon={CloudCog} label="소프트웨어" value={vehicle.softwareVersion} detail={isSample ? '샘플 버전' : '제조사 동기화'} />
               </div>
-              <div className="vehicle-location"><MapPin size={15} /><span>{vehicle.location}</span><small>방금 업데이트</small></div>
+              <div className="vehicle-location"><MapPin size={15} /><span>{vehicle.location}</span><small>{isSample ? '샘플 위치' : '동의 기반 갱신'}</small></div>
             </div>
           </div>
 
           <div className="next-actions">
             <div className="next-actions-head"><span>지금 필요한 일</span><strong>2</strong></div>
-            <ActionRow icon={BatteryCharging} color="blue" title="오늘 밤 11시 충전 추천" detail="완충 예상 비용 8,400원 · 42분" badge="추천" onClick={() => navigate('charge')} />
+            <ActionRow icon={BatteryCharging} color="blue" title="오늘 밤 11시 충전 추천" detail={isSample ? '샘플: 예상 비용 8,400원 · 42분' : '요금 공급자 연결 시 계산'} badge={isSample ? '예시' : '추천'} onClick={() => navigate('charge')} />
             <ActionRow icon={Wrench} color="orange" title="타이어 위치 교환이 가까워요" detail={`권장 점검까지 ${vehicle.nextServiceKm.toLocaleString()}km`} badge="예정" onClick={() => navigate('care')} />
-            <ActionRow icon={ShieldCheck} color="green" title="차량 여권 신뢰도 98%" detail="최근 정비 기록까지 검증 완료" badge="안전" onClick={() => navigate('passport')} />
+            <ActionRow icon={ShieldCheck} color="green" title={`차량 여권 신뢰도 ${vehicle.healthScore}%`} detail={isSample ? '샘플 이력으로 사용 흐름 시연' : '연결된 이력의 서명 검증'} badge={isSample ? '예시' : '검증'} onClick={() => navigate('passport')} />
           </div>
         </div>
       </section>
@@ -334,82 +369,135 @@ function HomePage({ vehicle, navigate, setModal }) {
 }
 
 function ChargePage({ vehicle, notify, platform, actions, busy }) {
-  const stationList = platform.stations?.length ? platform.stations.map((item) => ({ id: item.id, name: item.name, address: item.address, distance: `${item.distanceKm}km`, available: item.available, total: item.total, speed: `${item.speedKw}kW`, price: `${item.pricePerKwh}원/kWh`, eta: `${item.etaMinutes}분` })) : stations;
+  const stationList = useMemo(() => platform.stations?.length ? platform.stations.map((item) => ({ ...item, distance: `${item.distanceKm}km`, speed: `${item.speedKw}kW`, price: `${item.pricePerKwh}원/kWh`, eta: `${item.etaMinutes}분` })) : stations.map((item) => ({ ...item, source: 'CLIENT_SAMPLE', reservable: true, operator: '샘플 운영사', statusLabel: '시뮬레이션' })), [platform.stations]);
   const [selectedStation, setSelectedStation] = useState(stations[0]);
   const [search, setSearch] = useState('성수동');
+  const chargerProvider = platform.providers?.find((provider) => provider.id === 'ev-charger');
+  const chargerLive = chargerProvider?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(chargerProvider.state);
   const activeReservation = platform.chargingReservations?.find((item) => item.vehicleExternalId === vehicle.id && item.status === 'CONFIRMED');
   useEffect(() => {
-    if (stationList.length && !stationList.some((item) => item.id === selectedStation.id)) setSelectedStation(stationList[0]);
+    if (stationList.length) setSelectedStation((current) => stationList.find((item) => item.id === current.id) ?? stationList[0]);
   }, [platform.stations]);
   return (
     <div className="page container">
       <PageIntro eyebrow="SMART CHARGE" title="기다리지 않는 충전" description="내 위치, 예상 도착시간, 실시간 충전 가능 여부를 함께 계산합니다." />
+      {chargerProvider && <div className={`provider-inline ${chargerLive ? 'live' : 'sample'}`}><span>{chargerLive ? 'LIVE DATA' : chargerProvider.mode === 'LIVE' ? 'LIVE ERROR' : 'SAMPLE DATA'}</span><strong>{chargerProvider.source}</strong><small>{chargerProvider.message}</small></div>}
       <OperationBanner
         tone={activeReservation ? 'active' : 'ready'}
         icon={BatteryCharging}
-        label={activeReservation ? '예약 확정' : '바로 예약 가능'}
-        title={activeReservation ? activeReservation.stationName : '충전소를 고르면 즉시 예약됩니다.'}
-        detail={activeReservation ? `${formatDateTime(activeReservation.scheduledAt)} · 목표 ${activeReservation.targetSoc}% · ₩${activeReservation.estimatedCost.toLocaleString()}` : '예약 결과는 차량 상태·알림·차량 여권에 동시에 기록됩니다.'}
-        action={activeReservation ? <button onClick={() => actions.cancelCharge(activeReservation.id)} disabled={busy}>예약 취소</button> : null}
+        label={activeReservation ? '샘플 예약 기록' : '샘플 예약 시나리오'}
+        title={activeReservation ? activeReservation.stationName : chargerLive ? '공공데이터 충전소는 길찾기만 제공합니다.' : '충전 예약 UX의 사용 예시입니다.'}
+        detail={activeReservation ? `${formatDateTime(activeReservation.scheduledAt)} · 목표 ${activeReservation.targetSoc}% · 예시 금액 ₩${activeReservation.estimatedCost.toLocaleString()}` : chargerLive ? '실제 예약·결제는 충전사업자 제휴 후 활성화됩니다.' : '실제 예약이 생성되거나 결제가 발생하지 않습니다.'}
+        action={activeReservation ? <button onClick={() => actions.cancelCharge(activeReservation.id)} disabled={busy}>샘플 취소</button> : null}
       />
       <div className="charge-layout">
         <section className="charge-map panel">
-          <div className="map-search"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="충전소 검색" /><button onClick={() => notify(`${search} 주변 충전소를 찾았습니다.`)}><LocateFixed size={17} /></button></div>
-          <div className="map-surface" aria-label="성수동 주변 충전소 지도">
-            <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
-            <div className="map-river" />
-            {stationList.map((station, index) => <button key={station.id} className={`map-pin pin-${index + 1} ${selectedStation.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
-            <div className="my-location"><Navigation size={14} fill="currentColor" /></div>
-          </div>
+          <div className="map-search"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="충전소 검색" /><button onClick={() => notify(`${search} 검색은 지도 API 키 연결 후 위치 기반으로 동작합니다.`)}><LocateFixed size={17} /></button></div>
+          <KakaoStationMap stations={stationList} selectedStation={selectedStation} onSelect={setSelectedStation} notify={notify} />
         </section>
         <aside className="station-panel panel">
-          <div className="station-panel-head"><span>가까운 충전소</span><small>실시간</small></div>
+          <div className="station-panel-head"><span>가까운 충전소</span><small>{chargerLive ? '공공데이터 실시간' : '사용 예시'}</small></div>
           {stationList.map((station) => (
             <button key={station.id} className={`station-row ${selectedStation.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className="station-availability"><strong>{station.available}</strong><span>/{station.total}</span></div>
-              <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span></div>
+              <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel}</small></div>
               <ChevronRight size={16} />
             </button>
           ))}
           <div className="station-detail">
             <div><span>선택한 충전소</span><strong>{selectedStation.name}</strong><p>{selectedStation.address}</p></div>
             <div className="charge-price"><span>예상 충전비</span><strong>₩8,420</strong><small>{selectedStation.price}</small></div>
-            <button className="button primary full" disabled={busy || !!activeReservation} onClick={() => actions.reserveCharge(selectedStation)}>{busy ? <LoaderCircle className="spin" size={16} /> : <Navigation size={16} />}{activeReservation ? '예약된 충전 일정 있음' : '경로 전송하고 예약'} </button>
+            <button className="button primary full" disabled={busy || !!activeReservation} onClick={() => selectedStation.reservable ? actions.reserveCharge(selectedStation) : window.open(`https://map.kakao.com/link/to/${encodeURIComponent(selectedStation.name)},${selectedStation.latitude},${selectedStation.longitude}`, '_blank', 'noopener,noreferrer')}>{busy ? <LoaderCircle className="spin" size={16} /> : <Navigation size={16} />}{activeReservation ? '예약된 충전 일정 있음' : selectedStation.reservable ? '샘플 예약 흐름 실행' : '카카오맵에서 길찾기'} </button>
           </div>
         </aside>
       </div>
       <div className="charge-plan-grid">
-        <div className="panel plan-card"><div className="plan-icon"><Clock3 size={20} /></div><div><span>가장 저렴한 시간</span><strong>오늘 23:00–02:00</strong><p>현재보다 약 18% 절약 · 예상 8,400원</p></div><button onClick={() => actions.reserveCharge(selectedStation)} disabled={busy || !!activeReservation}>예약하기</button></div>
+        <div className="panel plan-card"><div className="plan-icon"><Clock3 size={20} /></div><div><span>요금 최적화</span><strong>{selectedStation.reservable ? '샘플: 오늘 23:00–02:00' : 'CPO 요금 API 연결 필요'}</strong><p>{selectedStation.reservable ? '예약 시나리오 동작 예시' : '공공데이터에는 충전요금·예약 정보가 포함되지 않습니다.'}</p></div><button onClick={() => selectedStation.reservable ? actions.reserveCharge(selectedStation) : notify('충전사업자 제휴 API를 연결하면 활성화됩니다.')} disabled={busy || !!activeReservation}>{selectedStation.reservable ? '샘플 실행' : '연동 필요'}</button></div>
         <div className="panel plan-card"><div className="plan-icon"><Route size={20} /></div><div><span>내일 일정 기준</span><strong>오전 8시까지 80%</strong><p>예상 주행 64km · 출발 시 331km 가능</p></div><button onClick={() => notify('내일 일정에 맞춰 충전 계획을 저장했습니다.')}>계획 저장</button></div>
       </div>
     </div>
   );
 }
 
+let kakaoSdkPromise;
+function loadKakaoSdk(key) {
+  if (window.kakao?.maps) return Promise.resolve(window.kakao);
+  if (!kakaoSdkPromise) {
+    kakaoSdkPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`;
+      script.onload = () => window.kakao.maps.load(() => resolve(window.kakao));
+      script.onerror = () => reject(new Error('Kakao Maps SDK load failed'));
+      document.head.appendChild(script);
+    });
+  }
+  return kakaoSdkPromise;
+}
+
+function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, notify }) {
+  const mapElement = useRef(null);
+  const notifyRef = useRef(notify);
+  const [mapReady, setMapReady] = useState(false);
+  const key = window.__LIFEPASS_CONFIG__?.kakaoJavascriptKey || import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
+
+  useEffect(() => { notifyRef.current = notify; }, [notify]);
+
+  useEffect(() => {
+    if (!key || !mapElement.current || !stationItems.length) return undefined;
+    let cancelled = false;
+    loadKakaoSdk(key).then((kakao) => {
+      if (cancelled || !mapElement.current) return;
+      const centerStation = selectedStation ?? stationItems[0];
+      const map = new kakao.maps.Map(mapElement.current, {
+        center: new kakao.maps.LatLng(centerStation.latitude, centerStation.longitude),
+        level: 5,
+      });
+      stationItems.forEach((station) => {
+        const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(station.latitude, station.longitude), map });
+        kakao.maps.event.addListener(marker, 'click', () => onSelect(station));
+      });
+      setMapReady(true);
+    }).catch(() => notifyRef.current('카카오 지도 키 또는 허용 도메인을 확인해 주세요.'));
+    return () => { cancelled = true; };
+  }, [key, stationItems, selectedStation?.id, onSelect]);
+
+  if (key) return <div ref={mapElement} className={`map-surface kakao-map ${mapReady ? 'ready' : ''}`} aria-label="카카오 실지도 기반 충전소 지도" />;
+  return (
+    <div className="map-surface" aria-label="API 연결 전 충전소 지도 사용 예시">
+      <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
+      <div className="map-river" />
+      {stationItems.slice(0, 6).map((station, index) => <button key={station.id} style={{ left: `${18 + (index % 3) * 29}%`, top: `${24 + Math.floor(index / 3) * 40}%` }} className={`map-pin ${selectedStation.id === station.id ? 'active' : ''}`} onClick={() => onSelect(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
+      <div className="my-location"><Navigation size={14} fill="currentColor" /></div>
+    </div>
+  );
+}
+
 function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
+  const isSample = vehicle.source !== 'HYUNDAI_DEVELOPERS';
   const bars = [62, 68, 65, 72, 76, 81, 84, 88, 92, vehicle.healthScore];
   const activeBooking = platform.serviceBookings?.find((item) => item.vehicleExternalId === vehicle.id && item.status === 'CONFIRMED');
   return (
     <div className="page container">
       <PageIntro eyebrow="PREDICTIVE CARE" title="고장 나기 전에 먼저" description="차량 상태와 주행 패턴을 바탕으로 지금 필요한 관리만 알려드립니다." actions={<button className="button outline" onClick={() => notify('차량 케어 리포트를 준비했습니다.')}>리포트 받기 <Share2 size={16} /></button>} />
-      {activeBooking && <OperationBanner tone="active" icon={CalendarClock} label="정비 예약 확정" title={`${activeBooking.centerName} · ${activeBooking.serviceType}`} detail={`${formatDateTime(activeBooking.scheduledAt)} · 예상 ₩${activeBooking.estimatedCost.toLocaleString()}`} action={<button onClick={() => actions.cancelService(activeBooking.id)} disabled={busy}>예약 취소</button>} />}
+      {activeBooking && <OperationBanner tone="active" icon={CalendarClock} label="샘플 정비 예약" title={`${activeBooking.centerName} · ${activeBooking.serviceType}`} detail={`${formatDateTime(activeBooking.scheduledAt)} · 예시 금액 ₩${activeBooking.estimatedCost.toLocaleString()}`} action={<button onClick={() => actions.cancelService(activeBooking.id)} disabled={busy}>샘플 취소</button>} />}
       <section className="care-overview panel">
         <div className="care-score-block"><span>오늘의 차량 건강도</span><div className="score-ring" style={{ '--score': `${vehicle.healthScore * 3.6}deg` }}><strong>{vehicle.healthScore}</strong><small>/100</small></div><em>매우 좋음</em></div>
-        <div className="care-copy"><span className="live-label"><i /> {vehicle.name} 실시간 분석</span><h2>지금은 안심하고<br />주행하셔도 좋아요.</h2><p>배터리, 구동계, 타이어에서 즉시 확인할 이상 신호가 없습니다.</p><div className="care-inline-metrics"><div><ThermometerSun size={18} /><span>배터리 온도</span><strong>24°C</strong></div><div><CircleGauge size={18} /><span>타이어 공기압</span><strong>정상</strong></div><div><Zap size={18} /><span>배터리 SOH</span><strong>{vehicle.batterySoh}%</strong></div></div></div>
+        <div className="care-copy"><span className="live-label"><i /> {vehicle.name} {isSample ? '샘플 분석' : '동의 기반 차량 분석'}</span><h2>지금은 안심하고<br />주행하셔도 좋아요.</h2><p>{isSample ? '아래 진단값은 API 연결 후 제공될 기능의 사용 예시입니다.' : '연결된 차량 데이터에서 즉시 확인할 이상 신호가 없습니다.'}</p><div className="care-inline-metrics"><div><ThermometerSun size={18} /><span>배터리 온도</span><strong>{isSample ? '예시 24°C' : '24°C'}</strong></div><div><CircleGauge size={18} /><span>타이어 공기압</span><strong>{isSample ? '예시 정상' : '정상'}</strong></div><div><Zap size={18} /><span>배터리 SOH</span><strong>{vehicle.batterySoh}%</strong></div></div></div>
       </section>
       <div className="care-content-grid">
         <section className="panel health-chart"><div className="panel-title"><div><span>최근 10회 건강도</span><h3>안정적으로 유지 중</h3></div><span className="positive">+2.8%</span></div><div className="bar-chart">{bars.map((bar, index) => <div key={index}><span style={{ height: `${bar}%` }} /><small>{index + 1}</small></div>)}</div><div className="chart-legend"><span><i /> 차량 건강도</span><small>최근 30일</small></div></section>
-        <section className="panel maintenance-card"><div className="panel-title"><div><span>다가오는 정비</span><h3>타이어 위치 교환</h3></div><div className="maintenance-icon"><Wrench size={19} /></div></div><div className="maintenance-distance"><strong>{vehicle.nextServiceKm.toLocaleString()}</strong><span>km 후 권장</span></div><p>주행 패턴을 기준으로 약 5주 뒤가 적당합니다.</p><div className="maintenance-meta"><span><CalendarClock size={15} /> 예약 가능 일정 +4일</span><span>예상 비용 ₩84,000</span></div><button className="button primary full" disabled={!!activeBooking} onClick={() => setModal('service')}>{activeBooking ? '예약 완료' : '블루핸즈 예약하기'} <ArrowRight size={16} /></button></section>
+        <section className="panel maintenance-card"><div className="panel-title"><div><span>다가오는 정비</span><h3>타이어 위치 교환</h3></div><div className="maintenance-icon"><Wrench size={19} /></div></div><div className="maintenance-distance"><strong>{vehicle.nextServiceKm.toLocaleString()}</strong><span>km 후 권장</span></div><p>주행 패턴을 기준으로 약 5주 뒤가 적당합니다.</p><div className="maintenance-meta"><span><CalendarClock size={15} /> {isSample ? '샘플 일정 +4일' : '파트너 일정 연동 필요'}</span><span>{isSample ? '예시 비용 ₩84,000' : '견적 API 연결 필요'}</span></div><button className="button primary full" disabled={!!activeBooking} onClick={() => setModal('service')}>{activeBooking ? '샘플 흐름 완료' : '샘플 예약 흐름 보기'} <ArrowRight size={16} /></button></section>
       </div>
       <section className="section-sub">
         <SectionHeading eyebrow="SOFTWARE STATUS" title="내 차의 소프트웨어" description="업데이트가 어떻게 검증되었는지 소비자도 이해할 수 있게 보여드립니다." />
-        <div className="software-card panel"><div className="software-icon"><CloudCog size={25} /></div><div className="software-copy"><span>현재 버전 {vehicle.softwareVersion}</span><h3>모든 업데이트가 완료되었습니다.</h3><p>배터리 열관리 · 내비게이션 · 주행 보조 시스템 최신</p></div><div className="software-proof"><ShieldCheck size={18} /><div><strong>안전 검증 완료</strong><span>98,422대 · 이상률 0.04%</span></div></div><button onClick={() => notify('업데이트 상세 이력을 열었습니다.')}><ChevronRight size={18} /></button></div>
+        <div className="software-card panel"><div className="software-icon"><CloudCog size={25} /></div><div className="software-copy"><span>표시 버전 {vehicle.softwareVersion}</span><h3>{isSample ? 'OTA 운영 화면의 사용 예시입니다.' : '연결된 소프트웨어 상태입니다.'}</h3><p>{isSample ? '실제 배포 데이터가 아닌 포트폴리오 시나리오' : '현대차 OTA 공급자에서 동기화된 상태'}</p></div><div className="software-proof"><ShieldCheck size={18} /><div><strong>{isSample ? '샘플 검증 결과' : '안전 검증 완료'}</strong><span>{isSample ? '가상 차량군 · 예시 이상률' : '제조사 데이터 기준'}</span></div></div><button onClick={() => notify('업데이트 상세 이력을 열었습니다.')}><ChevronRight size={18} /></button></div>
       </section>
     </div>
   );
 }
 
 function PassportPage({ vehicle, notify, setModal, platform, passport, actions, busy }) {
+  const isSample = vehicle.source !== 'HYUNDAI_DEVELOPERS';
   const activeHandover = platform.handovers?.find((item) => item.vehicleExternalId === vehicle.id && !['COMPLETED', 'CANCELLED'].includes(item.status));
   const timelineEvents = passport?.events?.length ? passport.events : passportEvents;
   return (
@@ -418,7 +506,7 @@ function PassportPage({ vehicle, notify, setModal, platform, passport, actions, 
       {activeHandover && <OperationBanner tone="active" icon={KeyRound} label={`인수인계 ${activeHandover.step}/4단계`} title={handoverLabel(activeHandover.status)} detail={`구매자 ${activeHandover.buyerEmailMasked} · 전송 코드 ${activeHandover.transferCode}`} action={<button onClick={() => actions.advanceHandover(activeHandover.id)} disabled={busy}>{activeHandover.step === 3 ? '최종 전달' : '다음 단계'}</button>} />}
       <div className="passport-layout">
         <section className="passport-main panel">
-          <div className="passport-head"><div><span className="verified"><ShieldCheck size={15} /> HYUNDAI LIFE PASS VERIFIED</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="passport-id"><span>PASS ID</span><strong>HMC-{vehicle.plate.replace(/\s/g, '')}-26</strong></div></div>
+          <div className="passport-head"><div><span className="verified"><ShieldCheck size={15} /> {isSample ? 'SAMPLE PASSPORT · 사용 예시' : 'LIFE PASS VERIFIED'}</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="passport-id"><span>PASS ID</span><strong>{isSample ? 'SAMPLE' : 'HMC'}-{vehicle.plate.replace(/\s/g, '')}-26</strong></div></div>
           <div className="passport-scores"><PassportScore label="차량 신뢰도" value={passport?.trustScore ?? 98} unit="/100" note="검증 완료" /><PassportScore label="배터리 SOH" value={vehicle.batterySoh} unit="%" note="평균 이상" /><PassportScore label="서명된 기록" value={passport?.signedEvents ?? 0} unit="건" note="DB 동기화" /><PassportScore label="OTA 무결성" value="100" unit="%" note="최신 상태" /></div>
           <div className="passport-signature"><LockKeyhole size={16} /><span>현재 여권 서명</span><code>sha256 · {passport?.hash ?? '동기화 중'}</code><CheckCircle2 size={16} /></div>
         </section>

@@ -5,6 +5,8 @@ import com.hyundai.lifepass.domain.ChargingReservation
 import com.hyundai.lifepass.domain.ServiceBooking
 import com.hyundai.lifepass.domain.UserNotification
 import com.hyundai.lifepass.domain.VehicleHandover
+import com.hyundai.lifepass.domain.HyundaiConnection
+import com.hyundai.lifepass.domain.HyundaiOAuthState
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface ChargingReservationRepository : JpaRepository<ChargingReservation, Long> {
@@ -25,4 +27,13 @@ interface NotificationRepository : JpaRepository<UserNotification, Long> {
 
 interface AuditLogRepository : JpaRepository<AuditLog, Long> {
     fun findTop30ByOrderByCreatedAtDesc(): List<AuditLog>
+}
+
+interface HyundaiConnectionRepository : JpaRepository<HyundaiConnection, Long> {
+    fun findByActorId(actorId: String): HyundaiConnection?
+    fun findByHyundaiUserId(hyundaiUserId: String): HyundaiConnection?
+}
+
+interface HyundaiOAuthStateRepository : JpaRepository<HyundaiOAuthState, Long> {
+    fun findByStateToken(stateToken: String): HyundaiOAuthState?
 }

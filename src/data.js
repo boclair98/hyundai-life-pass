@@ -50,9 +50,9 @@ export const demoVehicles = [
 ];
 
 export const stations = [
-  { id: 1, name: '현대 EV 스테이션 강동', address: '서울 강동구 천호대로 1221', distance: '2.4km', available: 7, total: 8, speed: '350kW', price: '347원/kWh', eta: '8분' },
-  { id: 2, name: '성수 E-pit', address: '서울 성동구 아차산로 17길', distance: '3.1km', available: 3, total: 6, speed: '200kW', price: '340원/kWh', eta: '11분' },
-  { id: 3, name: '서울숲 공영주차장', address: '서울 성동구 뚝섬로 273', distance: '4.6km', available: 11, total: 16, speed: '100kW', price: '324원/kWh', eta: '14분' },
+  { id: 1, name: '현대 EV 스테이션 강동', address: '서울 강동구 천호대로 1221', latitude: 37.5365, longitude: 127.1330, distance: '2.4km', available: 7, total: 8, speed: '350kW', price: '347원/kWh', eta: '8분' },
+  { id: 2, name: '성수 E-pit', address: '서울 성동구 아차산로 17길', latitude: 37.5467, longitude: 127.0643, distance: '3.1km', available: 3, total: 6, speed: '200kW', price: '340원/kWh', eta: '11분' },
+  { id: 3, name: '서울숲 공영주차장', address: '서울 성동구 뚝섬로 273', latitude: 37.5444, longitude: 127.0374, distance: '4.6km', available: 11, total: 16, speed: '100kW', price: '324원/kWh', eta: '14분' },
 ];
 
 export const passportEvents = [

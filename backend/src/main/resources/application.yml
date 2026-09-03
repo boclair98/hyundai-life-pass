@@ -33,7 +33,30 @@ management:
         enabled: true
 
 lifepass:
+  sample-data-enabled: ${LIFEPASS_SAMPLE_DATA_ENABLED:true}
   cors-origins: "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:4173"
   release-tick-ms: 20000
   operator-users: ""
   allow-demo-operator: true
+  providers:
+    hyundai:
+      mode: ${LIFEPASS_HYUNDAI_MODE:simulation}
+      client-id: ${HYUNDAI_CLIENT_ID:}
+      client-secret: ${HYUNDAI_CLIENT_SECRET:}
+      redirect-uri: ${HYUNDAI_REDIRECT_URI:}
+      authorize-url: ${HYUNDAI_AUTHORIZE_URL:https://prd.kr-ccapi.hyundai.com/api/v1/user/oauth2/authorize}
+      token-url: ${HYUNDAI_TOKEN_URL:https://prd.kr-ccapi.hyundai.com/api/v1/user/oauth2/token}
+      data-api-base-url: ${HYUNDAI_DATA_API_BASE_URL:https://dev.kr-ccapi.hyundai.com}
+      agreement-url: ${HYUNDAI_AGREEMENT_URL:https://dev.kr-ccapi.hyundai.com/api/v1/car-service/terms/agreement}
+      reject-url: ${HYUNDAI_REJECT_URL:https://dev.kr-ccapi.hyundai.com/api/v1/car-service/terms/reject}
+      callback-secret: ${HYUNDAI_CALLBACK_SECRET:}
+      token-encryption-key: ${HYUNDAI_TOKEN_ENCRYPTION_KEY:}
+    ev-charger:
+      mode: ${LIFEPASS_EV_CHARGER_MODE:simulation}
+      service-key: ${DATA_GO_KR_SERVICE_KEY:}
+      base-url: ${DATA_GO_KR_EV_CHARGER_URL:https://apis.data.go.kr/B552584/EvCharger/getChargerInfo}
+      zcode: ${LIFEPASS_EV_CHARGER_ZCODE:11}
+      center-latitude: ${LIFEPASS_CENTER_LATITUDE:37.5446}
+      center-longitude: ${LIFEPASS_CENTER_LONGITUDE:127.0559}
+      default-price-per-kwh: ${LIFEPASS_DEFAULT_CHARGE_PRICE:347}
+      cache-seconds: ${LIFEPASS_EV_CHARGER_CACHE_SECONDS:300}

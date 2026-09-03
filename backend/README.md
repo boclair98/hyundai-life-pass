@@ -23,6 +23,11 @@
 | GET | `/api/v1/releases` | OTA 릴리스 목록 |
 | POST | `/api/v1/releases/{id}/start|advance|pause` | Canary 상태 변경 |
 | GET | `/api/v1/platform/snapshot` | 사용자 플랫폼 상태 |
+| POST | `/api/v1/integrations/hyundai/authorize` | 현대 계정 OAuth 시작 |
+| GET | `/api/v1/integrations/hyundai/agreement` | 제3자 제공 동의 연결 |
+| POST | `/api/v1/integrations/hyundai/sync` | 동의 차량 동기화 |
+| POST | `/api/v1/integrations/hyundai/revoke` | 동의 철회·데이터 삭제 |
+| POST | `/api/v1/integrations/hyundai/callbacks/data-unavailable` | 탈퇴·삭제·철회 callback |
 | POST | `/api/v1/platform/vehicles/{id}/connect` | 차량 연결 |
 | POST | `/api/v1/platform/charging-reservations` | 충전 예약 |
 | POST | `/api/v1/platform/service-bookings` | 정비 예약 |
@@ -31,4 +36,4 @@
 | GET | `/api/v1/platform/audit-logs` | 운영자 감사 로그 |
 | GET | `/actuator/health` | 운영 상태 확인 |
 
-Flyway가 스키마 버전을 관리하며, Coders 배포에서는 PostgreSQL과 native identity를 사용합니다. 외부 차량 데이터는 service 계층 앞에 provider adapter를 추가하고, 수신 이벤트를 `VehicleEvent`로 정규화하는 구조로 확장합니다.
+Flyway가 스키마 버전을 관리하며, Coders 배포에서는 PostgreSQL과 native identity를 사용합니다. Hyundai Developers 토큰은 AES-256-GCM으로 암호화하고, 한국환경공단 응답은 provider adapter에서 정규화·캐시합니다. 공급자 장애나 키 누락은 `ERROR`/`MISCONFIGURED`로 노출하며 샘플 데이터로 조용히 대체하지 않습니다.

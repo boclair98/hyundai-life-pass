@@ -12,14 +12,32 @@ import java.time.Instant
 
 data class StationResponse(
     val id: Long,
+    val providerStationId: String,
     val name: String,
     val address: String,
+    val latitude: Double,
+    val longitude: Double,
     val distanceKm: Double,
     val available: Int,
     val total: Int,
     val speedKw: Int,
     val pricePerKwh: Int,
     val etaMinutes: Int,
+    val operator: String,
+    val statusLabel: String,
+    val source: String,
+    val reservable: Boolean,
+    val statusUpdatedAt: Instant?,
+)
+
+data class ProviderStatusResponse(
+    val id: String,
+    val name: String,
+    val mode: String,
+    val state: String,
+    val source: String,
+    val refreshedAt: Instant?,
+    val message: String,
 )
 
 data class CreateChargingReservationRequest(
@@ -97,6 +115,7 @@ data class AuditLogResponse(
 data class PlatformSnapshotResponse(
     val actor: String,
     val environment: String,
+    val providers: List<ProviderStatusResponse>,
     val stations: List<StationResponse>,
     val chargingReservations: List<ChargingReservationResponse>,
     val serviceBookings: List<ServiceBookingResponse>,

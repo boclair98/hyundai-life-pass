@@ -9,6 +9,8 @@ import com.hyundai.lifepass.domain.VehicleEvent
 import com.hyundai.lifepass.repository.VehicleEventRepository
 import com.hyundai.lifepass.repository.VehicleRepository
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
@@ -19,16 +21,20 @@ import java.time.Instant
 class VehicleService(
     private val vehicleRepository: VehicleRepository,
     private val eventRepository: VehicleEventRepository,
+    @Value("\${lifepass.sample-data-enabled:true}") private val sampleDataEnabled: Boolean,
 ) {
     @Transactional(readOnly = true)
-    fun findAll(): List<VehicleSummary> = vehicleRepository.findAll().map(::toSummary)
+    fun findAll(actor: String): List<VehicleSummary> = buildList {
+        addAll(vehicleRepository.findByOwnerId(actor))
+        if (sampleDataEnabled) addAll(vehicleRepository.findBySource("SAMPLE"))
+    }.distinctBy(Vehicle::id).map(::toSummary)
 
     @Transactional(readOnly = true)
-    fun find(id: Long): VehicleSummary = toSummary(requireVehicle(id))
+    fun find(actor: String, id: Long): VehicleSummary = toSummary(requireVehicle(actor, id))
 
     @Transactional
-    fun appendEvent(id: Long, request: CreateEventRequest): VehicleEventResponse {
-        val vehicle = requireVehicle(id)
+    fun appendEvent(actor: String, id: Long, request: CreateEventRequest): VehicleEventResponse {
+        val vehicle = requireVehicle(actor, id)
         val event = VehicleEvent(
             vehicle = vehicle,
             type = request.type,
@@ -43,14 +49,14 @@ class VehicleService(
     }
 
     @Transactional(readOnly = true)
-    fun events(id: Long): List<VehicleEventResponse> {
-        requireVehicle(id)
+    fun events(actor: String, id: Long): List<VehicleEventResponse> {
+        requireVehicle(actor, id)
         return eventRepository.findTop20ByVehicleIdOrderByOccurredAtDesc(id).map(::toEvent)
     }
 
     @Transactional(readOnly = true)
-    fun passport(id: Long): PassportResponse {
-        val vehicle = requireVehicle(id)
+    fun passport(actor: String, id: Long): PassportResponse {
+        val vehicle = requireVehicle(actor, id)
         val events = eventRepository.findTop20ByVehicleIdOrderByOccurredAtDesc(id).map(::toEvent)
         return PassportResponse(
             vehicle = toSummary(vehicle),
@@ -64,12 +70,18 @@ class VehicleService(
         )
     }
 
-    private fun requireVehicle(id: Long): Vehicle = vehicleRepository.findByIdOrNull(id)
-        ?: throw NoSuchElementException("Vehicle $id was not found")
+    private fun requireVehicle(actor: String, id: Long): Vehicle {
+        val vehicle = vehicleRepository.findByIdOrNull(id) ?: throw NoSuchElementException("Vehicle $id was not found")
+        if (vehicle.ownerId != actor && !(sampleDataEnabled && vehicle.source == "SAMPLE")) {
+            throw AccessDeniedException("이 차량 데이터에 접근할 권한이 없습니다.")
+        }
+        return vehicle
+    }
 
     private fun toSummary(vehicle: Vehicle) = VehicleSummary(
         id = vehicle.id,
         externalId = vehicle.externalId,
+        source = vehicle.source,
         name = vehicle.name,
         trim = vehicle.trim,
         plate = vehicle.plate,
