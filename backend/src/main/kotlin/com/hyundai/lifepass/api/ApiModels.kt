@@ -27,6 +27,7 @@ data class VehicleSummary(
     val warningCount: Int,
     val connectedService: ConnectedServiceResponse?,
     val updatedAt: Instant,
+    val tirePressure: TirePressureResponse = TirePressureResponse(),
 )
 
 data class VehicleHealthCheckResponse(
@@ -38,6 +39,21 @@ data class VehicleHealthCheckResponse(
 data class ConnectedServiceResponse(
     val subscribeDate: String?,
     val endDate: String?,
+)
+
+/**
+ * Tire telemetry is deliberately explicit about its coverage. Hyundai's
+ * currently approved warning endpoint reports only the vehicle-level warning;
+ * it does not expose a PSI reading per wheel. Keeping the source and
+ * availability in the API prevents clients from presenting made-up values and
+ * gives us a backwards-compatible place to add exact wheel telemetry later.
+ */
+data class TirePressureResponse(
+    val warning: Boolean? = null,
+    val values: Map<String, Double>? = null,
+    val unit: String? = null,
+    val exactValuesAvailable: Boolean = false,
+    val source: String = "HYUNDAI_WARNING_ONLY",
 )
 
 data class VehicleEventResponse(

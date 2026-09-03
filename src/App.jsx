@@ -101,6 +101,38 @@ function sharePage({ title, text, path = window.location.hash || '#home', notify
   notify(`공유 링크: ${url}`);
 }
 
+const tirePositions = [
+  { id: 'frontLeft', label: '앞 왼쪽', key: 'frontLeft' },
+  { id: 'frontRight', label: '앞 오른쪽', key: 'frontRight' },
+  { id: 'rearLeft', label: '뒤 왼쪽', key: 'rearLeft' },
+  { id: 'rearRight', label: '뒤 오른쪽', key: 'rearRight' },
+];
+
+function tireCheck(vehicle) {
+  return vehicle?.healthChecks?.find((check) => check.id === 'TIRE_PRESSURE') ?? {
+    state: vehicle?.tirePressureWarning == null ? 'UNAVAILABLE' : vehicle.tirePressureWarning ? 'WARNING' : 'CLEAR',
+  };
+}
+
+function tireStatusLabel(state) {
+  return state === 'WARNING' ? '점검 필요' : state === 'CLEAR' ? '경고 없음' : '개별값 미제공';
+}
+
+function tireValue(vehicle, key) {
+  const payload = vehicle?.tirePressure;
+  if (payload && payload.exactValuesAvailable !== true) return null;
+  const values = payload?.values ?? vehicle?.tirePressures;
+  if (!values) return null;
+  return values[key] ?? values[key.replace(/[A-Z]/g, (match) => `_${match.toLowerCase()}`)] ?? null;
+}
+
+function vehicleReadiness(vehicle) {
+  const checked = Number(vehicle?.checkedWarnings ?? 0);
+  const warnings = Number(vehicle?.warningCount ?? 0);
+  if (!checked) return null;
+  return Math.max(0, Math.round(((checked - warnings) / checked) * 100));
+}
+
 export default function App() {
   const initialPage = window.location.hash.replace('#', '');
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
@@ -359,9 +391,6 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
 
 function HomePage({ vehicle, navigate, setModal, notify }) {
   const connected = Boolean(vehicle);
-  const careSummary = connected ? vehicle.warningCount > 0
-    ? `확인이 필요한 차량 경고 ${vehicle.warningCount}건`
-    : vehicle.checkedWarnings > 0 ? `${vehicle.checkedWarnings}개 상태 항목 이상 없음` : '차량 상태를 새로고침해 주세요' : '전화와 카카오맵 길찾기';
   return (
     <>
       <section className="home-hero">
@@ -409,26 +438,8 @@ function HomePage({ vehicle, navigate, setModal, notify }) {
       </section>
 
       <section className="section section-soft">
-        <div className="container vehicle-today-grid">
-          <div>
-            <SectionHeading eyebrow="TODAY'S VEHICLE" title="오늘의 내 차" description="복잡한 센서 정보 대신 지금 필요한 것만 보여드립니다." />
-            {connected ? <div className="vehicle-summary-card">
-              <div className="vehicle-summary-top"><div><span className="connected"><i /> 현대 커넥티드카 연결</span><h3>{vehicle.name}</h3><p>{vehicle.trim} · {vehicle.plate}</p></div><div className="health-score"><span>SYNC</span><strong>LIVE</strong></div></div>
-              <div className="summary-metrics">
-                <Metric icon={BatteryCharging} label="배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.range == null ? '주행 가능 거리 미제공' : `${vehicle.range.toLocaleString()}km 주행 가능`} />
-                <Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail="현대차 데이터 동기화" />
-                <Metric icon={ShieldCheck} label="차량 경고" value={vehicle.warningCount > 0 ? `${vehicle.warningCount}건` : vehicle.checkedWarnings > 0 ? '이상 없음' : '미제공'} detail={`${vehicle.checkedWarnings ?? 0}/7개 항목 확인`} />
-              </div>
-              <div className="vehicle-location"><RefreshCcw size={15} /><span>현대 통합계정에서 동기화됨</span><small>{vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '갱신 확인 중'}</small></div>
-            </div> : <VehicleConnectPanel onConnect={() => setModal('connect')} compact />}
-          </div>
-
-          <div className="next-actions">
-            <div className="next-actions-head"><span>지금 필요한 일</span><strong>2</strong></div>
-            <ActionRow icon={BatteryCharging} color="blue" title="가까운 충전소 찾기" detail="실시간 충전 가능 여부와 길찾기" badge="바로 사용" onClick={() => navigate('charge')} />
-            <ActionRow icon={Wrench} color="orange" title={connected ? '내 차 점검 상태 확인' : '가까운 블루핸즈 찾기'} detail={careSummary} badge={connected ? (vehicle.warningCount > 0 ? '확인 필요' : '내 차') : '게스트'} onClick={() => navigate('care')} />
-            {connected && <ActionRow icon={ShieldCheck} color="green" title="차량 연결 기록 확인" detail="실제로 저장된 이벤트의 서명 검증" badge="기록" onClick={() => navigate('passport')} />}
-          </div>
+        <div className="container">
+          {connected ? <VehicleCommandCenter vehicle={vehicle} navigate={navigate} setModal={setModal} notify={notify} /> : <GuestGaragePanel setModal={setModal} navigate={navigate} />}
         </div>
       </section>
 
@@ -467,6 +478,90 @@ function OpenBetaPanel({ navigate, notify }) {
       <small className="open-beta-note">현대자동차 공식 운영 서비스가 아닌 독립 포트폴리오 파일럿입니다.</small>
     </section>
   );
+}
+
+function VehicleCommandCenter({ vehicle, navigate, setModal, notify }) {
+  const readiness = vehicleReadiness(vehicle);
+  const warningCount = Number(vehicle.warningCount ?? 0);
+  const checkedWarnings = Number(vehicle.checkedWarnings ?? 0);
+  const readinessLabel = readiness == null ? '데이터 대기' : readiness >= 90 ? '오늘 운행 준비 완료' : warningCount ? '점검 후 운행 권장' : '확인 후 운행';
+  const sourceLabel = vehicle.source === 'HYUNDAI_DEVELOPERS' ? 'HYUNDAI LIVE' : 'SAMPLE PREVIEW';
+  const coverage = [
+    ['배터리 잔량', vehicle.batterySoc != null],
+    ['주행 가능 거리', vehicle.range != null],
+    ['누적 주행', vehicle.odometer != null],
+    ['공기압 경고', tireCheck(vehicle).state !== 'UNAVAILABLE'],
+    ['개별 PSI', vehicle.tirePressure?.exactValuesAvailable === true && Boolean(vehicle.tirePressure?.values ?? vehicle.tirePressures)],
+  ];
+  return (
+    <section className="vehicle-command-center" aria-labelledby="vehicle-command-title">
+      <div className="command-heading">
+        <div>
+          <span className="command-eyebrow"><CarFront size={14} /> MY HYUNDAI GARAGE</span>
+          <h2 id="vehicle-command-title">오늘의 {vehicle.name}</h2>
+          <p>{vehicle.trim} · {vehicle.plate} · 마지막 동기화 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '확인 중'}</p>
+        </div>
+        <div className="command-heading-actions">
+          <span className="command-source"><i /> {sourceLabel}</span>
+          <button className="command-icon-button" onClick={() => setModal('connect')} aria-label="차량 데이터 새로고침"><RefreshCcw size={17} /></button>
+          <button className="command-icon-button" onClick={() => sharePage({ title: `${vehicle.name} 차량 현황`, text: '현대차 오너용 Life Pass 차량 대시보드', path: '#home', notify })} aria-label="차량 현황 공유"><Share2 size={17} /></button>
+        </div>
+      </div>
+
+      <div className="command-primary-grid">
+        <article className="readiness-card panel">
+          <div className="readiness-top"><div><span>DRIVE READINESS</span><h3>{readinessLabel}</h3><p>{warningCount ? `확인이 필요한 경고 ${warningCount}건이 있습니다.` : checkedWarnings ? `${checkedWarnings}/7개 안전 항목을 확인했습니다.` : '현대 계정에서 안전 항목을 불러오는 중입니다.'}</p></div><div className={`readiness-score ${warningCount ? 'warning' : ''}`}><strong>{readiness == null ? '—' : readiness}</strong><small>{readiness == null ? '점' : '점'}</small></div></div>
+          <div className="readiness-meter" aria-label={readiness == null ? '운행 준비도 미제공' : `운행 준비도 ${readiness}점`}><span style={{ width: `${readiness == null ? 10 : Math.max(readiness, 4)}%` }} /></div>
+          <div className="readiness-foot"><span><i className={warningCount ? 'warn' : readiness == null ? 'unknown' : ''} />{warningCount ? '점검 필요' : readiness == null ? '제공 범위 확인' : '현재 경고 없음'}</span><button onClick={() => navigate('care')}>상세 안전 점검 <ArrowRight size={14} /></button></div>
+        </article>
+        <TirePressureCard vehicle={vehicle} compact onDetails={() => navigate('care')} />
+      </div>
+
+      <div className="vehicle-vitals-grid">
+        <VehicleStat icon={BatteryCharging} label="배터리 잔량" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '현대 API 미제공' : vehicle.chargingState || '현재 상태 확인'} tone="blue" />
+        <VehicleStat icon={Navigation} label="주행 가능 거리" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '현대 API 미제공' : '동기화된 차량 값'} tone="sky" />
+        <VehicleStat icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '현대 API 미제공' : '동기화된 차량 값'} tone="navy" />
+        <VehicleStat icon={ThermometerSun} label="충전 상태" value={vehicle.chargingState || '미제공'} detail={vehicle.chargingState ? '현대 커넥티드 데이터' : '상태 미제공'} tone="green" />
+      </div>
+
+      <div className="garage-action-grid" aria-label="차량 바로가기">
+        <button onClick={() => navigate('charge')}><span className="garage-action-icon blue"><BatteryCharging size={18} /></span><span><strong>충전소 찾기</strong><small>내 위치 기준 실시간 검색</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => navigate('care')}><span className="garage-action-icon orange"><Wrench size={18} /></span><span><strong>차량 케어</strong><small>7종 경고와 블루핸즈</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => navigate('passport')}><span className="garage-action-icon green"><ShieldCheck size={18} /></span><span><strong>차량 여권</strong><small>서명된 생애주기 기록</small></span><ChevronRight size={16} /></button>
+      </div>
+
+      <div className="coverage-row"><div><span>DATA COVERAGE</span><strong>이번 동기화에서 확인된 범위</strong></div><div className="coverage-chips">{coverage.map(([label, available]) => <span key={label} className={available ? 'available' : ''}><i />{label}</span>)}</div></div>
+    </section>
+  );
+}
+
+function GuestGaragePanel({ setModal, navigate }) {
+  return (
+    <section className="garage-empty-panel" aria-labelledby="garage-empty-title">
+      <div className="garage-empty-copy"><span className="command-eyebrow"><Plus size={14} /> MY HYUNDAI GARAGE</span><h2 id="garage-empty-title">내 차를 등록하면<br />매일 필요한 정보가 한 화면에 모입니다.</h2><p>현대자동차 공식 통합계정에 동의하면 차량 신원, 배터리, 주행 가능 거리, 누적 주행, 공기압 경고와 7종 안전 상태를 제공 범위 안에서 확인합니다.</p><button className="button primary" onClick={() => setModal('connect')}>현대차 등록 시작 <ArrowRight size={16} /></button></div>
+      <div className="garage-empty-steps"><div><b>01</b><CarFront size={17} /><strong>차량 연결</strong><small>공식 로그인과 동의</small></div><div><b>02</b><Activity size={17} /><strong>상태 동기화</strong><small>제공 범위만 안전하게</small></div><div><b>03</b><Route size={17} /><strong>다음 행동</strong><small>충전·케어로 바로 이동</small></div></div>
+      <div className="garage-empty-links"><button onClick={() => navigate('charge')}>로그인 없이 충전소 먼저 보기 <ArrowRight size={14} /></button><button onClick={() => navigate('care')}>주변 블루핸즈 찾아보기 <ArrowRight size={14} /></button></div>
+    </section>
+  );
+}
+
+function TirePressureCard({ vehicle, compact = false, onDetails }) {
+  const check = tireCheck(vehicle);
+  const exactCount = tirePositions.filter(({ key }) => tireValue(vehicle, key) != null).length;
+  const unit = vehicle?.tirePressure?.unit ?? '';
+  const overallLabel = tireStatusLabel(check.state);
+  return (
+    <article className={`tire-pressure-card panel ${compact ? 'compact' : ''}`}>
+      <div className="tire-card-heading"><div><span>TYRE WATCH</span><h3>타이어 공기압</h3></div><strong className={`tire-status ${check.state.toLowerCase()}`}>{overallLabel}</strong></div>
+      <div className="tire-grid" aria-label="타이어 위치별 상태">{tirePositions.map(({ id, label, key }) => { const value = tireValue(vehicle, key); const valueLabel = value == null ? (check.state === 'WARNING' ? '확인' : check.state === 'CLEAR' ? '정상' : '—') : `${value}${unit ? ` ${unit}` : ''}`; return <div className={`tire-wheel ${check.state.toLowerCase()}`} key={id} aria-label={`${label} ${valueLabel}`}><i /><span>{label}</span><strong>{valueLabel}</strong></div>; })}</div>
+      <div className="tire-card-note"><CircleGauge size={15} /><span>{exactCount ? `${exactCount}개 바퀴의 개별값이 제공됩니다.` : vehicle?.source === 'HYUNDAI_DEVELOPERS' ? '현재 현대 API는 공기압 경고 상태만 제공하며 개별 PSI는 미제공입니다.' : '실차 연결 후 현대 API가 제공하는 공기압 범위를 확인합니다.'}</span></div>
+      {onDetails && <button className="tire-details-button" onClick={onDetails}>7종 안전 상태에서 자세히 보기 <ArrowRight size={14} /></button>}
+    </article>
+  );
+}
+
+function VehicleStat({ icon: Icon, label, value, detail, tone }) {
+  return <article className={`vehicle-stat panel ${tone}`}><div className="vehicle-stat-icon"><Icon size={18} /></div><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>;
 }
 
 function ChargePage({ vehicle, notify, platform, actions, busy }) {
@@ -753,7 +848,8 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
         <div><span>NEXT BEST ACTION</span><strong>{nextAction.title}</strong><p>{nextAction.detail}</p></div>
         <button className="button outline" onClick={() => document.getElementById('service-centers')?.scrollIntoView({ behavior: 'smooth' })}>{nextAction.button} <ArrowRight size={15} /></button>
       </section>
-      <section className="section-sub vehicle-health-section">
+      <TirePressureCard vehicle={vehicle} onDetails={() => document.getElementById('vehicle-health')?.scrollIntoView({ behavior: 'smooth' })} />
+      <section className="section-sub vehicle-health-section" id="vehicle-health">
         <div className="health-section-heading">
           <SectionHeading eyebrow="7-POINT VEHICLE CHECK" title="차량 경고 상태" description="계기판에서 놓치기 쉬운 주요 경고를 현대 차량 데이터로 확인합니다." />
           <div className={`health-result ${vehicle.warningCount > 0 ? 'warning' : vehicle.checkedWarnings > 0 ? 'clear' : 'unknown'}`}><strong>{vehicle.warningCount > 0 ? `${vehicle.warningCount}건 확인 필요` : vehicle.checkedWarnings > 0 ? '확인 항목 이상 없음' : '상태 미제공'}</strong><span>{vehicle.checkedWarnings ?? 0}/7개 응답</span></div>

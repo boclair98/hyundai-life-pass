@@ -20,6 +20,12 @@
 | 중고차 구매자 | 차량 기록의 출처를 알기 어려움 | Life Pass에서 생성된 이벤트 서명과 연결 기록 |
 | SDV 운영팀 | 대규모 OTA 실패가 큰 리스크가 됨 | Canary 배포, 이상 감지, 자동 보호 모드, 이벤트 스트림 |
 
+## 차량 커맨드센터
+
+차량을 연결한 뒤 홈에서 `MY HYUNDAI GARAGE`를 중심으로 운행 준비도, 배터리 잔량, 주행 가능 거리, 누적 주행, 충전 상태를 한 번에 확인합니다. 타이어 공기압은 위치별 카드를 제공하되, 현재 Hyundai Developers 승인 API가 차량 단위 경고만 반환하므로 개별 PSI는 `미제공`으로 표시합니다. 즉, 숫자를 추정하거나 샘플로 채우지 않고 실제 데이터 범위를 그대로 보여줍니다.
+
+충전소와 블루핸즈는 현재 위치 기준으로 다시 검색할 수 있고, 차량 케어의 7종 경고·차량 여권·공유 링크로 바로 이어집니다. 로그인 전에도 위치 기반 충전·정비 탐색은 사용할 수 있어 첫 화면에서 서비스 가치를 확인할 수 있습니다.
+
 ## 기술 구성
 
 - Frontend: React, Vite, Lucide Icons
@@ -107,13 +113,13 @@ npm run dev
 | GET | `/api/v1/service-centers` | 위도·경도 기준 주변 현대자동차 서비스 거점 검색 |
 | POST | `/api/v1/integrations/hyundai/sync` | 동의 차량 데이터 동기화 |
 | POST | `/api/v1/integrations/hyundai/revoke` | 동의 철회 및 실차 데이터 삭제 |
-
-`coders.yaml`은 `mode: standalone`을 사용한다. 이 서비스는 coders.kr 방문자 로그인이 아니라 Hyundai Developers OAuth를 자체 신원 흐름으로 사용하기 때문이다. `native` 모드로 바꾸면 소비자 POST 요청이 coders.kr 로그인 게이트로 이동해 차량 연결·동기화가 중단된다.
 | POST | `/api/v1/integrations/hyundai/callbacks/data-unavailable` | 탈퇴·차량 삭제·철회 callback |
 | POST | `/api/v1/platform/charging-reservations` | 충전 예약 생성 |
 | POST | `/api/v1/platform/service-bookings` | 정비 예약 생성 |
 | POST | `/api/v1/platform/handovers` | 차량 인수인계 생성 |
 | GET | `/actuator/health` | 서비스·DB 상태 확인 |
+
+`coders.yaml`은 `mode: standalone`을 사용한다. 이 서비스는 coders.kr 방문자 로그인이 아니라 Hyundai Developers OAuth를 자체 신원 흐름으로 사용하기 때문이다. `native` 모드로 바꾸면 소비자 POST 요청이 coders.kr 로그인 게이트로 이동해 차량 연결·동기화가 중단된다.
 
 프로젝트에는 광고, 결제, 후원 UI가 없으며 Coders Donate도 사용하지 않습니다. 설치형 PWA manifest와 오프라인 앱 셸을 포함하며 `/api/*` 응답은 서비스 워커에 저장하지 않습니다.
 

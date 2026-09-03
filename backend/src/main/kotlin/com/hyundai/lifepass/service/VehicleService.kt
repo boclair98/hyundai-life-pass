@@ -3,6 +3,7 @@ package com.hyundai.lifepass.service
 import com.hyundai.lifepass.api.CreateEventRequest
 import com.hyundai.lifepass.api.ConnectedServiceResponse
 import com.hyundai.lifepass.api.PassportResponse
+import com.hyundai.lifepass.api.TirePressureResponse
 import com.hyundai.lifepass.api.VehicleEventResponse
 import com.hyundai.lifepass.api.VehicleHealthCheckResponse
 import com.hyundai.lifepass.api.VehicleSummary
@@ -105,6 +106,13 @@ class VehicleService(
             endDate = vehicle.connectedServiceEnd,
         ) else null,
         updatedAt = vehicle.updatedAt,
+        tirePressure = TirePressureResponse(
+            warning = vehicle.tirePressureWarning,
+            values = null,
+            unit = null,
+            exactValuesAvailable = false,
+            source = "HYUNDAI_WARNING_ONLY",
+        ),
     )
 
     private fun healthChecks(vehicle: Vehicle) = listOf(

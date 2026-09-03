@@ -28,6 +28,8 @@ class VehicleApiIntegrationTest(
                 jsonPath("$[0].rangeKm") { value(386) }
                 jsonPath("$[0].healthChecks", hasSize<Any>(7))
                 jsonPath("$[0].warningCount") { value(0) }
+                jsonPath("$[0].tirePressure.exactValuesAvailable") { value(false) }
+                jsonPath("$[0].tirePressure.source") { value("HYUNDAI_WARNING_ONLY") }
             }
     }
 
