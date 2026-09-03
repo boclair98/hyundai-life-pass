@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   ArrowRight,
+  ArrowUpRight,
   BatteryCharging,
   Bookmark,
   Bell,
@@ -251,6 +252,21 @@ export default function App() {
       root.style.setProperty('--page-progress', `${Math.min(100, (scrollTop / scrollable) * 100)}%`);
       root.style.setProperty('--hero-shift', `${Math.min(90, scrollTop * .12)}px`);
       root.classList.toggle('is-scrolled', scrollTop > 42);
+      const intro = document.querySelector('.orbit-intro');
+      if (intro) {
+        const rect = intro.getBoundingClientRect();
+        const distance = Math.max(1, intro.offsetHeight - window.innerHeight);
+        const progress = Math.max(0, Math.min(1, -rect.top / distance));
+        intro.style.setProperty('--intro-progress', progress.toFixed(4));
+        intro.style.setProperty('--intro-inset-x', `${(progress * 4.4).toFixed(2)}vw`);
+        intro.style.setProperty('--intro-inset-y', `${(progress * 3.4).toFixed(2)}vh`);
+        intro.style.setProperty('--intro-radius', `${(progress * 34).toFixed(1)}px`);
+        intro.style.setProperty('--intro-media-scale', (1.08 - progress * .08).toFixed(4));
+        intro.style.setProperty('--intro-copy-opacity', Math.max(0, 1 - progress * 1.55).toFixed(3));
+        intro.style.setProperty('--intro-copy-y', `${(-progress * 56).toFixed(1)}px`);
+        intro.style.setProperty('--intro-rail-opacity', Math.max(.18, 1 - progress * .72).toFixed(3));
+        intro.dataset.phase = progress > .72 ? 'compressed' : progress > .18 ? 'moving' : 'open';
+      }
       const story = document.querySelector('.motion-story');
       if (story) {
         const rect = story.getBoundingClientRect();
@@ -259,6 +275,7 @@ export default function App() {
         story.style.setProperty('--story-progress', progress.toFixed(4));
         story.style.setProperty('--story-fill', `${(progress * 100).toFixed(2)}%`);
         story.style.setProperty('--story-scale', (1.09 - progress * .09).toFixed(4));
+        story.style.setProperty('--story-angle', `${(progress * 210).toFixed(1)}deg`);
         story.dataset.active = String(Math.min(2, Math.floor(progress * 3)));
       }
     };
@@ -492,71 +509,71 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
   const connected = Boolean(vehicle);
   return (
     <>
-      <section className="home-hero" data-scene="01">
-        <img
-          src="/hyundai-life-orbit-hero-v2.jpg"
-          alt="별빛이 흐르는 미래 도시의 현대 전기차와 충전 네트워크"
-          fetchPriority="high"
-        />
-        <div className="hero-shade" />
-        <div className="hero-chapter" aria-hidden="true"><span>01</span><i /><small>MY CAR LIFE</small></div>
-        <div className="hero-content container">
-          <div className="hero-copy">
-            <div className="overline"><i /> MY HYUNDAI CAR LIFE</div>
-            <h1>내 차를 이해하고<br /><em>다음 행동까지.</em></h1>
-            <p>내 차의 오늘을 살피고, 필요한 순간 바로 움직이세요.<br /> 차량 상태부터 충전·정비·차량 기록까지 한곳에서 챙겨드립니다.</p>
-            <div className="hero-service-pills" aria-label="차량 생활 주요 기능"><span>내 차 상태</span><span>충전소</span><span>블루핸즈</span><span>차량 기록</span></div>
-            <div className="hero-buttons">
-              <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 새로고침' : '현대차 연결하기'} <ArrowRight size={17} /></button>
-              <button className="button glass" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>서비스 둘러보기</button>
-              <button className="button glass hero-share-button" onClick={() => sharePage({ title: 'HYUNDAI LIFE PASS', text: '충전·정비·차량 상태를 한곳에서 확인하는 모바일 카라이프 플랫폼', notify })}><Share2 size={16} /> 공유</button>
+      <section className="orbit-intro" data-scene="01" data-phase="open">
+        <div className="orbit-intro-sticky">
+          <div className="orbit-intro-frame">
+            <img
+              src="/orbit-drive-hero-v3.jpg"
+              alt="지구 위 궤도형 도로를 달리는 미래형 전기차"
+              fetchPriority="high"
+            />
+            <div className="orbit-intro-shade" />
+            <div className="orbit-grid" aria-hidden="true" />
+            <div className="orbit-system-label" aria-hidden="true"><span>01</span><i /><small>CAR LIFE IN ORBIT</small></div>
+            <div className="orbit-intro-copy container">
+              <div className="overline"><i /> MY HYUNDAI · ONE CONTINUOUS LIFE</div>
+              <h1>자동차 생활의 모든 순간을<br /><em>하나의 궤도로.</em></h1>
+              <p>차량 상태를 이해하고, 충전과 정비를 찾고, 중요한 기록을 이어갑니다.<br />내 차를 중심으로 움직이는 새로운 카 라이프 플랫폼.</p>
+              <div className="hero-buttons">
+                <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 상태 새로고침' : '현대차 연결하기'} <ArrowRight size={17} /></button>
+                <button className="button glass" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>서비스 시작</button>
+                <button className="button glass hero-share-button" onClick={() => sharePage({ title: 'HYUNDAI LIFE PASS', text: '차량 상태·충전·정비·기록을 하나의 흐름으로 연결하는 카라이프 플랫폼', notify })}><Share2 size={16} /> 공유</button>
+              </div>
             </div>
+            <div className="orbit-function-rail" aria-label="주요 차량 생활 기능">
+              <button onClick={() => navigate('care')}><Activity size={17} /><span><small>VEHICLE</small><strong>내 차 상태</strong></span><ArrowUpRight size={15} /></button>
+              <button onClick={() => navigate('charge')}><BatteryCharging size={17} /><span><small>ENERGY</small><strong>주변 충전</strong></span><ArrowUpRight size={15} /></button>
+              <button onClick={() => navigate('passport')}><FileCheck2 size={17} /><span><small>HISTORY</small><strong>차량 기록</strong></span><ArrowUpRight size={15} /></button>
+            </div>
+            <button className="orbit-scroll-cue" onClick={() => document.getElementById('mission')?.scrollIntoView({ behavior: 'smooth' })} aria-label="다음 장면으로 이동"><span>SCROLL TO EXPLORE</span><i /></button>
           </div>
         </div>
-        <div className={`hero-status container ${connected ? '' : 'guest'}`}>
-          {connected ? <>
-            <div><span className="status-dot" /><p>현재 연결 차량</p><strong>{vehicle.name}</strong></div>
-            <div><BatteryCharging size={20} /><p>배터리</p><strong>{formatMetric(vehicle.batterySoc, '%')}</strong></div>
-            <div><Navigation size={20} /><p>주행 가능</p><strong>{formatMetric(vehicle.range, 'km')}</strong></div>
-            <div><Gauge size={20} /><p>누적 주행</p><strong>{formatMetric(vehicle.odometer, 'km')}</strong></div>
-            <button onClick={() => setModal('connect')}>내 차 새로고침 <RefreshCcw size={16} /></button>
-          </> : <>
-            <div className="guest-status-copy"><UserRound size={20} /><p>먼저 둘러보기</p><strong>차량을 연결하지 않아도 충전소와 블루핸즈를 찾아볼 수 있어요.</strong></div>
-            <button onClick={() => setModal('connect')}>내 차 등록하기 <ArrowRight size={16} /></button>
-          </>}
-        </div>
-        <button className="hero-scroll-cue" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })} aria-label="다음 서비스 장면으로 이동"><span>SCROLL</span><i /></button>
       </section>
 
-      <section className="home-manifesto reveal" data-reveal>
+      <section className="home-manifesto reveal" data-reveal id="mission">
         <div className="container home-manifesto-inner">
-          <span>ONE CAR · ONE CONTINUOUS LIFE</span>
-          <h2>차를 타는 모든 순간이<br />하나의 흐름으로 이어집니다.</h2>
-          <div><p>상태를 확인하고, 필요한 장소를 찾고, 중요한 기록을 남기는 일까지. 흩어져 있던 자동차 생활을 한곳에서 자연스럽게 연결합니다.</p><i /></div>
+          <span>A CAR, ALWAYS IN MOTION</span>
+          <h2>차는 멈춰 있어도<br />당신의 카 라이프는 움직입니다.</h2>
+          <div><p>차량 상태부터 충전과 정비, 차량 기록까지. 흩어져 있던 자동차 생활을 하나의 궤도로 연결하고 다음 행동을 먼저 보여드립니다.</p><i /></div>
         </div>
       </section>
 
       <section className="motion-story" data-scene="02" data-active="0" aria-label="차량 생활 주요 가치">
         <div className="motion-story-sticky">
-          <img src="/hyundai-ioniq6-hero.png" alt="밝은 공간에 전시된 현대 아이오닉 6" loading="lazy" />
+          <div className="motion-story-media" aria-hidden="true">
+            <figure><img src="/orbit-vehicle-scan-v3.jpg" alt="" loading="lazy" /></figure>
+            <figure><img src="/orbit-charge-network-v3.jpg" alt="" loading="lazy" /></figure>
+            <figure><img src="/orbit-drive-hero-v3.jpg" alt="" loading="lazy" /></figure>
+          </div>
           <div className="motion-story-shade" />
-          <div className="motion-story-chapter"><span>02</span><i /><small>ONE CONTINUOUS LIFE</small></div>
+          <div className="motion-story-orbit" aria-hidden="true"><i /><b /></div>
+          <div className="motion-story-chapter"><span>02</span><i /><small>THE CAR LIFE SYSTEM</small></div>
           <div className="motion-story-copy container">
             <article>
               <span>UNDERSTAND</span>
-              <h2>차의 모든 신호를<br />한눈에 이해합니다.</h2>
+              <h2>내 차의 모든 신호를<br />한눈에 읽습니다.</h2>
               <p>배터리와 주행거리, 타이어와 안전 경고까지 지금 필요한 정보만 선명하게 보여드립니다.</p>
               <button onClick={() => navigate('care')}>내 차 상태 보기 <ArrowRight size={18} /></button>
             </article>
             <article>
               <span>CONNECT</span>
-              <h2>충전과 정비를<br />내 위치에서 이어갑니다.</h2>
+              <h2>지금 갈 수 있는 충전과 정비를<br />내 위치에서 연결합니다.</h2>
               <p>가까운 충전기와 블루핸즈를 실제 위치에서 찾고, 선택한 곳까지 바로 길 안내를 시작합니다.</p>
               <button onClick={() => navigate('charge')}>주변 충전소 찾기 <ArrowRight size={18} /></button>
             </article>
             <article>
               <span>REMEMBER</span>
-              <h2>차의 시간을<br />신뢰할 기록으로 남깁니다.</h2>
+              <h2>차와 함께한 모든 시간을<br />신뢰할 기록으로 남깁니다.</h2>
               <p>점검과 소프트웨어 변경, 차량의 중요한 순간을 이어서 보고 필요할 때 안전하게 공유합니다.</p>
               <button onClick={() => navigate('passport')}>차량 기록 보기 <ArrowRight size={18} /></button>
             </article>
