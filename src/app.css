@@ -23,6 +23,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: #f7f9fc; }
 body { margin: 0; min-width: 320px; min-height: 100vh; background: #f7f9fc; }
+[data-coders-support] { display: none !important; }
 button, input, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(10,123,216,.3); outline-offset: 2px; }
