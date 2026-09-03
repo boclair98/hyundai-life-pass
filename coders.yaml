@@ -9,7 +9,6 @@ services:
     expose: public
     env:
       BACKEND_URL: ${api.internal_url}
-      KAKAO_JAVASCRIPT_KEY: ""
 
   api:
     dockerfile: backend/Dockerfile
@@ -23,8 +22,9 @@ services:
       LIFEPASS_OPERATOR_USERS: boclair98@users.noreply.github.com
       LIFEPASS_ALLOW_DEMO_OPERATOR: "false"
       LIFEPASS_SAMPLE_DATA_ENABLED: "true"
-      LIFEPASS_EV_CHARGER_MODE: simulation
-      LIFEPASS_HYUNDAI_MODE: simulation
+      LIFEPASS_EV_CHARGER_MODE: live
+      LIFEPASS_HYUNDAI_MODE: live
+      LIFEPASS_SESSION_COOKIE_SECURE: "true"
 
   db:
     type: postgres

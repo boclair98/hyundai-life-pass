@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.http.MediaType
 
-@SpringBootTest
+@SpringBootTest(properties = ["lifepass.trusted-user-header-enabled=true"])
 @AutoConfigureMockMvc
 class VehicleApiIntegrationTest(
     @Autowired private val mockMvc: MockMvc,

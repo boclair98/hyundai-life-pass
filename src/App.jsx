@@ -30,6 +30,7 @@ import {
   Share2,
   ShieldCheck,
   ThermometerSun,
+  UserRound,
   Wrench,
   X,
   Zap,
@@ -49,6 +50,7 @@ import {
   pauseRelease,
   readNotification,
   reserveCharging,
+  revokeHyundaiConnection,
   startHandover,
   startRelease,
   syncHyundaiVehicles,
@@ -65,6 +67,20 @@ const navigation = [
 ];
 
 const validPages = new Set([...navigation.map((item) => item.id), 'lab']);
+
+const hyundaiStatusLabel = (provider) => {
+  if (!provider) return '상태 확인 중';
+  if (provider.mode !== 'LIVE') return 'API 연결 준비';
+  return {
+    CONNECTED: '내 차 연결됨',
+    STALE: '동기화 지연',
+    OAUTH_REQUIRED: '로그인 필요',
+    CONSENT_REQUIRED: '정보 제공 동의 필요',
+    REVOKED: '다시 연결 필요',
+    MISCONFIGURED: 'API 설정 필요',
+    ERROR: '연결 점검 필요',
+  }[provider.state] ?? provider.state;
+};
 
 export default function App() {
   const initialPage = window.location.hash.replace('#', '');
@@ -177,6 +193,8 @@ export default function App() {
       }
     },
     syncHyundai: () => transact(() => syncHyundaiVehicles(), '동의한 현대차 데이터를 동기화했습니다.'),
+    resumeHyundaiAgreement: () => window.location.assign('/api/v1/integrations/hyundai/agreement'),
+    revokeHyundai: () => transact(() => revokeHyundaiConnection(), '현대 계정 연결과 저장된 실차 데이터를 삭제했습니다.'),
     connectVehicle: () => transact(() => connectVehicle(vehicle.id), `${vehicle.name} 연결과 데이터 동기화가 완료됐습니다.`),
     reserveCharge: (station) => transact(() => reserveCharging({ vehicleExternalId: vehicle.id, stationId: station.id, scheduledAt: new Date(Date.now() + 3600000).toISOString(), targetSoc: 80 }), station.source === 'SAMPLE' || station.source === 'CLIENT_SAMPLE' ? `${station.name} 샘플 예약 흐름을 완료했습니다.` : `${station.name} 충전 예약이 확정됐습니다.`),
     cancelCharge: (id) => transact(() => cancelCharging(id), '충전 예약을 취소했습니다.'),
@@ -207,6 +225,7 @@ export default function App() {
         notify={notify}
         platform={platform}
         actions={actions}
+        busy={busy}
       />
 
       <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
@@ -220,33 +239,49 @@ export default function App() {
       </main>
 
       <MobileNav page={page} navigate={navigate} />
-      {modal && <Modal type={modal} vehicle={vehicle} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
+      {modal && <Modal type={modal} vehicle={vehicle} platform={platform} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
     </div>
   );
 }
 
 function DataProvenanceBar({ platform, actions, busy }) {
+  const [expanded, setExpanded] = useState(false);
   const providers = platform.providers ?? [];
   if (!providers.length) return null;
   const hyundai = providers.find((provider) => provider.id === 'hyundai-connected-car');
   const isLive = (provider) => provider.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(provider.state);
+  const liveCount = providers.filter(isLive).length;
+  const environmentLabel = platform.environment === 'LIVE' ? '실데이터 운영' : platform.environment === 'HYBRID' ? '하이브리드 운영' : '시뮬레이션 환경';
   return (
-    <aside className={`data-provenance ${platform.environment?.toLowerCase()}`} aria-label="데이터 연결 상태">
+    <aside className={`data-provenance ${platform.environment?.toLowerCase()} ${expanded ? 'open' : ''}`} aria-label="데이터 연결 상태">
       <div className="container">
-        <strong>{platform.environment === 'LIVE' ? '실데이터 운영' : platform.environment === 'HYBRID' ? '하이브리드 운영' : '시뮬레이션 환경'}</strong>
-        <div>{providers.map((provider) => <span key={provider.id} className={isLive(provider) ? 'live' : 'sample'} title={provider.message}><i />{provider.name}: {isLive(provider) ? (provider.state === 'STALE' ? '지연' : '실시간') : provider.state === 'OAUTH_REQUIRED' ? '연결 필요' : provider.state === 'CONSENT_REQUIRED' ? '동의 필요' : provider.state === 'MISCONFIGURED' ? '설정 필요' : provider.state === 'REVOKED' ? '철회됨' : provider.state === 'ERROR' ? '오류' : '샘플'}</span>)}</div>
-        <small>{platform.environment === 'LIVE' ? '연결된 공식 공급자에서 갱신됩니다.' : '현재 샘플은 기능의 사용 형태만 보여줍니다. API 키 연결 전에는 실제 데이터로 표시하지 않습니다.'}</small>
-        {hyundai?.mode === 'LIVE' && hyundai.state === 'OAUTH_REQUIRED' && <button disabled={busy} onClick={actions.connectHyundai}>현대 계정 연결</button>}
-        {hyundai?.mode === 'LIVE' && hyundai.state === 'REVOKED' && <button disabled={busy} onClick={actions.connectHyundai}>다시 연결</button>}
-        {hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED' && <button disabled={busy} onClick={actions.syncHyundai}>동의 완료 후 동기화</button>}
+        <div className="provenance-summary">
+          <strong><i />{environmentLabel}</strong>
+          <span className="provenance-mobile-summary">{liveCount ? `${liveCount}/${providers.length} 실시간 연결` : `${providers.length}개 샘플 소스`}</span>
+          <button className="provenance-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>출처 <ChevronDown size={14} /></button>
+        </div>
+        <div className="provenance-details">
+          <div className="provider-list">{providers.map((provider) => <span key={provider.id} className={isLive(provider) ? 'live' : 'sample'} title={provider.message}><i />{provider.name}: {isLive(provider) ? (provider.state === 'STALE' ? '지연' : '실시간') : provider.state === 'OAUTH_REQUIRED' ? '연결 필요' : provider.state === 'CONSENT_REQUIRED' ? '동의 필요' : provider.state === 'MISCONFIGURED' ? '설정 필요' : provider.state === 'REVOKED' ? '철회됨' : provider.state === 'ERROR' ? '오류' : '샘플'}</span>)}</div>
+          <small>{platform.environment === 'LIVE' ? '연결된 공식 공급자에서 갱신됩니다.' : '현재 샘플은 기능의 사용 형태만 보여줍니다. API 키 연결 전에는 실제 데이터로 표시하지 않습니다.'}</small>
+          {hyundai?.mode === 'LIVE' && ['OAUTH_REQUIRED', 'REVOKED'].includes(hyundai.state) && <button className="provenance-action" disabled={busy} onClick={actions.connectHyundai}>{hyundai.state === 'REVOKED' ? '다시 연결' : '현대 계정 연결'}</button>}
+          {hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED' && <button className="provenance-action" disabled={busy} onClick={actions.resumeHyundaiAgreement}>동의 계속하기</button>}
+        </div>
       </div>
     </aside>
   );
 }
 
-function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, dataSource, platform, actions }) {
+function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, dataSource, notify, platform, actions, busy }) {
   const [alertsOpen, setAlertsOpen] = useState(false);
+  const hyundai = platform.providers?.find((provider) => provider.id === 'hyundai-connected-car');
+  const connected = hyundai?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(hyundai.state);
+  const accountAction = () => {
+    if (connected) return actions.syncHyundai();
+    if (hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED') return actions.resumeHyundaiAgreement();
+    if (hyundai?.mode === 'LIVE' && !['MISCONFIGURED', 'ERROR'].includes(hyundai.state)) return actions.connectHyundai();
+    notify('Hyundai Developers 프로젝트 키를 연결하면 실제 현대 통합계정 로그인이 열립니다.');
+  };
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -274,14 +309,16 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
             <button className="header-icon" onClick={() => setAlertsOpen((value) => !value)} aria-label={`알림 ${platform.unreadNotifications ?? 0}개`}><Bell size={18} />{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
             {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{platform.environment === 'LIVE' ? '실데이터 동기화' : platform.environment === 'HYBRID' ? '일부 실데이터 연결' : '샘플 데이터 환경'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
           </div>
+          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>현대 통합계정</small><strong>{hyundaiStatusLabel(hyundai)}</strong></span></button>
           <button className={`lab-button ${page === 'lab' ? 'active' : ''}`} onClick={() => navigate('lab')}><Code2 size={15} /><span>Developer Lab</span></button>
-          <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="메뉴 열기">{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
+          <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}>{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
         </div>
       </div>
 
       {menuOpen && (
         <div className="mobile-drawer">
           <div className="mobile-vehicle"><span>{vehicle.name}</span><strong>{vehicle.plate}</strong><small>{dataSource === 'platform' ? '플랫폼 서버 연결' : '오프라인 샘플'}</small></div>
+          <div className={`mobile-account ${connected ? 'connected' : ''}`}><div><UserRound size={19} /><span><small>현대 통합계정</small><strong>{hyundaiStatusLabel(hyundai)}</strong></span></div><button disabled={busy} onClick={accountAction}>{connected ? '새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '연결하기'}</button></div>
           {navigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
           <button onClick={() => navigate('lab')}><Code2 size={18} />Developer Lab<ChevronRight size={16} /></button>
         </div>
@@ -295,15 +332,20 @@ function HomePage({ vehicle, navigate, setModal }) {
   return (
     <>
       <section className="home-hero">
-        <img src="/hyundai-ioniq6-hero.png" alt="밝은 스튜디오에 놓인 현대 아이오닉 6" />
+        <img
+          src="/hyundai-life-orbit-hero-v2.jpg"
+          alt="별빛이 흐르는 미래 도시의 현대 전기차와 충전 네트워크"
+          fetchPriority="high"
+        />
         <div className="hero-shade" />
+        <div className="hero-chapter" aria-hidden="true"><span>01</span><i /><small>CONNECTED MOBILITY</small></div>
         <div className="hero-content container">
           <div className="hero-copy">
-            <div className="overline">HYUNDAI LIFE PASS</div>
-            <h1>내 차의 모든 순간을<br /><em>하나로 연결합니다.</em></h1>
-            <p>충전, 정비, 소프트웨어 업데이트와 중고차 인수인계까지.<br />내 현대차의 생애주기를 한 곳에서 관리하세요.</p>
+            <div className="overline"><i /> HYUNDAI LIFE PASS</div>
+            <h1>차의 오늘부터<br /><em>다음 여정까지.</em></h1>
+            <p>충전·정비·소프트웨어 업데이트·차량 여권을 하나로.<br />내 현대차의 모든 생애주기가 끊김 없이 이어집니다.</p>
             <div className="hero-buttons">
-              <button className="button primary" onClick={() => navigate('care')}>내 차 시작하기 <ArrowRight size={17} /></button>
+              <button className="button primary" onClick={() => setModal('connect')}>현대차 연결하기 <ArrowRight size={17} /></button>
               <button className="button glass" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>서비스 둘러보기</button>
             </div>
           </div>
@@ -601,21 +643,40 @@ function EventRow({ time, tone, title, detail }) {
 }
 
 function MobileNav({ page, navigate }) {
-  return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{navigation.map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={20} /><span>{label}</span></button>)}<button className={page === 'lab' ? 'active' : ''} onClick={() => navigate('lab')}><Code2 size={20} /><span>Lab</span></button></nav>;
+  return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{navigation.map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={21} /><span>{label}</span></button>)}<button className={page === 'lab' ? 'active' : ''} aria-current={page === 'lab' ? 'page' : undefined} onClick={() => navigate('lab')}><Code2 size={21} /><span>SDV Lab</span></button></nav>;
 }
 
-function Modal({ type, vehicle, close, navigate, actions, busy }) {
+function Modal({ type, vehicle, platform, close, notify, navigate, actions, busy }) {
+  useEffect(() => {
+    const onKeyDown = (event) => event.key === 'Escape' && close();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [close]);
+  const hyundai = platform.providers?.find((provider) => provider.id === 'hyundai-connected-car');
+  const connected = hyundai?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(hyundai.state);
   const content = {
-    connect: { icon: CarFront, eyebrow: '차량 연결', title: '내 현대차를 연결할까요?', description: '커넥티드 계정 동의 후 차량 상태와 이력을 안전하게 불러옵니다.', button: '현대 통합계정으로 연결', done: '차량 연결 시연이 완료되었습니다.' },
+    connect: { icon: UserRound, eyebrow: 'HYUNDAI ACCOUNT', title: connected ? '내 차가 연결되어 있습니다.' : '현대 통합계정으로 시작하세요.', description: hyundai?.mode === 'LIVE' ? '현대자동차 공식 로그인 화면에서 차량 접근과 정보 제공 범위를 직접 확인합니다. 비밀번호는 Life Pass에 저장되지 않습니다.' : 'Hyundai Developers 프로젝트 키를 배포 환경에 등록하면 공식 로그인과 차량 데이터 동기화가 활성화됩니다.', button: connected ? '차량 데이터 새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '정보 제공 동의 계속하기' : hyundai?.mode === 'LIVE' && hyundai.state !== 'MISCONFIGURED' ? '현대 통합계정으로 연결' : '연동 준비 항목 확인', done: '현대 계정 연결을 시작했습니다.' },
     service: { icon: Wrench, eyebrow: '블루핸즈 예약', title: '가까운 서비스센터를 찾았습니다.', description: '성수 현대서비스 · 2.1km · 가장 빠른 일정 9월 7일 10:30', button: '이 일정으로 예약', done: '9월 7일 오전 10시 30분으로 예약했습니다.' },
     handover: { icon: KeyRound, eyebrow: '안전한 인수인계', title: '4단계로 차량을 전달합니다.', description: '디지털 키 회수 → 개인정보 삭제 → 차량 여권 서명 → 구매자 초대', button: '인수인계 체크 시작', done: '안전한 인수인계 체크리스트를 시작했습니다.' },
     release: { icon: CloudCog, eyebrow: '새 Canary 배포', title: '1% 차량군부터 시작합니다.', description: 'IONIQ 6 · 2026 · 148대 · 자동 중지 및 롤백 활성화', button: 'Canary 배포 시작', done: 'Canary 배포가 1% 차량군에서 시작됐습니다.' },
   }[type];
   const Icon = content.icon;
   const submit = async () => {
-    const task = { connect: actions.connectVehicle, service: actions.bookService, handover: actions.startHandover, release: () => actions.startRelease(3) }[type];
+    if (type === 'connect') {
+      if (connected) return actions.syncHyundai();
+      if (hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED') return actions.resumeHyundaiAgreement();
+      if (hyundai?.mode === 'LIVE' && !['MISCONFIGURED', 'ERROR'].includes(hyundai.state)) return actions.connectHyundai();
+      notify('Client ID와 Secret은 Hyundai Developers 서비스 콘솔에서 발급받아야 합니다. docs/API_KEYS.md에 등록 순서를 정리해 두었습니다.');
+      return false;
+    }
+    const task = { service: actions.bookService, handover: actions.startHandover, release: () => actions.startRelease(3) }[type];
     const completed = await task();
     if (completed && type === 'handover') navigate('passport');
   };
-  return <div className="modal-backdrop" onMouseDown={(event) => event.currentTarget === event.target && close()}><div className="modal" role="dialog" aria-modal="true"><button className="modal-close" onClick={close} aria-label="닫기"><X size={19} /></button><div className="modal-icon"><Icon size={22} /></div><span>{content.eyebrow}</span><h2>{content.title}</h2><p>{content.description}</p>{type === 'connect' && <div className="connected-vehicle-preview"><CarFront size={20} /><div><strong>{vehicle.name}</strong><span>{vehicle.plate} · {vehicle.trim}</span></div><CheckCircle2 size={18} /></div>}<button className="button primary full" disabled={busy} onClick={submit}>{busy ? <LoaderCircle className="spin" size={16} /> : null}{content.button}<ArrowRight size={16} /></button><small>작업 결과는 PostgreSQL, 차량 여권 이벤트와 감사 로그에 함께 기록됩니다.</small></div></div>;
+  return <div className="modal-backdrop" onMouseDown={(event) => event.currentTarget === event.target && close()}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description"><button className="modal-close" onClick={close} aria-label="닫기"><X size={19} /></button><div className="modal-icon"><Icon size={22} /></div><span>{content.eyebrow}</span><h2 id="modal-title">{content.title}</h2><p id="modal-description">{content.description}</p>{type === 'connect' && <div className="connected-vehicle-preview"><CarFront size={20} /><div><strong>{vehicle.name}</strong><span>{vehicle.plate} · {vehicle.trim}</span></div><CheckCircle2 size={18} /></div>}<button className="button primary full" disabled={busy} onClick={submit}>{busy ? <LoaderCircle className="spin" size={16} /> : null}{content.button}<ArrowRight size={16} /></button><small>{type === 'connect' ? '로그인 토큰은 서버에서 AES-256-GCM으로 암호화되며 브라우저에 노출되지 않습니다.' : '작업 결과는 PostgreSQL, 차량 여권 이벤트와 감사 로그에 함께 기록됩니다.'}</small></div></div>;
 }

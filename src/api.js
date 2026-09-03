@@ -53,6 +53,7 @@ export const loadPassport = (vehicleDatabaseId) => request(`/api/v1/vehicles/${v
 export const connectVehicle = (externalId) => request(`/api/v1/platform/vehicles/${externalId}/connect`, { method: 'POST' });
 export const createHyundaiAuthorization = () => request('/api/v1/integrations/hyundai/authorize', { method: 'POST' });
 export const syncHyundaiVehicles = () => request('/api/v1/integrations/hyundai/sync', { method: 'POST' });
+export const revokeHyundaiConnection = () => request('/api/v1/integrations/hyundai/revoke', { method: 'POST' });
 
 export const reserveCharging = ({ vehicleExternalId, stationId, scheduledAt, targetSoc = 80 }) => request('/api/v1/platform/charging-reservations', {
   method: 'POST',

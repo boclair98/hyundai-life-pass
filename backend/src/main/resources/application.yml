@@ -16,11 +16,24 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 1
+  session:
+    store-type: jdbc
+    timeout: 30d
+    jdbc:
+      initialize-schema: never
   h2:
     console:
       enabled: true
 server:
   port: ${PORT:8080}
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        name: LIFE_PASS_SESSION
+        http-only: true
+        secure: ${LIFEPASS_SESSION_COOKIE_SECURE:false}
+        same-site: lax
 
 management:
   endpoints:
@@ -38,6 +51,7 @@ lifepass:
   release-tick-ms: 20000
   operator-users: ""
   allow-demo-operator: true
+  trusted-user-header-enabled: ${LIFEPASS_TRUSTED_USER_HEADER_ENABLED:false}
   providers:
     hyundai:
       mode: ${LIFEPASS_HYUNDAI_MODE:simulation}

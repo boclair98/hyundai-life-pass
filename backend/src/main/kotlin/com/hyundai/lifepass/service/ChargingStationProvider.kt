@@ -13,6 +13,9 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.max
@@ -72,13 +75,17 @@ class ChargingStationProvider(
     }
 
     private fun fetchLive(refreshedAt: Instant): StationFeed {
+        val normalizedServiceKey = if ('%' in serviceKey) URLDecoder.decode(serviceKey, StandardCharsets.UTF_8) else serviceKey
+        // data.go.kr exposes both an encoded and decoded key. Normalize once, then
+        // encode as a form-safe query value so '+', '=' and '%' survive unchanged.
+        val encodedServiceKey = URLEncoder.encode(normalizedServiceKey, StandardCharsets.UTF_8)
         val uri = UriComponentsBuilder.fromUriString(baseUrl)
-                .queryParam("serviceKey", serviceKey)
+                .queryParam("serviceKey", encodedServiceKey)
                 .queryParam("pageNo", 1)
                 .queryParam("numOfRows", 9999)
                 .queryParam("dataType", "JSON")
                 .queryParam("zcode", zcode)
-                .build().encode().toUri()
+                .build(true).toUri()
         val root = client.get().uri(uri).retrieve().body(JsonNode::class.java) ?: error("Empty EV charger response")
 
         val header = root.path("response").path("header")
