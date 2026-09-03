@@ -1,28 +1,28 @@
 :root {
   font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #15283e;
-  background: #f7f9fc;
+  background: #f5f5f2;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --navy: #002c5f;
-  --navy-2: #073d78;
-  --blue: #0067b1;
-  --bright-blue: #0a7bd8;
-  --ice: #e8f2fb;
-  --soft-blue: #f1f6fb;
-  --ink: #15283e;
-  --muted: #63768c;
-  --quiet: #8b9aab;
-  --line: rgba(0, 44, 95, .12);
-  --line-strong: rgba(0, 44, 95, .2);
-  --green: #13795b;
-  --orange: #d46b2c;
-  --shadow: 0 20px 55px rgba(13, 44, 78, .08);
+  --navy: #101116;
+  --navy-2: #252831;
+  --blue: #e85832;
+  --bright-blue: #f47b54;
+  --ice: #fff0e9;
+  --soft-blue: #f6f6f2;
+  --ink: #1d1e24;
+  --muted: #686a72;
+  --quiet: #95969d;
+  --line: rgba(16, 17, 22, .12);
+  --line-strong: rgba(16, 17, 22, .22);
+  --green: #2d805e;
+  --orange: #ef6b3f;
+  --shadow: 0 24px 60px rgba(16, 17, 22, .13);
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; background: #f7f9fc; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: #f7f9fc; }
+html { scroll-behavior: smooth; background: #f5f5f2; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #f5f5f2; }
 [data-coders-support] { display: none !important; }
 button, input, select { font: inherit; }
 button { color: inherit; }
@@ -572,6 +572,111 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .owner-activity-list > div:last-child { border-bottom: 0; padding-bottom: 0; }
 }
 
+/* Aerospace / tutorial reference direction
+   The palette is intentionally restrained: graphite canvas, warm white surfaces,
+   and a single safety-orange accent that carries through every interaction. */
+.site-header {
+  background: rgba(16, 17, 22, .96);
+  border-bottom-color: rgba(255, 255, 255, .12);
+  color: #fff;
+}
+.hyundai-mark { border-color: #fff; color: #fff; }
+.brand-copy strong { color: #fff; }
+.brand-copy small { color: rgba(255,255,255,.56); }
+.concept-chip { background: rgba(255,255,255,.1); color: rgba(255,255,255,.72); }
+.desktop-nav button { color: rgba(255,255,255,.66); }
+.desktop-nav button:hover, .desktop-nav button.active { color: #fff; border-bottom-color: var(--orange); }
+.vehicle-picker, .header-icon, .account-button, .mobile-menu-button {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.16);
+  color: #fff;
+}
+.vehicle-picker select, .account-button strong { color: #fff; }
+.account-button small { color: rgba(255,255,255,.58); }
+.account-button.connected { background: rgba(45,128,94,.24); border-color: rgba(116,224,172,.35); color: #a9f0ca; }
+.notification-panel { border-color: rgba(16,17,22,.18); }
+.lab-button { background: var(--orange); }
+
+.data-provenance {
+  background: rgba(16,17,22,.95);
+  border-bottom-color: rgba(255,255,255,.1);
+}
+.provenance-summary strong, .provider-list span { color: rgba(255,255,255,.86); }
+.provenance-summary strong i, .provider-list span i { background: var(--orange); box-shadow: 0 0 0 3px rgba(239,107,63,.18); }
+.data-provenance.live .provenance-summary strong i, .provider-list span.live i { background: #72dca6; box-shadow: 0 0 0 3px rgba(114,220,166,.16); }
+.provenance-details > small { color: rgba(255,255,255,.56); }
+.provenance-action { background: var(--orange); }
+
+.connectivity-banner { background: #f3dfd6; border-bottom-color: rgba(239,107,63,.22); color: #843e28; }
+.connectivity-banner button { border-color: rgba(239,107,63,.34); color: #843e28; background: #fffaf7; }
+.section-soft { background: #e9e9e5; }
+.section-heading > span, .page-intro > div > span { color: var(--orange); }
+.section-heading h2, .page-intro h1 { color: var(--navy); }
+.button.primary { background: var(--orange); color: #fff; }
+.button.primary:hover { background: #d94c2a; }
+.button.outline, .button.light-outline { border-color: rgba(16,17,22,.24); }
+.button.glass { background: rgba(16,17,22,.48); border-color: rgba(255,255,255,.3); color: #fff; }
+
+.home-hero { background: #08090d; }
+.hero-shade { background: linear-gradient(90deg, rgba(7,8,12,.98) 0%, rgba(7,8,12,.84) 31%, rgba(7,8,12,.34) 57%, rgba(7,8,12,.08) 78%), linear-gradient(0deg, rgba(7,8,12,.8) 0%, transparent 35%, rgba(7,8,12,.2) 100%); }
+.home-hero:after { background: radial-gradient(circle at 76% 54%, rgba(239,107,63,.16), transparent 27%), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); }
+.overline { color: #ffb39c; }
+.overline i { background: var(--orange); box-shadow: 0 0 12px rgba(239,107,63,.8); }
+.hero-copy h1 em { color: #ff997a; }
+.hero-service-pills span { border-color: rgba(255,188,163,.3); background: rgba(61,26,20,.42); }
+.hero-buttons .button.primary { background: var(--orange); color: #fff; }
+.hero-buttons .button.primary:hover { background: #ff845e; }
+.hero-chapter i { background: linear-gradient(var(--orange),rgba(255,255,255,.16)); }
+.hero-status > button { background: var(--orange); }
+.hero-status > button:hover { background: #d94c2a; }
+
+.service-card { border-radius: 12px; border-top: 3px solid transparent; }
+.service-card:hover { border-color: rgba(239,107,63,.42); border-top-color: var(--orange); }
+.service-card-top > div { border-radius: 11px; }
+.service-blue .service-card-top > div, .service-sky .service-card-top > div,
+.service-navy .service-card-top > div, .service-ice .service-card-top > div { background: #fff0e9; color: var(--orange); }
+.service-action { color: var(--orange); }
+.journey-step:hover { background: linear-gradient(180deg, rgba(255,239,232,.8), rgba(255,255,255,0)); }
+.journey-step.done > div { color: #287153; background: #e1f5e9; }
+.journey-step.done > span { color: #287153; }
+.tutorial-progress > i b { background: linear-gradient(90deg, var(--orange), #ffb18f); }
+
+.site-footer { background: #111217; border-top-color: rgba(255,255,255,.1); color: rgba(255,255,255,.74); }
+.site-footer strong, .site-footer a { color: #fff; }
+.site-footer small, .site-footer p { color: rgba(255,255,255,.5); }
+.mobile-nav { background: rgba(17,18,23,.97); border-top-color: rgba(255,255,255,.12); }
+.mobile-nav button { color: rgba(255,255,255,.55); }
+.mobile-nav button.active { color: #fff; }
+.mobile-nav button.active svg { color: var(--orange); }
+.mobile-drawer { background: #16171c; color: #fff; }
+.mobile-drawer > button { border-bottom-color: rgba(255,255,255,.1); color: rgba(255,255,255,.86); }
+.mobile-vehicle strong, .mobile-account strong { color: #fff; }
+.mobile-vehicle span, .mobile-vehicle small, .mobile-account small { color: rgba(255,255,255,.55); }
+
+@media (min-width: 761px) {
+  .home-hero { min-height: 720px; }
+  .hero-copy h1 { max-width: 760px; font-size: clamp(58px, 7.2vw, 104px); letter-spacing: -.09em; }
+  .section { padding-block: 144px; }
+  .service-grid { gap: 16px; }
+  .service-card:nth-child(2) { border-top-color: rgba(239,107,63,.3); }
+}
+
+@media (max-width: 760px) {
+  .site-header { height: 62px; }
+  .brand { gap: 8px; }
+  .hyundai-mark { width: 31px; height: 21px; font-size: 11px; }
+  .brand-copy strong { font-size: 11px; }
+  .brand-copy small { font-size: 6px; }
+  .concept-chip { display: none; }
+  .header-icon, .mobile-menu-button { background: rgba(255,255,255,.1); color: #fff; }
+  .hero-copy h1 { letter-spacing: -.085em; }
+  .hero-buttons .button.primary { box-shadow: 0 12px 28px rgba(239,107,63,.24); }
+  .data-provenance { top: 60px; }
+  .provenance-summary strong { color: #fff; }
+  .service-card { border-top-width: 2px; }
+  .site-footer { padding-bottom: calc(98px + env(safe-area-inset-bottom)); }
+}
+
 /* Tutorial journey — an interactive, welcoming layer over the brand scenes */
 .tutorial-heading { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: end; gap: 32px; }
 .tutorial-heading .section-heading { margin-bottom: 50px; }
@@ -601,4 +706,233 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .journey-step { min-height: 190px; }
   .journey-step:hover { transform: none; }
   .journey-cta { margin-top: 14px; }
+}
+
+/* Full immersive scene system shared by the home and feature screens */
+.service-scene {
+  width: 100%;
+  max-width: none;
+  position: relative;
+  overflow: hidden;
+  background: #111217;
+  color: #fff;
+}
+.service-scene::before {
+  content: '02';
+  position: absolute;
+  top: 54px;
+  right: max(24px, calc((100vw - 1180px) / 2));
+  color: rgba(255,255,255,.05);
+  font-size: clamp(110px, 18vw, 260px);
+  font-weight: 800;
+  line-height: .8;
+  letter-spacing: -.1em;
+}
+.service-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 86% 22%, rgba(239,107,63,.2), transparent 25%), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 16.66% 100%;
+}
+.service-scene-inner { position: relative; z-index: 1; }
+.service-scene .section-heading > span { color: #ff9a7a; }
+.service-scene .section-heading h2 { color: #fff; }
+.service-scene .section-heading p { color: rgba(255,255,255,.58); }
+.service-scene .service-card {
+  min-height: 410px;
+  border-color: rgba(255,255,255,.12);
+  border-top-color: rgba(239,107,63,.42);
+  border-radius: 0;
+  background: rgba(27,28,34,.82);
+  box-shadow: none;
+  color: #fff;
+  backdrop-filter: blur(12px);
+}
+.service-scene .service-card:hover { border-color: var(--orange); background: #202127; box-shadow: 0 28px 70px rgba(0,0,0,.28); }
+.service-scene .service-card-top > span { color: rgba(255,255,255,.38); }
+.service-scene .service-card-top > div { background: rgba(239,107,63,.14); color: #ff8b68; }
+.service-scene .service-card h3 { color: #fff; }
+.service-scene .service-card p { color: rgba(255,255,255,.58); }
+.service-scene .service-action { color: #ff8b68; }
+
+.garage-scene {
+  min-height: 720px;
+  position: relative;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(239,239,235,.98) 0%, rgba(239,239,235,.94) 45%, rgba(239,239,235,.42) 78%, rgba(239,239,235,.18) 100%), url('/hyundai-ioniq6-hero.png') 76% center / cover no-repeat;
+}
+.garage-scene::before {
+  content: '03';
+  position: absolute;
+  top: 54px;
+  right: max(24px, calc((100vw - 1180px) / 2));
+  color: rgba(16,17,22,.055);
+  font-size: clamp(110px, 18vw, 260px);
+  font-weight: 800;
+  line-height: .8;
+  letter-spacing: -.1em;
+}
+.garage-scene > .container { position: relative; z-index: 1; }
+.garage-empty-panel { max-width: 960px; border-radius: 0; border-color: rgba(16,17,22,.16); background: rgba(250,250,247,.9); box-shadow: 0 28px 80px rgba(16,17,22,.16); backdrop-filter: blur(18px); }
+.garage-empty-steps > div { border-radius: 0; background: rgba(255,255,255,.72); }
+.vehicle-command-center { padding: 46px; background: rgba(245,245,242,.9); box-shadow: 0 28px 80px rgba(16,17,22,.12); backdrop-filter: blur(18px); }
+
+.tutorial-scene {
+  width: 100%;
+  max-width: none;
+  position: relative;
+  overflow: hidden;
+  padding-inline: max(24px, calc((100vw - 1180px) / 2));
+  background: var(--orange);
+  color: #fff;
+}
+.tutorial-scene::before {
+  content: '04';
+  position: absolute;
+  top: 46px;
+  right: max(24px, calc((100vw - 1180px) / 2));
+  color: rgba(255,255,255,.11);
+  font-size: clamp(110px, 18vw, 260px);
+  font-weight: 800;
+  line-height: .8;
+  letter-spacing: -.1em;
+}
+.tutorial-scene > * { position: relative; z-index: 1; }
+.tutorial-scene .section-heading > span { color: rgba(255,255,255,.78); }
+.tutorial-scene .section-heading h2 { color: #fff; }
+.tutorial-scene .section-heading p { color: rgba(255,255,255,.75); }
+.tutorial-scene .tutorial-progress strong, .tutorial-scene .tutorial-progress span { color: #fff; }
+.tutorial-scene .tutorial-progress > i { background: rgba(255,255,255,.25); }
+.tutorial-scene .tutorial-progress > i b { background: #fff; }
+.tutorial-scene .journey { border-color: rgba(255,255,255,.42); }
+.tutorial-scene .journey-step { color: #fff; border-color: rgba(255,255,255,.3); }
+.tutorial-scene .journey-step:hover { background: rgba(16,17,22,.12); }
+.tutorial-scene .journey-step > div { background: #111217; color: #fff; }
+.tutorial-scene .journey-step > span { color: rgba(255,255,255,.6); }
+.tutorial-scene .journey-step h3 { color: #fff; }
+.tutorial-scene .journey-step p { color: rgba(255,255,255,.72); }
+.tutorial-scene .journey-cta, .tutorial-scene .journey-step.done .journey-cta { color: #fff; }
+.tutorial-scene .journey-step.done > div { background: #fff; color: #2d805e; }
+.tutorial-scene .journey-step.done > span { color: #fff; }
+
+.open-beta-panel {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(120deg,#111217 0%,#22242b 70%,#362019 100%);
+  box-shadow: 0 25px 70px rgba(16,17,22,.2);
+}
+.open-beta-panel::after { content: ''; position: absolute; width: 280px; height: 280px; right: -80px; top: -120px; border: 1px solid rgba(239,107,63,.45); border-radius: 50%; box-shadow: 0 0 0 52px rgba(239,107,63,.045), 0 0 0 104px rgba(239,107,63,.025); }
+.open-beta-panel > * { position: relative; z-index: 1; }
+.open-beta-eyebrow { color: #ff9675; }
+.open-beta-copy h2 { color: #fff; }
+.open-beta-copy p, .open-beta-note { color: rgba(255,255,255,.58); }
+.open-beta-panel .button.light { background: var(--orange); color: #fff; }
+.open-beta-panel .button.light-outline { color: #fff; border-color: rgba(255,255,255,.28); }
+
+.page { padding-top: 0; }
+.page-intro {
+  min-height: 330px;
+  margin-bottom: 54px;
+  padding: 68px 58px;
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  border-radius: 0 0 26px 26px;
+  background: radial-gradient(circle at 86% 25%, rgba(239,107,63,.23), transparent 27%), #111217;
+}
+.page-intro::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 20% 100%; }
+.page-intro > * { position: relative; z-index: 1; }
+.page-intro > div > span { color: #ff9b7b; }
+.page-intro h1 { color: #fff; font-size: clamp(46px,6vw,76px); }
+.page-intro p { color: rgba(255,255,255,.64); }
+.page-intro .button.outline { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.25); color: #fff; }
+.panel { border-radius: 12px; }
+.mobile-nav button.active { background: #24252c; }
+.mobile-vehicle, .mobile-account { background: #202127; border-color: rgba(255,255,255,.12); }
+.mobile-account > div { color: #ff9b7b; }
+.mobile-account > button { background: var(--orange); }
+
+@media (max-width: 1060px) {
+  .service-scene .service-card { min-height: 320px; }
+  .garage-scene { min-height: 650px; background-position: 70% center; }
+  .vehicle-command-center { padding: 30px; }
+}
+
+@media (max-width: 760px) {
+  .service-scene, .garage-scene, .tutorial-scene { min-height: auto; }
+  .service-scene::before, .garage-scene::before, .tutorial-scene::before { top: 32px; right: 16px; font-size: 96px; }
+  .service-scene { padding-inline: 0; }
+  .service-scene .service-grid { gap: 12px; }
+  .service-scene .service-card { min-height: 235px; border-radius: 0; }
+  .garage-scene { background: linear-gradient(rgba(239,239,235,.84), rgba(239,239,235,.96)), url('/hyundai-ioniq6-hero.png') 68% center / cover no-repeat; }
+  .garage-empty-panel { padding: 28px 20px; }
+  .vehicle-command-center { padding: 24px 16px; margin-inline: -2px; }
+  .tutorial-scene { padding-inline: 15px; }
+  .tutorial-scene .journey { border-bottom-color: rgba(255,255,255,.42); }
+  .tutorial-scene .journey-step { min-height: 180px; padding: 24px 14px; }
+  .tutorial-scene .journey-step:not(:first-child) { padding-left: 14px; }
+  .tutorial-scene .journey-step > span { top: 29px; right: 14px; }
+  .tutorial-scene .journey-step h3 { margin-top: 24px; }
+  .open-beta-panel { margin: 0; padding: 34px 20px; }
+  .page-intro { width: calc(100% + 30px); min-height: 300px; margin-left: -15px; padding: 48px 22px; align-items: flex-start; flex-direction: column; justify-content: center; border-radius: 0 0 20px 20px; }
+  .page-intro h1 { font-size: clamp(40px,12vw,56px); }
+  .page-intro > div + div { width: 100%; margin-top: 22px; }
+  .page-intro .button { width: 100%; }
+}
+
+/* Scroll-driven response and chapter navigation */
+.page-progress { position: fixed; z-index: 120; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; background: rgba(255,255,255,.08); }
+.page-progress i { display: block; width: var(--page-progress, 0%); height: 100%; background: var(--orange); box-shadow: 0 0 14px rgba(239,107,63,.65); transition: width .08s linear; }
+.scene-rail { position: fixed; z-index: 46; top: 50%; right: 18px; transform: translateY(-50%); padding: 12px 8px; display: grid; gap: 3px; border: 1px solid rgba(255,255,255,.14); background: rgba(12,13,17,.74); backdrop-filter: blur(14px); }
+.scene-rail button { width: 45px; height: 56px; padding: 0; position: relative; border: 0; display: grid; grid-template-columns: 14px 1fr; align-items: center; background: transparent; color: rgba(255,255,255,.38); cursor: pointer; }
+.scene-rail button span { font: 600 8px 'DM Mono',monospace; }
+.scene-rail button i { width: 12px; height: 1px; background: rgba(255,255,255,.24); transition: width .3s, background .3s; }
+.scene-rail button small { position: absolute; right: 38px; padding: 6px 8px; opacity: 0; pointer-events: none; background: #111217; color: #fff; font-size: 8px; white-space: nowrap; transform: translateX(7px); transition: opacity .2s, transform .2s; }
+.scene-rail button:hover small, .scene-rail button:focus-visible small { opacity: 1; transform: none; }
+.scene-rail button.active { color: #fff; }
+.scene-rail button.active i { width: 25px; background: var(--orange); }
+.scene-rail button.active::after { content: ''; position: absolute; right: -3px; width: 4px; height: 4px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 5px rgba(239,107,63,.14); }
+
+.home-hero > img { transform: translate3d(0,var(--hero-shift,0),0) scale(1.065); animation: hero-parallax-arrive 1.2s cubic-bezier(.2,.7,.2,1) both; will-change: transform; }
+.hero-scroll-cue { width: 44px; height: 96px; position: absolute; z-index: 4; right: max(82px, calc((100vw - 1180px) / 2)); bottom: 132px; padding: 0; border: 0; display: grid; justify-items: center; align-content: end; gap: 9px; background: transparent; color: rgba(255,255,255,.6); cursor: pointer; }
+.hero-scroll-cue span { font: 600 7px 'DM Mono',monospace; letter-spacing: .18em; writing-mode: vertical-rl; }
+.hero-scroll-cue i { width: 1px; height: 32px; position: relative; overflow: hidden; background: rgba(255,255,255,.25); }
+.hero-scroll-cue i::after { content: ''; position: absolute; inset: -100% 0 100%; background: var(--orange); animation: scroll-line 1.8s ease-in-out infinite; }
+.swipe-hint { display: none; }
+
+@keyframes scroll-line { 0% { transform: translateY(0); } 60%,100% { transform: translateY(200%); } }
+@keyframes hero-parallax-arrive { from { opacity: .25; transform: translate3d(0,var(--hero-shift,0),0) scale(1.11); } to { opacity: 1; transform: translate3d(0,var(--hero-shift,0),0) scale(1.065); } }
+
+@media (max-width: 1180px) {
+  .scene-rail { display: none; }
+  .hero-scroll-cue { right: 24px; }
+}
+
+@media (max-width: 760px) {
+  .hero-scroll-cue { right: 13px; bottom: 137px; height: 70px; }
+  .hero-scroll-cue span { display: none; }
+  .hero-scroll-cue i { height: 40px; }
+  .service-scene-inner { width: 100%; }
+  .service-scene .section-heading { width: calc(100% - 30px); margin-inline: auto; }
+  .service-scene .service-grid { width: 100%; padding: 0 15px 12px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(280px, calc(100vw - 48px)); gap: 12px; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: inline mandatory; scrollbar-width: none; }
+  .service-scene .service-grid::-webkit-scrollbar, .tutorial-scene .journey::-webkit-scrollbar { display: none; }
+  .service-scene .service-card, .service-scene .service-card:nth-child(2), .service-scene .service-card:nth-child(4) { min-height: 380px; transform: none; scroll-snap-align: center; scroll-snap-stop: always; }
+  .service-scene .service-card:hover { transform: none; }
+  .swipe-hint { width: calc(100% - 30px); margin: 15px auto 0; display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.58); font-size: 9px; }
+  .swipe-hint span { width: 34px; height: 1px; position: relative; background: rgba(255,255,255,.25); }
+  .swipe-hint span::after { content: ''; width: 13px; height: 1px; position: absolute; right: 0; transform: rotate(35deg); transform-origin: right; background: var(--orange); }
+  .tutorial-scene .journey { width: calc(100% + 15px); padding-right: 15px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(270px, 80vw); gap: 0; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: inline mandatory; scrollbar-width: none; }
+  .tutorial-scene .journey-step { border-right: 1px solid rgba(255,255,255,.3); border-bottom: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-progress i { transition: none; }
+  .home-hero > img { transform: scale(1.03); will-change: auto; }
+  .hero-scroll-cue i::after { animation: none; inset: 0; }
 }

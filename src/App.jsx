@@ -62,6 +62,13 @@ const navigation = [
   { id: 'settings', label: '설정', icon: Settings2 },
 ];
 
+const homeScenes = [
+  { id: '01', label: '시작' },
+  { id: '02', label: '서비스' },
+  { id: '03', label: '내 차' },
+  { id: '04', label: '가이드' },
+];
+
 const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide']);
 
 const hyundaiStatusLabel = (provider) => {
@@ -156,8 +163,10 @@ function locationErrorMessage(error) {
 }
 
 export default function App() {
+  const appRef = useRef(null);
   const initialPage = window.location.hash.replace('#', '');
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
+  const [activeScene, setActiveScene] = useState('01');
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [dataSource, setDataSource] = useState('loading');
@@ -230,6 +239,42 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
+    let animationFrame = 0;
+    const updateScrollMotion = () => {
+      animationFrame = 0;
+      const root = appRef.current;
+      if (!root) return;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      root.style.setProperty('--page-progress', `${Math.min(100, (scrollTop / scrollable) * 100)}%`);
+      root.style.setProperty('--hero-shift', `${Math.min(90, scrollTop * .12)}px`);
+    };
+    const onScroll = () => {
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(updateScrollMotion);
+    };
+    updateScrollMotion();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+    };
+  }, [page]);
+
+  useEffect(() => {
+    if (page !== 'home') return undefined;
+    const scenes = [...document.querySelectorAll('[data-scene]')];
+    if (!scenes.length || !('IntersectionObserver' in window)) return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) setActiveScene(visible.target.dataset.scene);
+    }, { threshold: [0.18, 0.35, 0.55], rootMargin: '-12% 0px -42% 0px' });
+    scenes.forEach((scene) => observer.observe(scene));
+    return () => observer.disconnect();
+  }, [page]);
+
+  useEffect(() => {
     if (!toast) return undefined;
     const timer = window.setTimeout(() => setToast(null), 3200);
     return () => window.clearTimeout(timer);
@@ -291,7 +336,8 @@ export default function App() {
   const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy };
 
   return (
-    <div className="app">
+    <div className="app" ref={appRef}>
+      <div className="page-progress" aria-hidden="true"><i /></div>
       <Header
         page={page}
         navigate={navigate}
@@ -307,6 +353,8 @@ export default function App() {
         actions={actions}
         busy={busy}
       />
+
+      {page === 'home' && <SceneRail activeScene={activeScene} />}
 
       <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
       {refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
@@ -327,6 +375,19 @@ export default function App() {
       {modal && <Modal type={modal} vehicle={vehicle} platform={platform} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
     </div>
+  );
+}
+
+function SceneRail({ activeScene }) {
+  const jumpTo = (id) => document.querySelector(`[data-scene="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return (
+    <nav className="scene-rail" aria-label="홈 화면 장면 이동">
+      {homeScenes.map((scene) => (
+        <button key={scene.id} className={activeScene === scene.id ? 'active' : ''} onClick={() => jumpTo(scene.id)} aria-label={`${scene.id} ${scene.label} 장면으로 이동`} aria-current={activeScene === scene.id ? 'step' : undefined}>
+          <span>{scene.id}</span><i /><small>{scene.label}</small>
+        </button>
+      ))}
+    </nav>
   );
 }
 
@@ -418,7 +479,7 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
   const connected = Boolean(vehicle);
   return (
     <>
-      <section className="home-hero">
+      <section className="home-hero" data-scene="01">
         <img
           src="/hyundai-life-orbit-hero-v2.jpg"
           alt="별빛이 흐르는 미래 도시의 현대 전기차와 충전 네트워크"
@@ -451,25 +512,29 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
             <button onClick={() => setModal('connect')}>내 차 등록하기 <ArrowRight size={16} /></button>
           </>}
         </div>
+        <button className="hero-scroll-cue" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })} aria-label="다음 서비스 장면으로 이동"><span>SCROLL</span><i /></button>
       </section>
 
-      <section className="section container reveal" data-reveal id="services">
-        <SectionHeading eyebrow="FOR YOUR EVERYDAY DRIVE" title="차를 아끼는 가장 쉬운 방법." description="충전이 필요할 때, 점검이 걱정될 때, 내 차 기록이 필요할 때 한 번에 찾아보세요." />
-        <div className="service-grid">
-          <ServiceCard number="01" icon={BatteryCharging} title="충전소 찾기" description="내 주변에서 사용 가능한 충전기를 찾고 길 안내까지 바로 이어갑니다." action="주변 충전소 보기" onClick={() => navigate('charge')} tone="blue" />
-          <ServiceCard number="02" icon={Activity} title="블루핸즈 찾기" description="가까운 서비스 거점을 살펴보고 전화나 길 안내를 바로 이용하세요." action="가까운 곳 찾기" onClick={() => navigate('care')} tone="sky" />
-          <ServiceCard number="03" icon={CloudCog} title="내 차 상태" description="배터리와 주행 정보, 타이어·안전 점검 결과를 한 화면에서 확인합니다." action="차량 상태 보기" onClick={() => navigate('care')} tone="navy" />
-          <ServiceCard number="04" icon={FileCheck2} title="차량 기록" description="차량과 함께 남은 중요한 기록을 시간 순서로 확인하고 필요할 때 공유합니다." action="차량 기록 보기" onClick={() => navigate('passport')} tone="ice" />
+      <section className="section service-scene reveal" data-reveal data-scene="02" id="services">
+        <div className="container service-scene-inner">
+          <SectionHeading eyebrow="FOR YOUR EVERYDAY DRIVE" title="차를 아끼는 가장 쉬운 방법." description="충전이 필요할 때, 점검이 걱정될 때, 내 차 기록이 필요할 때 한 번에 찾아보세요." />
+          <div className="service-grid">
+            <ServiceCard number="01" icon={BatteryCharging} title="충전소 찾기" description="내 주변에서 사용 가능한 충전기를 찾고 길 안내까지 바로 이어갑니다." action="주변 충전소 보기" onClick={() => navigate('charge')} tone="blue" />
+            <ServiceCard number="02" icon={Activity} title="블루핸즈 찾기" description="가까운 서비스 거점을 살펴보고 전화나 길 안내를 바로 이용하세요." action="가까운 곳 찾기" onClick={() => navigate('care')} tone="sky" />
+            <ServiceCard number="03" icon={CloudCog} title="내 차 상태" description="배터리와 주행 정보, 타이어·안전 점검 결과를 한 화면에서 확인합니다." action="차량 상태 보기" onClick={() => navigate('care')} tone="navy" />
+            <ServiceCard number="04" icon={FileCheck2} title="차량 기록" description="차량과 함께 남은 중요한 기록을 시간 순서로 확인하고 필요할 때 공유합니다." action="차량 기록 보기" onClick={() => navigate('passport')} tone="ice" />
+          </div>
+          <p className="swipe-hint" aria-hidden="true"><span /> 옆으로 넘겨 기능을 살펴보세요</p>
         </div>
       </section>
 
-      <section className="section section-soft reveal" data-reveal>
+      <section className="section section-soft garage-scene reveal" data-reveal data-scene="03">
         <div className="container">
           {connected ? <VehicleCommandCenter vehicle={vehicle} navigate={navigate} setModal={setModal} notify={notify} platform={platform} /> : <GuestGaragePanel setModal={setModal} navigate={navigate} />}
         </div>
       </section>
 
-      <section className="section container reveal" data-reveal>
+      <section className="section container tutorial-scene reveal" data-reveal data-scene="04">
         <div className="tutorial-heading">
           <SectionHeading eyebrow="CAR LIFE TUTORIAL" title="처음부터 한 단계씩." description="내 차를 연결하고, 주변을 찾고, 오늘의 안전을 확인하는 순서대로 안내해 드려요." />
           <div className="tutorial-progress" aria-label="차량 생활 준비도">
