@@ -470,12 +470,18 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
       </section>
 
       <section className="section container reveal" data-reveal>
-        <SectionHeading eyebrow="YOUR CAR, YOUR STORY" title="차를 만난 날부터 오래도록." description="오늘의 운행부터 다음 오너에게 전할 기록까지, 차의 시간을 차곡차곡 남겨보세요." />
+        <div className="tutorial-heading">
+          <SectionHeading eyebrow="CAR LIFE TUTORIAL" title="처음부터 한 단계씩." description="내 차를 연결하고, 주변을 찾고, 오늘의 안전을 확인하는 순서대로 안내해 드려요." />
+          <div className="tutorial-progress" aria-label="차량 생활 준비도">
+            <div><strong>{connected ? '2' : '1'} / 4</strong><span>{connected ? '내 차가 준비됐어요' : '첫 단계부터 시작해요'}</span></div>
+            <i><b style={{ width: connected ? '50%' : '25%' }} /></i>
+          </div>
+        </div>
         <div className="journey">
-          <JourneyStep icon={CarFront} number="01" title="차량 등록" detail="내 차를 한 번 연결하면 매일 필요한 정보가 모입니다." />
-          <JourneyStep icon={Activity} number="02" title="운행·케어" detail="충전과 정비, 안전 점검을 놓치지 않게 챙깁니다." />
-          <JourneyStep icon={CloudCog} number="03" title="차량 기록" detail="차량과 함께한 중요한 순간을 오래 남깁니다." />
-          <JourneyStep icon={KeyRound} number="04" title="안심하고 공유" detail="필요한 기록만 골라 다음 오너에게 전할 수 있습니다." />
+          <JourneyStep icon={CarFront} number="01" title="내 차 연결" detail={connected ? '현대 계정과 차량이 연결되어 있어요.' : '공식 로그인에서 내 차를 선택해 주세요.'} done={connected} onClick={() => setModal('connect')} />
+          <JourneyStep icon={BatteryCharging} number="02" title="주변 충전" detail="현재 위치에서 쓸 수 있는 충전기를 바로 찾아요." onClick={() => navigate('charge')} />
+          <JourneyStep icon={ShieldCheck} number="03" title="오늘 안전" detail="배터리·타이어·안전 점검을 한 화면에 확인해요." onClick={() => navigate('care')} />
+          <JourneyStep icon={FileCheck2} number="04" title="내 차 기록" detail="차와 함께한 중요한 순간을 오래 남겨요." onClick={() => navigate('passport')} />
         </div>
       </section>
 
@@ -1058,8 +1064,8 @@ function ActionRow({ icon: Icon, color, title, detail, badge, onClick }) {
   return <button className="action-row" onClick={onClick}><div className={`action-icon ${color}`}><Icon size={18} /></div><div><strong>{title}</strong><span>{detail}</span></div><em>{badge}</em><ChevronRight size={17} /></button>;
 }
 
-function JourneyStep({ icon: Icon, number, title, detail }) {
-  return <div className="journey-step"><div><Icon size={20} /></div><span>{number}</span><h3>{title}</h3><p>{detail}</p></div>;
+function JourneyStep({ icon: Icon, number, title, detail, done = false, onClick }) {
+  return <button className={`journey-step ${done ? 'done' : ''}`} onClick={onClick} aria-label={`${number} ${title} ${done ? '완료' : '시작하기'}`}><div><Icon size={20} /></div><span>{done ? <CheckCircle2 size={15} /> : number}</span><h3>{title}</h3><p>{detail}</p><strong className="journey-cta">{done ? '다시 확인' : '시작하기'} <ArrowRight size={14} /></strong></button>;
 }
 
 function PassportScore({ label, value, unit, note }) {

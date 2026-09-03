@@ -571,3 +571,34 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .owner-activity-list > div, .owner-activity-list > div:not(:first-child) { padding: 13px 0; border-right: 0; border-bottom: 1px solid var(--line); }
   .owner-activity-list > div:last-child { border-bottom: 0; padding-bottom: 0; }
 }
+
+/* Tutorial journey — an interactive, welcoming layer over the brand scenes */
+.tutorial-heading { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: end; gap: 32px; }
+.tutorial-heading .section-heading { margin-bottom: 50px; }
+.tutorial-progress { padding: 18px 0 7px; }
+.tutorial-progress > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.tutorial-progress strong { color: var(--navy); font-size: 25px; letter-spacing: -.06em; }
+.tutorial-progress span { color: var(--muted); font-size: 10px; text-align: right; }
+.tutorial-progress > i { display: block; height: 5px; margin-top: 13px; overflow: hidden; border-radius: 99px; background: #dbe7f0; }
+.tutorial-progress > i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), #67c9de); transition: width .6s cubic-bezier(.2,.7,.2,1); }
+.journey-step { width: 100%; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; transition: background .25s, transform .25s, padding .25s; }
+.journey-step:hover { background: linear-gradient(180deg, rgba(232,242,251,.72), rgba(255,255,255,0)); transform: translateY(-5px); }
+.journey-step:focus-visible { position: relative; z-index: 1; outline-offset: -4px; }
+.journey-step.done > div { color: #087b53; background: #dff7ed; }
+.journey-step.done > span { color: #087b53; }
+.journey-step > span svg { vertical-align: middle; }
+.journey-cta { margin-top: 19px; display: inline-flex; align-items: center; gap: 5px; color: var(--blue); font-size: 9px; font-weight: 700; }
+.journey-step.done .journey-cta { color: var(--green); }
+
+@media (max-width: 1060px) {
+  .tutorial-heading { grid-template-columns: 1fr; gap: 0; }
+  .tutorial-progress { max-width: 300px; margin: -17px 0 28px auto; }
+}
+
+@media (max-width: 760px) {
+  .tutorial-heading .section-heading { margin-bottom: 28px; }
+  .tutorial-progress { max-width: none; margin: -8px 0 25px; padding-top: 0; }
+  .journey-step { min-height: 190px; }
+  .journey-step:hover { transform: none; }
+  .journey-cta { margin-top: 14px; }
+}
