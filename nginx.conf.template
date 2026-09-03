@@ -36,6 +36,15 @@ server {
         proxy_read_timeout 10s;
     }
 
+    # Runtime-injected browser configuration must never be served from a
+    # previous deployment's CDN cache.
+    location = /runtime-config.js {
+        add_header Cache-Control "no-store, no-cache, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        expires -1;
+        try_files $uri =404;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }
