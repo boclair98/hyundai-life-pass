@@ -133,6 +133,35 @@ function vehicleReadiness(vehicle) {
   return Math.max(0, Math.round(((checked - warnings) / checked) * 100));
 }
 
+function getCurrentPosition() {
+  if (!navigator.geolocation) return Promise.reject({ code: 'UNSUPPORTED' });
+  if (!window.isSecureContext && window.location.hostname !== 'localhost') return Promise.reject({ code: 'INSECURE_CONTEXT' });
+  return new Promise((resolve, reject) => {
+    let retried = false;
+    const retryOrReject = (error) => {
+      if (!retried && [2, 3].includes(error?.code)) {
+        retried = true;
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 });
+        return;
+      }
+      reject(error);
+    };
+    try {
+      navigator.geolocation.getCurrentPosition(resolve, retryOrReject, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function locationErrorMessage(error) {
+  if (error?.code === 'UNSUPPORTED') return '이 기기에서는 위치 기능을 사용할 수 없습니다.';
+  if (error?.code === 'INSECURE_CONTEXT') return '위치 기능은 HTTPS에서만 사용할 수 있습니다. 공개 주소로 다시 접속해 주세요.';
+  if (error?.code === 1) return '위치 권한이 꺼져 있습니다. 브라우저 설정에서 이 사이트의 위치 권한을 허용해 주세요.';
+  if (error?.code === 3) return '위치 확인 시간이 초과되었습니다. 실내·절전 모드를 해제하고 다시 시도해 주세요.';
+  return '현재 위치를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+}
+
 export default function App() {
   const initialPage = window.location.hash.replace('#', '');
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
@@ -665,23 +694,14 @@ function ChargePage({ vehicle, notify, platform, actions, busy }) {
   }, [chargerFeed.search, notify]);
 
   const findFromCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      notify('이 기기에서는 위치 기능을 사용할 수 없습니다.');
-      return;
-    }
     setLocationBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => loadFromCoordinates({ latitude: coords.latitude, longitude: coords.longitude }),
-      (error) => {
+    getCurrentPosition()
+      .then(({ coords }) => loadFromCoordinates({ latitude: coords.latitude, longitude: coords.longitude }))
+      .catch((error) => {
         setLocationBusy(false);
         setUsingCurrentLocation(false);
-        const message = error.code === 1
-          ? '위치 권한이 꺼져 있습니다. 브라우저 설정에서 이 사이트의 위치 권한을 허용해 주세요.'
-          : '현재 위치를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-        notify(message);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 120000 },
-    );
+        notify(locationErrorMessage(error));
+      });
   }, [loadFromCoordinates, notify]);
 
   useEffect(() => {
@@ -738,13 +758,34 @@ function ChargePage({ vehicle, notify, platform, actions, busy }) {
 
 let kakaoSdkPromise;
 function loadKakaoSdk(key) {
-  if (window.kakao?.maps) return Promise.resolve(window.kakao);
+  if (!key) return Promise.reject(new Error('Kakao Maps JavaScript 키가 없습니다.'));
+  if (window.kakao?.maps?.Map) return Promise.resolve(window.kakao);
   if (!kakaoSdkPromise) {
     kakaoSdkPromise = new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        if (error) {
+          kakaoSdkPromise = undefined;
+          reject(error);
+        } else {
+          resolve(window.kakao);
+        }
+      };
       const script = document.createElement('script');
+      const timeout = window.setTimeout(() => finish(new Error('Kakao Maps SDK load timeout')), 10000);
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`;
-      script.onload = () => window.kakao.maps.load(() => resolve(window.kakao));
-      script.onerror = () => reject(new Error('Kakao Maps SDK load failed'));
+      script.async = true;
+      script.onload = () => {
+        if (!window.kakao?.maps?.load) {
+          finish(new Error('Kakao Maps SDK가 초기화되지 않았습니다.'));
+          return;
+        }
+        window.kakao.maps.load(() => finish());
+      };
+      script.onerror = () => finish(new Error('Kakao Maps SDK를 불러오지 못했습니다. 도메인 허용 목록과 키를 확인해 주세요.'));
       document.head.appendChild(script);
     });
   }
@@ -762,7 +803,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   useEffect(() => {
     if (!key || !mapElement.current || !stationItems.length) return undefined;
     let cancelled = false;
-    loadKakaoSdk(key).then((kakao) => {
+  loadKakaoSdk(key).then((kakao) => {
       if (cancelled || !mapElement.current) return;
       const centerStation = selectedStation ?? stationItems[0];
       const map = new kakao.maps.Map(mapElement.current, {
@@ -783,7 +824,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
       }
       if (stationItems.length > 1) map.setBounds(bounds, 48, 48, 48, 48);
       setMapReady(true);
-    }).catch(() => notifyRef.current('카카오 지도 키 또는 허용 도메인을 확인해 주세요.'));
+  }).catch((error) => notifyRef.current(error.message || '카카오 지도 키 또는 허용 도메인을 확인해 주세요.'));
     return () => { cancelled = true; };
   }, [key, stationItems, selectedStation?.id, onSelect, userLocation?.latitude, userLocation?.longitude]);
 
@@ -801,6 +842,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
 function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
   const [centerFeed, setCenterFeed] = useState({ centers: [], provider: null });
   const [centerBusy, setCenterBusy] = useState(true);
+  const [centerLocation, setCenterLocation] = useState({ current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
   const nextAction = vehicle?.warningCount > 0
     ? { title: '경고 항목부터 확인하세요', detail: `차량 경고 ${vehicle.warningCount}건이 현대 데이터에 보고되었습니다. 가까운 서비스 거점에서 점검을 예약할 수 있습니다.`, button: '서비스 거점 보기' }
     : vehicle?.nextServiceKm != null
@@ -809,6 +851,12 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
 
   const findCenters = useCallback(async (coordinates) => {
     setCenterBusy(true);
+    setCenterLocation(coordinates ? {
+      current: true,
+      label: '현재 위치',
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+    } : { current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
     try {
       const result = await loadServiceCenters(coordinates);
       setCenterFeed(result);
@@ -823,16 +871,10 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
   useEffect(() => { findCenters(); }, [findCenters]);
 
   function findFromCurrentLocation() {
-    if (!navigator.geolocation) {
-      notify('이 기기에서는 위치 기능을 사용할 수 없습니다.');
-      return;
-    }
     setCenterBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => findCenters({ latitude: coords.latitude, longitude: coords.longitude, radius: 20000 }),
-      () => { setCenterBusy(false); notify('위치 권한을 허용하면 가까운 순서로 다시 찾아드려요.'); },
-      { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 },
-    );
+    getCurrentPosition()
+      .then(({ coords }) => findCenters({ latitude: coords.latitude, longitude: coords.longitude, radius: 20000 }))
+      .catch((error) => { setCenterBusy(false); notify(locationErrorMessage(error)); });
   }
 
   return (
@@ -866,6 +908,10 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
           <SectionHeading eyebrow="LIVE SERVICE NETWORK" title="가까운 블루핸즈" description="카카오 장소 데이터에서 실제 현대자동차 서비스 거점을 가까운 순서로 찾습니다." />
           <button className="button outline" onClick={findFromCurrentLocation} disabled={centerBusy}>{centerBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />} 내 위치로 다시 찾기</button>
         </div>
+        <section className={`location-status ${centerLocation.current ? 'current' : 'default'}`} aria-live="polite">
+          <div><MapPin size={18} /><span><small>{centerLocation.current ? '현재 위치 기준' : '기본 위치 기준'}</small><strong>{centerLocation.current ? `${centerLocation.label} · ${centerLocation.latitude.toFixed(4)}, ${centerLocation.longitude.toFixed(4)}` : centerLocation.label} · 반경 20km</strong></span></div>
+          <p>{centerLocation.current ? '기기의 좌표를 서버에 일시 전달해 가까운 순서만 계산합니다.' : '내 위치로 다시 찾기를 누르면 현재 위치 기준으로 서비스 거점을 정렬합니다.'}</p>
+        </section>
         <div className={`provider-inline ${centerFeed.provider?.state === 'CONNECTED' || centerFeed.provider?.state === 'STALE' ? 'live' : 'sample'}`}>
           <span>{centerFeed.provider?.state === 'CONNECTED' ? 'LIVE DATA' : centerFeed.provider?.state === 'STALE' ? 'LAST KNOWN' : 'CONNECTING'}</span>
           <strong>{centerFeed.provider?.source ?? 'Kakao Local API'}</strong>
