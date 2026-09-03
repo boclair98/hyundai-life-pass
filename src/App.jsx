@@ -421,12 +421,10 @@ function ChargePage({ vehicle, notify, platform, actions, busy }) {
   const [selectedStation, setSelectedStation] = useState(null);
   const [search, setSearch] = useState('');
   const visibleStations = useMemo(() => stationList.filter((station) => `${station.name} ${station.address} ${station.operator}`.toLowerCase().includes(search.trim().toLowerCase())), [stationList, search]);
+  const activeStation = visibleStations.find((station) => station.id === selectedStation?.id) ?? visibleStations[0] ?? null;
   const chargerProvider = platform.providers?.find((provider) => provider.id === 'ev-charger');
   const chargerLive = chargerProvider?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(chargerProvider.state);
   const activeReservation = platform.chargingReservations?.find((item) => item.vehicleExternalId === vehicle?.id && item.status === 'CONFIRMED');
-  useEffect(() => {
-    setSelectedStation((current) => stationList.find((item) => item.id === current?.id) ?? stationList[0] ?? null);
-  }, [platform.stations]);
   return (
     <div className="page container">
       <PageIntro eyebrow="SMART CHARGE" title="기다리지 않는 충전" description="내 위치, 예상 도착시간, 실시간 충전 가능 여부를 함께 계산합니다." />
@@ -435,21 +433,21 @@ function ChargePage({ vehicle, notify, platform, actions, busy }) {
       <div className="charge-layout">
         <section className="charge-map panel">
           <div className="map-search"><Search size={18} /><input value={search} placeholder="충전소명·주소·운영기관 검색" onChange={(event) => setSearch(event.target.value)} aria-label="충전소 검색" /><button aria-label="검색어 지우기" onClick={() => setSearch('')}><X size={17} /></button></div>
-          <KakaoStationMap stations={visibleStations} selectedStation={selectedStation} onSelect={setSelectedStation} notify={notify} />
+          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} notify={notify} />
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 충전소</span><small>{chargerLive ? '공공데이터 실시간' : '연결 확인 중'}</small></div>
           {visibleStations.map((station) => (
-            <button key={station.id} className={`station-row ${selectedStation?.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
+            <button key={station.id} className={`station-row ${activeStation?.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className="station-availability"><strong>{station.available}</strong><span>/{station.total}</span></div>
               <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel}</small></div>
               <ChevronRight size={16} />
             </button>
           ))}
-          {selectedStation ? <div className="station-detail">
-            <div><span>선택한 충전소</span><strong>{selectedStation.name}</strong><p>{selectedStation.address}</p></div>
-            <div className="charge-price"><span>표시 요금</span><strong>{selectedStation.price}</strong><small>{selectedStation.operator} 제공 범위</small></div>
-            <button className="button primary full" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(selectedStation.name)},${selectedStation.latitude},${selectedStation.longitude}`, '_blank', 'noopener,noreferrer')}><Navigation size={16} />카카오맵에서 길찾기</button>
+          {activeStation ? <div className="station-detail">
+            <div><span>선택한 충전소</span><strong>{activeStation.name}</strong><p>{activeStation.address}</p></div>
+            <div className="charge-price"><span>표시 요금</span><strong>{activeStation.price}</strong><small>{activeStation.operator} 제공 범위</small></div>
+            <button className="button primary full" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(activeStation.name)},${activeStation.latitude},${activeStation.longitude}`, '_blank', 'noopener,noreferrer')}><Navigation size={16} />카카오맵에서 길찾기</button>
           </div> : <div className="station-empty"><MapPin size={22} /><strong>{stationList.length ? '검색 결과가 없습니다.' : '충전소를 불러오는 중입니다.'}</strong><span>{stationList.length ? '다른 충전소명이나 지역을 입력해 보세요.' : '데이터 연결에 실패하면 잠시 후 다시 시도해 주세요.'}</span></div>}
         </aside>
       </div>
