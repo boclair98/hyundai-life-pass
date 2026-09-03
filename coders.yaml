@@ -1,0 +1,25 @@
+version: "1"
+mode: standalone
+
+services:
+  web:
+    dockerfile: Dockerfile
+    context: .
+    port: 80
+    expose: public
+    env:
+      BACKEND_URL: ${api.internal_url}
+
+  api:
+    dockerfile: backend/Dockerfile
+    context: backend
+    port: 8080
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${db.host}:${db.port}/${db.name}
+      SPRING_DATASOURCE_USERNAME: ${db.user}
+      SPRING_DATASOURCE_PASSWORD: ${db.password}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+  db:
+    type: postgres
+    size: 1Gi

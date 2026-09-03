@@ -1,10 +1,8 @@
 import { demoVehicles } from './data';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
 
 export async function loadVehicles() {
-  if (!API_BASE) return { vehicles: demoVehicles, source: 'demo' };
-
   try {
     const response = await fetch(`${API_BASE}/api/v1/vehicles`, {
       headers: { Accept: 'application/json' },
