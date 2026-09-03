@@ -403,9 +403,10 @@ function HomePage({ vehicle, navigate, setModal, notify }) {
         <div className="hero-chapter" aria-hidden="true"><span>01</span><i /><small>CONNECTED MOBILITY</small></div>
         <div className="hero-content container">
           <div className="hero-copy">
-            <div className="overline"><i /> HYUNDAI LIFE PASS</div>
-            <h1>차의 오늘부터<br /><em>다음 여정까지.</em></h1>
-            <p>충전소·서비스 거점·차량 상태·연결 기록을 하나로.<br />오늘 필요한 카라이프 기능부터 바로 시작합니다.</p>
+            <div className="overline"><i /> HYUNDAI OWNER PLATFORM</div>
+            <h1>내 차를 이해하고<br /><em>다음 행동까지.</em></h1>
+            <p>현대차 오너를 위한 커넥티드 카라이프 플랫폼입니다.<br />차량 상태·충전·정비·디지털 차량 여권을 한곳에서 관리합니다.</p>
+            <div className="hero-service-pills" aria-label="플랫폼 핵심 기능"><span>차량 상태</span><span>충전</span><span>정비</span><span>차량 여권</span></div>
             <div className="hero-buttons">
               <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 새로고침' : '현대차 연결하기'} <ArrowRight size={17} /></button>
               <button className="button glass" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>서비스 둘러보기</button>
@@ -428,7 +429,7 @@ function HomePage({ vehicle, navigate, setModal, notify }) {
       </section>
 
       <section className="section container" id="services">
-        <SectionHeading eyebrow="ONE CONNECTED JOURNEY" title="한 번 연결하면, 차의 모든 순간이 이어집니다." description="매일 쓰는 기능부터 미래의 차량 가치까지 네 가지 경험으로 정리했습니다." />
+        <SectionHeading eyebrow="WHAT YOU CAN DO" title="현대차 오너에게 필요한 네 가지 기능." description="충전부터 정비, 실차 상태, 디지털 차량 여권까지 지금 필요한 기능을 한눈에 확인하세요." />
         <div className="service-grid">
           <ServiceCard number="01" icon={BatteryCharging} title="실시간 충전" description="공공데이터로 충전기 사용 가능 상태를 확인하고 카카오맵 길찾기로 이어집니다." action="충전소 찾기" onClick={() => navigate('charge')} tone="blue" />
           <ServiceCard number="02" icon={Activity} title="서비스 케어" description="실제 현대자동차·블루핸즈 거점을 현재 위치에서 가까운 순서로 찾습니다." action="서비스 거점 찾기" onClick={() => navigate('care')} tone="sky" />
