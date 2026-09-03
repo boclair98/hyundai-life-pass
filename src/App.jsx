@@ -23,6 +23,7 @@ import {
   LockKeyhole,
   MapPin,
   Menu,
+  Minus,
   Navigation,
   Plus,
   RefreshCcw,
@@ -64,9 +65,10 @@ const navigation = [
 
 const homeScenes = [
   { id: '01', label: '시작' },
-  { id: '02', label: '서비스' },
-  { id: '03', label: '내 차' },
-  { id: '04', label: '가이드' },
+  { id: '02', label: '하나의 흐름' },
+  { id: '03', label: '서비스' },
+  { id: '04', label: '내 차' },
+  { id: '05', label: '가이드' },
 ];
 
 const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide']);
@@ -248,6 +250,17 @@ export default function App() {
       const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       root.style.setProperty('--page-progress', `${Math.min(100, (scrollTop / scrollable) * 100)}%`);
       root.style.setProperty('--hero-shift', `${Math.min(90, scrollTop * .12)}px`);
+      root.classList.toggle('is-scrolled', scrollTop > 42);
+      const story = document.querySelector('.motion-story');
+      if (story) {
+        const rect = story.getBoundingClientRect();
+        const distance = Math.max(1, story.offsetHeight - window.innerHeight);
+        const progress = Math.max(0, Math.min(1, -rect.top / distance));
+        story.style.setProperty('--story-progress', progress.toFixed(4));
+        story.style.setProperty('--story-fill', `${(progress * 100).toFixed(2)}%`);
+        story.style.setProperty('--story-scale', (1.09 - progress * .09).toFixed(4));
+        story.dataset.active = String(Math.min(2, Math.floor(progress * 3)));
+      }
     };
     const onScroll = () => {
       if (!animationFrame) animationFrame = window.requestAnimationFrame(updateScrollMotion);
@@ -336,7 +349,7 @@ export default function App() {
   const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy };
 
   return (
-    <div className="app" ref={appRef}>
+    <div className={`app page-${page}`} ref={appRef}>
       <div className="page-progress" aria-hidden="true"><i /></div>
       <Header
         page={page}
@@ -356,8 +369,8 @@ export default function App() {
 
       {page === 'home' && <SceneRail activeScene={activeScene} />}
 
-      <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
-      {refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
+      {page !== 'home' && <DataProvenanceBar platform={platform} actions={actions} busy={busy} />}
+      {page !== 'home' && refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
 
       <main>
         {page === 'home' && <HomePage {...shared} />}
@@ -515,7 +528,44 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
         <button className="hero-scroll-cue" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })} aria-label="다음 서비스 장면으로 이동"><span>SCROLL</span><i /></button>
       </section>
 
-      <section className="section service-scene reveal" data-reveal data-scene="02" id="services">
+      <section className="home-manifesto reveal" data-reveal>
+        <div className="container home-manifesto-inner">
+          <span>ONE CAR · ONE CONTINUOUS LIFE</span>
+          <h2>차를 타는 모든 순간이<br />하나의 흐름으로 이어집니다.</h2>
+          <div><p>상태를 확인하고, 필요한 장소를 찾고, 중요한 기록을 남기는 일까지. 흩어져 있던 자동차 생활을 한곳에서 자연스럽게 연결합니다.</p><i /></div>
+        </div>
+      </section>
+
+      <section className="motion-story" data-scene="02" data-active="0" aria-label="차량 생활 주요 가치">
+        <div className="motion-story-sticky">
+          <img src="/hyundai-ioniq6-hero.png" alt="밝은 공간에 전시된 현대 아이오닉 6" loading="lazy" />
+          <div className="motion-story-shade" />
+          <div className="motion-story-chapter"><span>02</span><i /><small>ONE CONTINUOUS LIFE</small></div>
+          <div className="motion-story-copy container">
+            <article>
+              <span>UNDERSTAND</span>
+              <h2>차의 모든 신호를<br />한눈에 이해합니다.</h2>
+              <p>배터리와 주행거리, 타이어와 안전 경고까지 지금 필요한 정보만 선명하게 보여드립니다.</p>
+              <button onClick={() => navigate('care')}>내 차 상태 보기 <ArrowRight size={18} /></button>
+            </article>
+            <article>
+              <span>CONNECT</span>
+              <h2>충전과 정비를<br />내 위치에서 이어갑니다.</h2>
+              <p>가까운 충전기와 블루핸즈를 실제 위치에서 찾고, 선택한 곳까지 바로 길 안내를 시작합니다.</p>
+              <button onClick={() => navigate('charge')}>주변 충전소 찾기 <ArrowRight size={18} /></button>
+            </article>
+            <article>
+              <span>REMEMBER</span>
+              <h2>차의 시간을<br />신뢰할 기록으로 남깁니다.</h2>
+              <p>점검과 소프트웨어 변경, 차량의 중요한 순간을 이어서 보고 필요할 때 안전하게 공유합니다.</p>
+              <button onClick={() => navigate('passport')}>차량 기록 보기 <ArrowRight size={18} /></button>
+            </article>
+          </div>
+          <div className="motion-story-progress" aria-hidden="true"><span>01</span><i><b /></i><span>03</span></div>
+        </div>
+      </section>
+
+      <section className="section service-scene reveal" data-reveal data-scene="03" id="services">
         <div className="container service-scene-inner">
           <SectionHeading eyebrow="FOR YOUR EVERYDAY DRIVE" title="차를 아끼는 가장 쉬운 방법." description="충전이 필요할 때, 점검이 걱정될 때, 내 차 기록이 필요할 때 한 번에 찾아보세요." />
           <div className="service-grid">
@@ -528,13 +578,13 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
         </div>
       </section>
 
-      <section className="section section-soft garage-scene reveal" data-reveal data-scene="03">
+      <section className="section section-soft garage-scene reveal" data-reveal data-scene="04">
         <div className="container">
           {connected ? <VehicleCommandCenter vehicle={vehicle} navigate={navigate} setModal={setModal} notify={notify} platform={platform} /> : <GuestGaragePanel setModal={setModal} navigate={navigate} />}
         </div>
       </section>
 
-      <section className="section container tutorial-scene reveal" data-reveal data-scene="04">
+      <section className="section container tutorial-scene reveal" data-reveal data-scene="05">
         <div className="tutorial-heading">
           <SectionHeading eyebrow="CAR LIFE TUTORIAL" title="처음부터 한 단계씩." description="내 차를 연결하고, 주변을 찾고, 오늘의 안전을 확인하는 순서대로 안내해 드려요." />
           <div className="tutorial-progress" aria-label="차량 생활 준비도">
@@ -867,6 +917,8 @@ function loadKakaoSdk(key) {
 
 function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, notify, userLocation }) {
   const mapElement = useRef(null);
+  const mapRef = useRef(null);
+  const kakaoRef = useRef(null);
   const notifyRef = useRef(notify);
   const [mapReady, setMapReady] = useState(false);
   const key = window.__LIFEPASS_CONFIG__?.kakaoJavascriptKey || import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
@@ -883,31 +935,74 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
         center: new kakao.maps.LatLng(centerStation.latitude, centerStation.longitude),
         level: 5,
       });
+      mapRef.current = map;
+      kakaoRef.current = kakao;
       const bounds = new kakao.maps.LatLngBounds();
+      const overlays = [];
       stationItems.forEach((station) => {
         const position = new kakao.maps.LatLng(station.latitude, station.longitude);
         bounds.extend(position);
-        const marker = new kakao.maps.Marker({ position, map });
-        kakao.maps.event.addListener(marker, 'click', () => onSelect(station));
+        const marker = document.createElement('button');
+        marker.type = 'button';
+        marker.className = `kakao-station-marker ${selectedStation?.id === station.id ? 'active' : ''}`;
+        marker.setAttribute('aria-label', `${station.name}, 사용 가능 ${station.available}대`);
+        const count = document.createElement('strong');
+        count.textContent = String(station.available);
+        const label = document.createElement('span');
+        label.textContent = station.available > 0 ? '가능' : '대기';
+        marker.append(count, label);
+        marker.addEventListener('click', () => onSelect(station));
+        const overlay = new kakao.maps.CustomOverlay({ position, content: marker, yAnchor: 1.2, zIndex: selectedStation?.id === station.id ? 5 : 3 });
+        overlay.setMap(map);
+        overlays.push(overlay);
       });
       if (userLocation) {
         const current = new kakao.maps.LatLng(userLocation.latitude, userLocation.longitude);
         bounds.extend(current);
-        new kakao.maps.Circle({ center: current, radius: 80, strokeWeight: 3, strokeColor: '#00aad2', strokeOpacity: 1, fillColor: '#00aad2', fillOpacity: .28, map });
+        const currentMarker = document.createElement('div');
+        currentMarker.className = 'kakao-current-marker';
+        currentMarker.setAttribute('aria-label', '내 현재 위치');
+        const currentOverlay = new kakao.maps.CustomOverlay({ position: current, content: currentMarker, zIndex: 6 });
+        currentOverlay.setMap(map);
+        overlays.push(currentOverlay);
       }
       if (stationItems.length > 1) map.setBounds(bounds, 48, 48, 48, 48);
       setMapReady(true);
+      map.__lifePassOverlays = overlays;
   }).catch((error) => notifyRef.current(error.message || '지도 화면을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      mapRef.current?.__lifePassOverlays?.forEach((overlay) => overlay.setMap(null));
+      mapRef.current = null;
+      kakaoRef.current = null;
+    };
   }, [key, stationItems, selectedStation?.id, onSelect, userLocation?.latitude, userLocation?.longitude]);
 
-  if (key) return <div ref={mapElement} className={`map-surface kakao-map ${mapReady ? 'ready' : ''}`} aria-label="충전소 지도" />;
+  const changeZoom = (delta) => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setLevel(Math.max(1, Math.min(14, map.getLevel() + delta)), { animate: true });
+  };
+  const focusMap = () => {
+    const map = mapRef.current;
+    const kakao = kakaoRef.current;
+    const target = userLocation ?? selectedStation ?? stationItems[0];
+    if (!map || !kakao || !target) return;
+    map.panTo(new kakao.maps.LatLng(target.latitude, target.longitude));
+  };
+
   return (
-    <div className="map-surface" aria-label="충전소 위치 미리보기">
-      <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
-      <div className="map-river" />
-      {stationItems.slice(0, 6).map((station, index) => <button key={station.id} style={{ left: `${18 + (index % 3) * 29}%`, top: `${24 + Math.floor(index / 3) * 40}%` }} className={`map-pin ${selectedStation?.id === station.id ? 'active' : ''}`} onClick={() => onSelect(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
-      <div className="my-location"><Navigation size={14} fill="currentColor" /></div>
+    <div className={`map-experience ${mapReady ? 'ready' : ''}`}>
+      {key ? <div ref={mapElement} className="map-surface kakao-map" aria-label="충전소 지도" /> : <div className="map-surface map-fallback" aria-label="충전소 위치 미리보기">
+        <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
+        <div className="map-river" />
+        {stationItems.slice(0, 6).map((station, index) => <button key={station.id} style={{ left: `${18 + (index % 3) * 29}%`, top: `${24 + Math.floor(index / 3) * 40}%` }} className={`map-pin ${selectedStation?.id === station.id ? 'active' : ''}`} onClick={() => onSelect(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
+        <div className="my-location"><Navigation size={14} fill="currentColor" /></div>
+      </div>}
+      <div className="map-live-chip"><i /> 충전기 현황</div>
+      {key && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
+      <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>
+      {selectedStation && <button className="map-selected-card" onClick={() => onSelect(selectedStation)}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed}</small><ChevronRight size={17} /></button>}
     </div>
   );
 }
