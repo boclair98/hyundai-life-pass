@@ -1,5 +1,3 @@
-import { demoVehicles } from './data';
-
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
 
 async function request(path, options = {}) {
@@ -40,9 +38,9 @@ export async function loadVehicles() {
   try {
     const vehicles = await request('/api/v1/vehicles');
     const normalized = vehicles.map(normalizeVehicle);
-    return { vehicles: normalized.length ? normalized : demoVehicles, source: normalized.length ? 'platform' : 'sample-empty' };
+    return { vehicles: normalized, source: normalized.length ? 'platform' : 'empty' };
   } catch (error) {
-    return { vehicles: demoVehicles, source: 'sample-offline', error: error.message };
+    return { vehicles: [], source: 'error', error: error.message };
   }
 }
 

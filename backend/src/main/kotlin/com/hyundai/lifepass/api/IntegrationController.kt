@@ -30,16 +30,20 @@ class IntegrationController(private val service: HyundaiIntegrationService, priv
         request: HttpServletRequest,
         @RequestParam(required = false) code: String?,
         @RequestParam(required = false) userId: String?,
+        @RequestParam(required = false) error: String?,
         @RequestParam @NotBlank state: String,
     ): RedirectView {
         return when {
+            !error.isNullOrBlank() -> RedirectView("/?hyundai=cancelled#settings")
             !code.isNullOrBlank() -> {
                 service.completeAuthorization(userSession.actor(request), code, state)
                 RedirectView("/api/v1/integrations/hyundai/agreement")
             }
             !userId.isNullOrBlank() -> {
-                service.completeAgreement(userSession.actor(request), userId, state)
-                RedirectView("/?hyundai=connected#home")
+                val actor = userSession.actor(request)
+                service.completeAgreement(actor, userId, state)
+                val synced = runCatching { service.syncVehicles(actor) }.isSuccess
+                RedirectView(if (synced) "/?hyundai=connected#home" else "/?hyundai=sync-required#settings")
             }
             else -> throw IllegalArgumentException("현대 계정 콜백에 code 또는 userId가 없습니다.")
         }

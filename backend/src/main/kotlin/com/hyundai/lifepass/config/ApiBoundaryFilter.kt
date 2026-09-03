@@ -33,6 +33,7 @@ class ApiBoundaryFilter(
         response.setHeader("X-Frame-Options", "DENY")
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin")
         response.setHeader("Permissions-Policy", "camera=(), microphone=(), payment=(), geolocation=(self)")
+        request.setAttribute("lifepass.requestId", requestId)
 
         MDC.put("requestId", requestId)
         try {
@@ -40,7 +41,7 @@ class ApiBoundaryFilter(
                 response.status = 429
                 response.contentType = "application/json;charset=UTF-8"
                 response.setHeader("Retry-After", "60")
-                response.writer.write("{\"error\":\"요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.\",\"requestId\":\"$requestId\"}")
+                response.writer.write("{\"code\":\"RATE_LIMITED\",\"message\":\"요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.\",\"error\":\"요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.\",\"requestId\":\"$requestId\",\"retryable\":true}")
                 return
             }
             chain.doFilter(request, response)

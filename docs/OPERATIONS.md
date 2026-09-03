@@ -5,13 +5,13 @@
 - `web`: Vite 정적 산출물을 Nginx로 제공하고 `/api/*`를 내부 API로 프록시
 - `api`: Kotlin/Spring Boot/JPA 서비스
 - `db`: Coders managed PostgreSQL 1Gi
-- 인증: Coders gate가 변경 요청을 로그인 사용자로 제한하고 `X-Coders-User`를 API에 전달
-- 운영자 권한: `LIFEPASS_OPERATOR_USERS` allow-list가 OTA 변경과 감사 로그 접근을 제한
+- 인증: standalone 경계 안에서 Hyundai OAuth와 서버 세션을 사용
+- 운영자 권한: 공개 프런트에 포함되지 않는 `X-LifePass-Operator-Token`이 운영 API 접근을 제한
 
 ## 운영 확인
 
 1. `GET /actuator/health`가 `UP`인지 확인한다.
-2. `GET /api/v1/vehicles`가 차량 데이터를 반환하는지 확인한다.
+2. 비로그인 `GET /api/v1/vehicles`가 빈 배열을 반환하고 샘플 차량을 노출하지 않는지 확인한다.
 3. `GET /api/v1/platform/snapshot`의 공급자별 `mode`, `state`, `source`, `refreshedAt`를 확인한다.
 4. 실제 공공 충전소에서는 길찾기만 열리고, 제휴 전 예약이 차단되는지 확인한다.
 5. 운영자 화면에서 signed audit stream을 확인한다.
@@ -20,7 +20,7 @@
 
 - 웹 502: Nginx runtime DNS와 `api.internal_url`을 확인한다.
 - API 시작 실패: PostgreSQL datasource와 Flyway migration 결과를 확인한다.
-- 쓰기 요청 로그인 반복: Coders native identity와 브라우저 세션을 확인한다.
+- 현대 로그인 반복: callback URL, SameSite 세션 쿠키와 OAuth state 만료 여부를 확인한다.
 - OTA 진행 정지: 릴리스 상태가 `PAUSED`인지, operator allow-list가 맞는지 확인한다.
 
 ## 외부 Provider 전환

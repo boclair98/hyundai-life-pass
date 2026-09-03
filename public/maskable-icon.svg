@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Life Pass">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#002c5f"/><stop offset="1" stop-color="#007fa8"/></linearGradient></defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <path d="M151 301c34-82 71-123 111-123 42 0 66 28 99 94" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round"/>
+  <path d="M160 324h193" stroke="#fff" stroke-width="32" stroke-linecap="round"/>
+  <circle cx="192" cy="329" r="25" fill="#fff"/><circle cx="326" cy="329" r="25" fill="#fff"/>
+  <path d="M298 130l-30 50h31l-24 54 64-72h-36l22-32z" fill="#7fe3f3"/>
+</svg>

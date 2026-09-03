@@ -259,6 +259,45 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .service-center-empty strong { color: var(--navy); font-size: 14px; }
 .service-center-empty span { font-size: 10px; }
 
+/* Release-ready empty, account and live-data states */
+.hero-status.guest { grid-template-columns: 1fr auto; }
+.hero-status.guest .guest-status-copy { grid-template-columns: 24px 1fr; }
+.hero-status.guest .guest-status-copy svg { grid-row: 1 / 3; }
+.hero-status.guest .guest-status-copy strong { white-space: normal; }
+.vehicle-connect-panel { min-height: 250px; padding: 34px; display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 24px; background: linear-gradient(135deg,#fff,#f2f8fc); }
+.vehicle-connect-panel.compact { min-height: 218px; }
+.connect-orbit { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg,var(--navy),var(--blue)); box-shadow: 0 15px 32px rgba(0,44,95,.2); }
+.vehicle-connect-panel span, .settings-card > span { color: var(--blue); font: 600 8px 'DM Mono',monospace; letter-spacing: .11em; }
+.vehicle-connect-panel h2 { margin: 9px 0 8px; color: var(--navy); font-size: 23px; letter-spacing: -.04em; }
+.vehicle-connect-panel p { max-width: 620px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.vehicle-live-summary { padding: 32px; }
+.vehicle-live-summary h2 { margin: 12px 0 7px; color: var(--navy); font-size: 30px; }
+.vehicle-live-summary > div:first-child > p { margin: 0; color: var(--muted); font-size: 10px; }
+.live-summary-metrics { margin-top: 27px; display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid var(--line); border-radius: 15px; overflow: hidden; }
+.live-summary-metrics .metric { color: var(--ink); border-color: var(--line); }
+.live-summary-metrics .metric span, .live-summary-metrics .metric small { color: var(--muted); }
+.vehicle-live-summary > small { display: block; margin-top: 17px; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.station-empty, .empty-records { min-height: 180px; padding: 28px; display: grid; place-items: center; align-content: center; gap: 8px; color: var(--muted); text-align: center; }
+.station-empty strong, .empty-records strong { color: var(--navy); font-size: 13px; }
+.station-empty span, .empty-records span { font-size: 9px; line-height: 1.6; }
+.settings-page { min-height: 78vh; }
+.settings-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 15px; }
+.settings-card { min-height: 310px; padding: 30px; display: flex; flex-direction: column; align-items: flex-start; }
+.settings-icon { width: 48px; height: 48px; margin-bottom: 25px; border-radius: 15px; display: grid; place-items: center; color: var(--blue); background: var(--ice); }
+.settings-card h2 { margin: 12px 0 10px; color: var(--navy); font-size: 23px; }
+.settings-card p { margin: 0 0 24px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.settings-card > button, .settings-actions { margin-top: auto; }
+.settings-card > small { margin-top: 16px; color: var(--muted); font-size: 8px; }
+.settings-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+.button.danger { color: #a93636; border: 1px solid #eccdcd; background: #fff6f6; }
+.policy-links { margin-top: 15px; overflow: hidden; }
+.policy-links button, .policy-links a { width: 100%; min-height: 72px; padding: 15px 20px; border: 0; border-bottom: 1px solid var(--line); background: #fff; color: var(--navy); text-align: left; text-decoration: none; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.policy-links button:last-child, .policy-links a:last-child { border-bottom: 0; }
+.policy-links > * > span { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.policy-links strong { font-size: 11px; }.policy-links small { color: var(--muted); font-size: 8px; }
+.connectivity-banner { min-height: 40px; padding: 8px 18px; display: flex; align-items: center; justify-content: center; gap: 12px; background: #fff4e5; color: #754600; font-size: 10px; }
+.connectivity-banner button { min-height: 30px; padding: 0 11px; border: 1px solid #dfbd88; border-radius: 8px; background: #fff; color: #754600; font-size: 9px; font-weight: 700; cursor: pointer; }
+
 /* Policy and ownership */
 .site-footer { padding: 42px 0 110px; border-top: 1px solid var(--line); background: #eef3f7; }
 .site-footer .container { display: grid; grid-template-columns: 1fr auto; gap: 18px 30px; }
@@ -310,6 +349,25 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .journey { grid-template-columns: 1fr; }.journey-step, .journey-step:not(:first-child) { min-height: 170px; padding: 24px 0; border-right: 0; }.journey-step > span { top: 29px; }
   .charge-price strong { font-size: 19px; }.station-row { padding-inline: 14px; }
   .passport-score strong { font-size: 25px; }.passport-score { padding-inline: 12px; }
+}
+
+@media (max-width: 760px) {
+  .hero-status.guest { grid-template-columns: 1fr; height: 126px; padding: 16px; }
+  .hero-status.guest .guest-status-copy { padding: 0; display: grid; grid-template-columns: 24px 1fr; text-align: left; border: 0; }
+  .hero-status.guest .guest-status-copy svg { display: block; }
+  .hero-status.guest > button { min-height: 42px; padding: 0 14px; border-radius: 10px; display: flex; justify-content: center; }
+  .vehicle-connect-panel { min-height: 320px; padding: 25px 21px; grid-template-columns: 1fr; align-content: center; gap: 18px; }
+  .vehicle-connect-panel h2 { font-size: 21px; }
+  .vehicle-connect-panel .button { width: 100%; }
+  .vehicle-live-summary { padding: 23px 20px; }
+  .live-summary-metrics { grid-template-columns: 1fr; }
+  .live-summary-metrics .metric { border-right: 0; border-bottom: 1px solid var(--line); }
+  .live-summary-metrics .metric:last-child { border-bottom: 0; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .settings-card { min-height: 290px; padding: 24px 20px; }
+  .settings-actions { display: grid; }
+  .settings-actions .button { width: 100%; }
+  .policy-links button, .policy-links a { min-height: 76px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
