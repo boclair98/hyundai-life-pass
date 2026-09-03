@@ -53,5 +53,5 @@ class PlatformController(
     fun readNotification(request: HttpServletRequest, @PathVariable id: Long) = platformService.readNotification(userSession.actor(request), id)
 
     @GetMapping("/audit-logs")
-    fun audits(@RequestHeader(value = "X-Coders-User", required = false) user: String?): Any { operatorAccess.require(user); return platformService.audits() }
+    fun audits(@RequestHeader(value = "X-LifePass-Operator-Token", required = false) token: String?): Any { operatorAccess.require(token); return platformService.audits() }
 }

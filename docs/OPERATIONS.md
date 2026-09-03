@@ -28,6 +28,7 @@
 차량과 충전소는 아래 adapter가 구현되어 있으며 키가 없으면 명시적 simulation 상태입니다.
 
 - Hyundai Connected Vehicle Provider: OAuth, 제3자 제공 동의, 차량 상태·배터리·주행거리, 토큰 암호화·갱신, 철회 callback
+- Kakao Local Provider: 현재 좌표 기준 현대자동차·블루핸즈 키워드 검색, 5분 캐시, 장애 시 마지막 정상 결과 제공
 - KECO Charging Provider: 위치·운영기관·충전용량·실시간 상태, 5분 캐시, 마지막 정상 응답 보존
 - Kakao Map Provider: 런타임 키 기반 지도·마커, 길찾기 deep link
 - Charging Reservation Provider: CPO 제휴 전 미구현이며 실제 데이터에서는 예약을 차단
@@ -36,3 +37,10 @@
 - Signing Provider: KMS/HSM 기반 차량 여권 서명
 
 Provider 장애 시 마지막 정상 데이터를 `STALE` 읽기 전용으로 제공한다. 정상 데이터가 한 번도 없으면 `ERROR`를 반환하고 샘플로 위장하지 않는다. CPO·블루핸즈 제휴 이후에는 idempotency key, webhook signature, outbox 재처리를 추가해야 한다.
+
+## Runtime identity and boundary
+
+- 배포 모드는 `standalone`이다. Hyundai OAuth가 소비자 신원을 소유하며 coders.kr 네이티브 로그인 게이트를 사용하지 않는다.
+- 운영자 쓰기 API는 `X-LifePass-Operator-Token`이 서버 설정과 일치할 때만 허용한다. 공개 프런트에는 이 토큰을 제공하지 않는다.
+- 모든 API 응답은 `X-Request-Id`, `nosniff`, frame deny, referrer/permissions 정책을 포함한다.
+- 기본 API 제한은 세션 또는 원격 주소당 분당 240회다. 실제 대규모 운영 시에는 애플리케이션 제한과 별도로 엣지 WAF/분산 rate limit을 사용한다.

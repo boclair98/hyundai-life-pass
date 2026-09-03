@@ -47,9 +47,11 @@ management:
 
 lifepass:
   sample-data-enabled: ${LIFEPASS_SAMPLE_DATA_ENABLED:true}
+  rate-limit-per-minute: ${LIFEPASS_RATE_LIMIT_PER_MINUTE:240}
   cors-origins: "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:4173"
   release-tick-ms: 20000
   operator-users: ""
+  operator-token: ${LIFEPASS_OPERATOR_TOKEN:}
   allow-demo-operator: true
   trusted-user-header-enabled: ${LIFEPASS_TRUSTED_USER_HEADER_ENABLED:false}
   providers:
@@ -74,3 +76,8 @@ lifepass:
       center-longitude: ${LIFEPASS_CENTER_LONGITUDE:127.0559}
       default-price-per-kwh: ${LIFEPASS_DEFAULT_CHARGE_PRICE:347}
       cache-seconds: ${LIFEPASS_EV_CHARGER_CACHE_SECONDS:300}
+    kakao-local:
+      mode: ${LIFEPASS_KAKAO_LOCAL_MODE:live}
+      rest-api-key: ${KAKAO_REST_API_KEY:}
+      base-url: ${KAKAO_LOCAL_API_URL:https://dapi.kakao.com/v2/local/search/keyword.json}
+      cache-seconds: ${LIFEPASS_KAKAO_LOCAL_CACHE_SECONDS:300}

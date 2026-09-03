@@ -40,6 +40,23 @@ data class ProviderStatusResponse(
     val message: String,
 )
 
+data class ServiceCenterResponse(
+    val id: String,
+    val name: String,
+    val address: String,
+    val phone: String?,
+    val latitude: Double,
+    val longitude: Double,
+    val distanceKm: Double,
+    val placeUrl: String,
+    val source: String,
+)
+
+data class ServiceCenterFeedResponse(
+    val centers: List<ServiceCenterResponse>,
+    val provider: ProviderStatusResponse,
+)
+
 data class CreateChargingReservationRequest(
     @field:NotBlank val vehicleExternalId: String,
     val stationId: Long,

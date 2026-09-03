@@ -1,4 +1,10 @@
 resolver ${NGINX_RESOLVER} valid=30s ipv6=off;
+server_tokens off;
+
+gzip on;
+gzip_comp_level 5;
+gzip_min_length 1024;
+gzip_types application/json application/javascript text/css text/plain image/svg+xml;
 
 client_header_buffer_size 16k;
 large_client_header_buffers 8 32k;
@@ -11,6 +17,14 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), payment=(), geolocation=(self)" always;
+    add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://dapi.kakao.com https://*.daumcdn.net https://*.kakaocdn.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.daumcdn.net; img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net https://*.kakao.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://dapi.kakao.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.hyundai.com" always;
 
     location /api/ {
         set $backend "${BACKEND_URL}";
@@ -43,6 +57,16 @@ server {
         add_header Pragma "no-cache" always;
         expires -1;
         try_files $uri =404;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        try_files $uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate" always;
     }
 
     location / {

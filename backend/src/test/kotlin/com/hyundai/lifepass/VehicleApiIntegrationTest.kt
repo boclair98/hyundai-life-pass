@@ -42,6 +42,27 @@ class VehicleApiIntegrationTest(
     }
 
     @Test
+    fun `service center endpoint reports missing provider key without fake places`() {
+        mockMvc.get("/api/v1/service-centers")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.centers", hasSize<Any>(0))
+                jsonPath("$.provider.state") { value("MISCONFIGURED") }
+                header { exists("X-Request-Id") }
+                header { string("X-Content-Type-Options", "nosniff") }
+            }
+    }
+
+    @Test
+    fun `service center endpoint validates coordinates`() {
+        mockMvc.get("/api/v1/service-centers?latitude=200&longitude=127&radius=15000")
+            .andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error") { value("위도를 확인해 주세요.") }
+            }
+    }
+
+    @Test
     fun `Hyundai deletion callback is idempotent`() {
         mockMvc.post("/api/v1/integrations/hyundai/callbacks/data-unavailable") {
             contentType = MediaType.APPLICATION_JSON

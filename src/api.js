@@ -51,7 +51,11 @@ export const loadReleases = () => request('/api/v1/releases');
 export const loadAuditLogs = () => request('/api/v1/platform/audit-logs').catch(() => []);
 export const loadPassport = (vehicleDatabaseId) => request(`/api/v1/vehicles/${vehicleDatabaseId}/passport`);
 export const connectVehicle = (externalId) => request(`/api/v1/platform/vehicles/${externalId}/connect`, { method: 'POST' });
-export const createHyundaiAuthorization = () => request('/api/v1/integrations/hyundai/authorize', { method: 'POST' });
+export const hyundaiAuthorizationPath = '/api/v1/integrations/hyundai/authorize';
+export const loadServiceCenters = ({ latitude = 37.5446, longitude = 127.0559, radius = 15000 } = {}) => {
+  const query = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), radius: String(radius) });
+  return request(`/api/v1/service-centers?${query}`);
+};
 export const syncHyundaiVehicles = () => request('/api/v1/integrations/hyundai/sync', { method: 'POST' });
 export const revokeHyundaiConnection = () => request('/api/v1/integrations/hyundai/revoke', { method: 'POST' });
 

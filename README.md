@@ -18,6 +18,8 @@
 - Backend: Kotlin, Spring Boot 3, Spring Data JPA
 - Database: H2 local profile, PostgreSQL production runtime
 - Integration: Hyundai Developers OAuth/consent adapter, 한국환경공단 charger adapter, Kakao Maps runtime adapter
+- Live utility: Kakao Local API 기반 현재 위치 주변 현대자동차·블루핸즈 검색, 전화 및 길찾기
+- Runtime boundary: 자체 Hyundai OAuth를 위한 coders.kr `standalone` 모드, API 요청 ID·보안 헤더·속도 제한
 - Identity: Coders native identity (`X-Coders-User`) + operator allow-list
 - Data lifecycle: Flyway migrations, signed audit log, transactional domain events
 - Operations: Actuator health/metrics, scheduled OTA rollout progression
@@ -93,8 +95,11 @@ npm run dev
 | GET | `/api/v1/platform/snapshot` | 사용자별 예약·알림·이전 상태 |
 | POST | `/api/v1/integrations/hyundai/authorize` | 현대 통합계정 OAuth 시작 |
 | GET | `/api/v1/integrations/hyundai/agreement` | 개인정보 제3자 제공 동의 연결 |
+| GET | `/api/v1/service-centers` | 위도·경도 기준 주변 현대자동차 서비스 거점 검색 |
 | POST | `/api/v1/integrations/hyundai/sync` | 동의 차량 데이터 동기화 |
 | POST | `/api/v1/integrations/hyundai/revoke` | 동의 철회 및 실차 데이터 삭제 |
+
+`coders.yaml`은 `mode: standalone`을 사용한다. 이 서비스는 coders.kr 방문자 로그인이 아니라 Hyundai Developers OAuth를 자체 신원 흐름으로 사용하기 때문이다. `native` 모드로 바꾸면 소비자 POST 요청이 coders.kr 로그인 게이트로 이동해 차량 연결·동기화가 중단된다.
 | POST | `/api/v1/integrations/hyundai/callbacks/data-unavailable` | 탈퇴·차량 삭제·철회 callback |
 | POST | `/api/v1/platform/charging-reservations` | 충전 예약 생성 |
 | POST | `/api/v1/platform/service-bookings` | 정비 예약 생성 |

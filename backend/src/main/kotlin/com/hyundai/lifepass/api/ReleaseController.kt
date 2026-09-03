@@ -16,11 +16,11 @@ class ReleaseController(private val releaseService: ReleaseService, private val 
     fun list() = releaseService.findAll()
 
     @PostMapping("/{id}/start")
-    fun start(@PathVariable id: Long, @RequestHeader(value = "X-Coders-User", required = false) user: String?): Any { operatorAccess.require(user); return releaseService.start(id) }
+    fun start(@PathVariable id: Long, @RequestHeader(value = "X-LifePass-Operator-Token", required = false) token: String?): Any { operatorAccess.require(token); return releaseService.start(id) }
 
     @PostMapping("/{id}/advance")
-    fun advance(@PathVariable id: Long, @RequestHeader(value = "X-Coders-User", required = false) user: String?): Any { operatorAccess.require(user); return releaseService.advance(id) }
+    fun advance(@PathVariable id: Long, @RequestHeader(value = "X-LifePass-Operator-Token", required = false) token: String?): Any { operatorAccess.require(token); return releaseService.advance(id) }
 
     @PostMapping("/{id}/pause")
-    fun pause(@PathVariable id: Long, @RequestHeader(value = "X-Coders-User", required = false) user: String?): Any { operatorAccess.require(user); return releaseService.pause(id) }
+    fun pause(@PathVariable id: Long, @RequestHeader(value = "X-LifePass-Operator-Token", required = false) token: String?): Any { operatorAccess.require(token); return releaseService.pause(id) }
 }

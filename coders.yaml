@@ -1,5 +1,7 @@
 version: "1"
-mode: native
+# This app owns the Hyundai OAuth flow. Native mode would put the coders.kr
+# visitor gate in front of every POST and break consumer actions.
+mode: standalone
 
 services:
   web:
@@ -19,11 +21,12 @@ services:
       SPRING_DATASOURCE_USERNAME: ${db.user}
       SPRING_DATASOURCE_PASSWORD: ${db.password}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      LIFEPASS_OPERATOR_USERS: boclair98@users.noreply.github.com
       LIFEPASS_ALLOW_DEMO_OPERATOR: "false"
-      LIFEPASS_SAMPLE_DATA_ENABLED: "true"
+      LIFEPASS_SAMPLE_DATA_ENABLED: "false"
       LIFEPASS_EV_CHARGER_MODE: live
       LIFEPASS_HYUNDAI_MODE: live
+      LIFEPASS_KAKAO_LOCAL_MODE: live
+      LIFEPASS_RATE_LIMIT_PER_MINUTE: "240"
       LIFEPASS_SESSION_COOKIE_SECURE: "true"
 
   db:

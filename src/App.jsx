@@ -42,11 +42,12 @@ import {
   cancelCharging,
   cancelService,
   connectVehicle,
-  createHyundaiAuthorization,
+  hyundaiAuthorizationPath,
   loadAuditLogs,
   loadPassport,
   loadPlatform,
   loadReleases,
+  loadServiceCenters,
   pauseRelease,
   readNotification,
   reserveCharging,
@@ -66,7 +67,7 @@ const navigation = [
   { id: 'passport', label: '차량 여권', icon: FileCheck2 },
 ];
 
-const validPages = new Set([...navigation.map((item) => item.id), 'lab']);
+const validPages = new Set([...navigation.map((item) => item.id), 'lab', 'privacy', 'terms']);
 
 const hyundaiStatusLabel = (provider) => {
   if (!provider) return '상태 확인 중';
@@ -183,14 +184,7 @@ export default function App() {
 
   const actions = {
     connectHyundai: async () => {
-      setBusy(true);
-      try {
-        const result = await createHyundaiAuthorization();
-        window.location.assign(result.authorizeUrl);
-      } catch (error) {
-        notify(error.message || '현대 계정 연결을 시작하지 못했습니다.');
-        setBusy(false);
-      }
+      window.location.assign(hyundaiAuthorizationPath);
     },
     syncHyundai: () => transact(() => syncHyundaiVehicles(), '동의한 현대차 데이터를 동기화했습니다.'),
     resumeHyundaiAgreement: () => window.location.assign('/api/v1/integrations/hyundai/agreement'),
@@ -236,8 +230,11 @@ export default function App() {
         {page === 'care' && <CarePage {...shared} />}
         {page === 'passport' && <PassportPage {...shared} />}
         {page === 'lab' && <CanaryLab {...shared} />}
+        {page === 'privacy' && <LegalPage type="privacy" />}
+        {page === 'terms' && <LegalPage type="terms" />}
       </main>
 
+      <SiteFooter navigate={navigate} />
       <MobileNav page={page} navigate={navigate} />
       {modal && <Modal type={modal} vehicle={vehicle} platform={platform} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
@@ -518,6 +515,37 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
   const isSample = vehicle.source !== 'HYUNDAI_DEVELOPERS';
   const bars = [62, 68, 65, 72, 76, 81, 84, 88, 92, vehicle.healthScore];
   const activeBooking = platform.serviceBookings?.find((item) => item.vehicleExternalId === vehicle.id && item.status === 'CONFIRMED');
+  const [centerFeed, setCenterFeed] = useState({ centers: [], provider: null });
+  const [centerBusy, setCenterBusy] = useState(true);
+
+  const findCenters = useCallback(async (coordinates) => {
+    setCenterBusy(true);
+    try {
+      const result = await loadServiceCenters(coordinates);
+      setCenterFeed(result);
+      if (result.provider?.state === 'ERROR') notify(result.provider.message);
+    } catch (error) {
+      notify(error.message || '주변 서비스 거점을 불러오지 못했습니다.');
+    } finally {
+      setCenterBusy(false);
+    }
+  }, [notify]);
+
+  useEffect(() => { findCenters(); }, [findCenters]);
+
+  function findFromCurrentLocation() {
+    if (!navigator.geolocation) {
+      notify('이 기기에서는 위치 기능을 사용할 수 없습니다.');
+      return;
+    }
+    setCenterBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => findCenters({ latitude: coords.latitude, longitude: coords.longitude, radius: 20000 }),
+      () => { setCenterBusy(false); notify('위치 권한을 허용하면 가까운 순서로 다시 찾아드려요.'); },
+      { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 },
+    );
+  }
+
   return (
     <div className="page container">
       <PageIntro eyebrow="PREDICTIVE CARE" title="고장 나기 전에 먼저" description="차량 상태와 주행 패턴을 바탕으로 지금 필요한 관리만 알려드립니다." actions={<button className="button outline" onClick={() => notify('차량 케어 리포트를 준비했습니다.')}>리포트 받기 <Share2 size={16} /></button>} />
@@ -528,8 +556,34 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
       </section>
       <div className="care-content-grid">
         <section className="panel health-chart"><div className="panel-title"><div><span>최근 10회 건강도</span><h3>안정적으로 유지 중</h3></div><span className="positive">+2.8%</span></div><div className="bar-chart">{bars.map((bar, index) => <div key={index}><span style={{ height: `${bar}%` }} /><small>{index + 1}</small></div>)}</div><div className="chart-legend"><span><i /> 차량 건강도</span><small>최근 30일</small></div></section>
-        <section className="panel maintenance-card"><div className="panel-title"><div><span>다가오는 정비</span><h3>타이어 위치 교환</h3></div><div className="maintenance-icon"><Wrench size={19} /></div></div><div className="maintenance-distance"><strong>{vehicle.nextServiceKm.toLocaleString()}</strong><span>km 후 권장</span></div><p>주행 패턴을 기준으로 약 5주 뒤가 적당합니다.</p><div className="maintenance-meta"><span><CalendarClock size={15} /> {isSample ? '샘플 일정 +4일' : '파트너 일정 연동 필요'}</span><span>{isSample ? '예시 비용 ₩84,000' : '견적 API 연결 필요'}</span></div><button className="button primary full" disabled={!!activeBooking} onClick={() => setModal('service')}>{activeBooking ? '샘플 흐름 완료' : '샘플 예약 흐름 보기'} <ArrowRight size={16} /></button></section>
+        <section className="panel maintenance-card"><div className="panel-title"><div><span>다가오는 정비</span><h3>타이어 위치 교환</h3></div><div className="maintenance-icon"><Wrench size={19} /></div></div><div className="maintenance-distance"><strong>{vehicle.nextServiceKm.toLocaleString()}</strong><span>km 후 권장</span></div><p>주행 패턴을 기준으로 약 5주 뒤가 적당합니다.</p><div className="maintenance-meta"><span><CalendarClock size={15} /> {isSample ? '차량 연결 후 개인화' : '차량 주행거리 기준'}</span><span>실제 거점에 문의</span></div><button className="button primary full" onClick={() => document.getElementById('service-centers')?.scrollIntoView({ behavior: 'smooth' })}>가까운 서비스 거점 찾기 <ArrowRight size={16} /></button></section>
       </div>
+      <section className="section-sub service-center-section" id="service-centers">
+        <div className="service-center-heading">
+          <SectionHeading eyebrow="LIVE SERVICE NETWORK" title="가까운 블루핸즈" description="카카오 장소 데이터에서 실제 현대자동차 서비스 거점을 가까운 순서로 찾습니다." />
+          <button className="button outline" onClick={findFromCurrentLocation} disabled={centerBusy}>{centerBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />} 내 위치로 다시 찾기</button>
+        </div>
+        <div className={`provider-inline ${centerFeed.provider?.state === 'CONNECTED' || centerFeed.provider?.state === 'STALE' ? 'live' : 'sample'}`}>
+          <span>{centerFeed.provider?.state === 'CONNECTED' ? 'LIVE DATA' : centerFeed.provider?.state === 'STALE' ? 'LAST KNOWN' : 'CONNECTING'}</span>
+          <strong>{centerFeed.provider?.source ?? 'Kakao Local API'}</strong>
+          <small>{centerFeed.provider?.message ?? '주변 서비스 거점을 찾고 있습니다.'}</small>
+        </div>
+        <div className="service-center-grid">
+          {centerFeed.centers?.slice(0, 6).map((center) => (
+            <article className="service-center-card panel" key={center.id}>
+              <div className="service-center-distance"><MapPin size={16} /><strong>{center.distanceKm.toFixed(1)}km</strong></div>
+              <span>HYUNDAI SERVICE</span>
+              <h3>{center.name}</h3>
+              <p>{center.address}</p>
+              <div className="service-center-actions">
+                {center.phone && <a href={`tel:${center.phone.replace(/[^0-9+]/g, '')}`}><span>{center.phone}</span><strong>전화</strong></a>}
+                <button onClick={() => window.open(center.placeUrl, '_blank', 'noopener,noreferrer')}><span>카카오맵</span><strong>상세·길찾기</strong><Navigation size={14} /></button>
+              </div>
+            </article>
+          ))}
+          {!centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel"><MapPin size={22} /><strong>서비스 거점을 찾지 못했습니다.</strong><span>위치 권한을 허용하거나 잠시 후 다시 시도해 주세요.</span></div>}
+        </div>
+      </section>
       <section className="section-sub">
         <SectionHeading eyebrow="SOFTWARE STATUS" title="내 차의 소프트웨어" description="업데이트가 어떻게 검증되었는지 소비자도 이해할 수 있게 보여드립니다." />
         <div className="software-card panel"><div className="software-icon"><CloudCog size={25} /></div><div className="software-copy"><span>표시 버전 {vehicle.softwareVersion}</span><h3>{isSample ? 'OTA 운영 화면의 사용 예시입니다.' : '연결된 소프트웨어 상태입니다.'}</h3><p>{isSample ? '실제 배포 데이터가 아닌 포트폴리오 시나리오' : '현대차 OTA 공급자에서 동기화된 상태'}</p></div><div className="software-proof"><ShieldCheck size={18} /><div><strong>{isSample ? '샘플 검증 결과' : '안전 검증 완료'}</strong><span>{isSample ? '가상 차량군 · 예시 이상률' : '제조사 데이터 기준'}</span></div></div><button onClick={() => notify('업데이트 상세 이력을 열었습니다.')}><ChevronRight size={18} /></button></div>
@@ -569,9 +623,9 @@ function CanaryLab({ notify, setModal, liveReleases, auditLogs, actions, busy })
   return (
     <div className="lab-page">
       <div className="container lab-container">
-        <div className="lab-intro"><div><span><Code2 size={15} /> DEVELOPER PORTFOLIO · OPERATIONS</span><h1>CanaryDrive Control</h1><p>소비자 앱과 분리된 SDV 차량 소프트웨어 안전 운영 콘솔입니다.</p></div><div className="lab-status"><i /> Fleet stream 정상</div></div>
+        <div className="lab-intro"><div><span><Code2 size={15} /> READ-ONLY PILOT · OPERATIONS</span><h1>CanaryDrive Control</h1><p>실차 명령을 보내지 않는 SDV 안전 운영 시뮬레이터입니다.</p></div><div className="lab-status"><i /> Simulator 정상</div></div>
         <div className="lab-metrics"><LabMetric label="배포 진행률" value={activeRelease?.progress ?? 0} unit="%" trend="DB live state" /><LabMetric label="정상 차량" value="99.82" unit="%" trend="+0.11%" /><LabMetric label="감사 이벤트" value={auditLogs.length} unit="건" trend="signed actions" /><LabMetric label="활성 릴리스" value={releaseList.filter((item) => item.status === 'ROLLING').length} unit="개" trend="20s auto tick" /></div>
-        <section className="lab-release panel-dark"><div className="lab-release-head"><div><span>ACTIVE RELEASE</span><h2>{activeRelease?.version} · {activeRelease?.title}</h2><p>{activeRelease?.target}</p></div><div className="lab-release-actions"><button className="lab-ghost-button" disabled={busy} onClick={() => actions.pauseRelease(activeRelease.id)}>일시 중지</button><button className="lab-new-button" disabled={busy} onClick={() => actions.advanceRelease(activeRelease.id)}><Plus size={16} /> 범위 확대</button></div></div><div className="rollout-track"><div style={{ width: `${activeRelease?.progress ?? 0}%` }} /><span style={{ left: `${Math.min(activeRelease?.progress ?? 0, 92)}%` }}>{activeRelease?.progress ?? 0}%</span></div><div className="rollout-steps"><span className="done"><Check size={12} /> 1%</span><span className="done"><Check size={12} /> 10%</span><span className="active">{activeRelease?.progress ?? 0}% 현재</span><span>70%</span><span>100%</span></div><div className="guard-row"><div><ShieldCheck size={19} /><span><strong>자동 중지·롤백</strong><small>이상률 1% 초과 또는 치명 이벤트 발생 시</small></span></div><button className={`switch ${guard ? 'on' : ''}`} onClick={() => { setGuard((value) => !value); notify(`Canary Guard를 ${guard ? '해제' : '활성화'}했습니다.`); }} aria-label="Canary Guard 전환"><span /></button></div></section>
+        <section className="lab-release panel-dark"><div className="lab-release-head"><div><span>SIMULATED RELEASE</span><h2>{activeRelease?.version} · {activeRelease?.title}</h2><p>{activeRelease?.target}</p></div><div className="lab-release-actions"><button className="lab-ghost-button" disabled title="현대차 사내 OTA 권한 연결 후 활성화">실차 명령 잠금</button><button className="lab-new-button" disabled title="현대차 사내 OTA 권한 연결 후 활성화"><LockKeyhole size={15} /> 읽기 전용</button></div></div><div className="rollout-track"><div style={{ width: `${activeRelease?.progress ?? 0}%` }} /><span style={{ left: `${Math.min(activeRelease?.progress ?? 0, 92)}%` }}>{activeRelease?.progress ?? 0}%</span></div><div className="rollout-steps"><span className="done"><Check size={12} /> 1%</span><span className="done"><Check size={12} /> 10%</span><span className="active">{activeRelease?.progress ?? 0}% 현재</span><span>70%</span><span>100%</span></div><div className="guard-row"><div><ShieldCheck size={19} /><span><strong>자동 중지·롤백 규칙</strong><small>시뮬레이터에서 임계값 동작을 확인합니다.</small></span></div><button className={`switch ${guard ? 'on' : ''}`} onClick={() => { setGuard((value) => !value); notify(`시뮬레이션 Guard를 ${guard ? '해제' : '활성화'}했습니다.`); }} aria-label="시뮬레이션 Canary Guard 전환"><span /></button></div></section>
         <div className="lab-grid"><section className="panel-dark"><div className="lab-panel-title"><span>RELEASE TRAINS</span><button onClick={() => notify('서버와 10초마다 자동 동기화됩니다.')}><RefreshCcw size={15} /></button></div>{releaseList.map((release) => <div className="release-row" key={release.id}><i className={releaseTone(release.status)} /><div><strong>{release.version}</strong><span>{release.title}</span><small>{release.target}</small></div><div><span>{releaseStatus(release.status)}</span><strong>{release.progress}%</strong></div><div><span>위험도</span><strong>{release.risk}</strong></div><ChevronRight size={16} /></div>)}</section><section className="panel-dark events-stream"><div className="lab-panel-title"><span>SIGNED AUDIT STREAM</span><small><i /> LIVE</small></div>{auditLogs.length ? auditLogs.slice(0, 5).map((event) => <EventRow key={event.id} time={formatTime(event.createdAt)} tone="good" title={event.action} detail={`${event.resourceType} · ${event.signature.slice(0, 8)}`} />) : <><EventRow time="LIVE" tone="good" title="Platform stream ready" detail="사용자 동작을 기다리는 중" /><EventRow time="SYSTEM" tone="info" title="Audit signing enabled" detail="SHA-256 event chain" /></>}</section></div>
       </div>
     </div>
@@ -640,6 +694,41 @@ function LabMetric({ label, value, unit, trend }) {
 
 function EventRow({ time, tone, title, detail }) {
   return <div className="event-row"><time>{time}</time><i className={tone} /><div><strong>{title}</strong><span>{detail}</span></div></div>;
+}
+
+function SiteFooter({ navigate }) {
+  return (
+    <footer className="site-footer">
+      <div className="container">
+        <div><strong>HYUNDAI LIFE PASS</strong><span>현대자동차 오픈 API 활용 포트폴리오 파일럿</span></div>
+        <nav aria-label="서비스 정책"><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>서비스 이용안내</button><a href="https://github.com/boclair98/hyundai-life-pass" target="_blank" rel="noreferrer">GitHub</a></nav>
+        <small>현대자동차 공식 운영 서비스가 아니며, 실차 데이터는 사용자의 명시적 동의 후에만 조회됩니다.</small>
+      </div>
+    </footer>
+  );
+}
+
+function LegalPage({ type }) {
+  const privacy = type === 'privacy';
+  return (
+    <div className="page container legal-page">
+      <PageIntro eyebrow={privacy ? 'PRIVACY' : 'SERVICE GUIDE'} title={privacy ? '개인정보 처리 안내' : '서비스 이용안내'} description="HYUNDAI LIFE PASS 파일럿의 데이터 처리 원칙을 투명하게 안내합니다." />
+      <section className="panel legal-card">
+        <span>2026년 9월 3일 기준 · 파일럿</span>
+        {privacy ? <>
+          <h2>수집과 이용</h2><p>현대 통합계정 연결 전에는 임의의 브라우저 세션 식별자만 사용합니다. 사용자가 현대자동차 화면에서 직접 동의한 경우에만 차량 식별자, 차종, 주행거리, 주행 가능 거리, EV 배터리 및 충전 상태를 처리합니다.</p>
+          <h2>보관과 보호</h2><p>접근·갱신 토큰은 서버에서 AES-256-GCM으로 암호화해 저장하며 브라우저에 전달하지 않습니다. 세션 쿠키는 Secure·HttpOnly로 설정합니다.</p>
+          <h2>철회와 삭제</h2><p>연결 해제 또는 현대자동차 데이터 제공 중단 콜백이 수신되면 연결 토큰과 해당 실차 데이터를 삭제합니다. 포트폴리오 샘플은 실제 사용자 정보가 아닙니다.</p>
+          <h2>외부 제공자</h2><p>차량 데이터는 Hyundai Developers, 충전소 정보는 공공데이터포털, 지도와 주변 장소 검색은 Kakao API를 사용합니다.</p>
+        </> : <>
+          <h2>서비스 범위</h2><p>충전소 상태와 주변 서비스 거점은 외부 공급자 정보를 바탕으로 제공합니다. 실제 충전 예약·결제, 블루핸즈 확정 예약, 디지털 키 이전, OTA 제어는 제휴 권한 연결 전까지 제공하지 않습니다.</p>
+          <h2>파일럿 고지</h2><p>이 서비스는 현대자동차 공식 서비스가 아닌 개발 포트폴리오 파일럿입니다. 화면에서 SAMPLE 또는 SIMULATED로 표시된 값은 기능 설명을 위한 예시이며 실제 차량 상태가 아닙니다.</p>
+          <h2>정보 정확성</h2><p>공공데이터와 장소 정보는 갱신 시점에 따라 실제 현장 상태와 다를 수 있으므로 출발 전 운영기관 또는 서비스 거점에 확인해야 합니다.</p>
+        </>}
+        <div className="legal-contact"><strong>문의 및 개선 제안</strong><a href="https://github.com/boclair98/hyundai-life-pass/issues" target="_blank" rel="noreferrer">GitHub Issues에서 문의하기 <ArrowRight size={14} /></a></div>
+      </section>
+    </div>
+  );
 }
 
 function MobileNav({ page, navigate }) {

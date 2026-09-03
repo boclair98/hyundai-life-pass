@@ -21,8 +21,9 @@ class IntegrationController(private val service: HyundaiIntegrationService, priv
     @GetMapping("/status")
     fun status(request: HttpServletRequest) = service.providerStatus(userSession.actor(request))
 
-    @PostMapping("/authorize")
-    fun authorize(request: HttpServletRequest) = mapOf("authorizeUrl" to service.createAuthorizationUrl(userSession.actor(request)))
+    @GetMapping("/authorize")
+    fun authorize(request: HttpServletRequest): RedirectView =
+        RedirectView(service.createAuthorizationUrl(userSession.actor(request)))
 
     @GetMapping("/callback")
     fun callback(
