@@ -59,6 +59,19 @@ server {
         try_files $uri =404;
     }
 
+    location = /manifest.webmanifest {
+        default_type application/manifest+json;
+        add_header Cache-Control "public, max-age=3600" always;
+        try_files $uri =404;
+    }
+
+    location = /sw.js {
+        default_type application/javascript;
+        add_header Cache-Control "no-cache, must-revalidate" always;
+        add_header Service-Worker-Allowed "/" always;
+        try_files $uri =404;
+    }
+
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable" always;
