@@ -70,6 +70,16 @@ class Vehicle(
     @Column(nullable = false, length = 40)
     var chargingState: String = "연결 안 됨",
 
+    var chargingTargetSoc: Int? = null,
+
+    var chargingRemainingMinutes: Int? = null,
+
+    @Column(length = 24)
+    var chargingPlugType: String? = null,
+
+    @Column(length = 14)
+    var dataTimestamp: String? = null,
+
     @Column(nullable = false)
     var batteryStatusAvailable: Boolean = false,
 

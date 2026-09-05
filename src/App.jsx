@@ -84,6 +84,16 @@ const spaceGallery = [
   { src: '/space-drive-08-v1.webp', eyebrow: 'LIFE PASS ARRIVAL', title: '모든 차량 생활을 한곳으로' },
 ];
 
+const pageHeroVisuals = {
+  'CHARGE NEAR YOU': { src: '/space-drive-03-v1.webp', index: '01', label: 'ENERGY & ROUTE' },
+  'MY CAR CARE': { src: '/space-drive-04-v1.webp', index: '02', label: 'STATUS & CARE' },
+  'MY CAR STORY': { src: '/space-drive-05-v1.webp', index: '03', label: 'TRUSTED HISTORY' },
+  'MY ACCOUNT': { src: '/space-drive-06-v1.webp', index: '04', label: 'CONNECTION & CONTROL' },
+  'START HERE': { src: '/space-drive-02-v1.webp', index: '05', label: 'FIRST ORBIT' },
+  'YOUR PRIVACY': { src: '/space-drive-07-v1.webp', index: '06', label: 'CONSENT & PRIVACY' },
+  'SERVICE GUIDE': { src: '/space-drive-01-v1.webp', index: '07', label: 'SERVICE BOUNDARY' },
+};
+
 const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide']);
 
 const hyundaiStatusLabel = (provider) => {
@@ -477,10 +487,10 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
   return (
     <header className="site-header">
       <div className="header-inner">
-        <button className="brand" onClick={() => navigate('home')} aria-label="현대 라이프패스 홈">
-          <span className="hyundai-mark">H</span>
-          <span className="brand-copy"><strong>HYUNDAI</strong><small>LIFE PASS</small></span>
-          <span className="concept-chip">MY CAR LIFE</span>
+        <button className="brand" onClick={() => navigate('home')} aria-label="라이프패스 홈">
+          <span className="life-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" /><path d="M13 13v18h11" /><path d="M25 31V13h5a6 6 0 0 1 0 12h-5" /><circle className="life-mark-dot" cx="35" cy="9" r="2.5" /></svg></span>
+          <span className="brand-copy"><strong>LIFE PASS</strong><small>HYUNDAI CAR DATA</small></span>
+          <span className="concept-chip">OWNER OS</span>
         </button>
 
         <nav className="desktop-nav" aria-label="주요 메뉴">
@@ -906,6 +916,7 @@ function ChargePage({ vehicle, notify, platform, actions, busy }) {
     <div className="page container">
       <PageIntro eyebrow="CHARGE NEAR YOU" title="내 주변 충전소" description="지금 갈 수 있는 충전소를 찾고, 도착까지 편하게 안내받으세요." actions={<button className="button primary location-button" onClick={findFromCurrentLocation} disabled={locationBusy}>{locationBusy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}{locationBusy ? '위치 확인 중' : '내 위치로 찾기'}</button>} />
       <FeaturePurpose icon={BatteryCharging} title="현재 위치 주변의 충전소를 찾아 길 안내까지 연결합니다." description="차량을 연결하지 않아도 이용할 수 있습니다. 충전기 사용 가능 수와 거리, 충전 출력을 비교해 목적지를 선택하세요." steps={['내 위치 확인', '충전기 비교', '길찾기 시작']} />
+      {vehicle && <section className="vehicle-charge-strip panel reveal" data-reveal><div><span>CONNECTED VEHICLE</span><strong>{vehicle.name}</strong><small>{vehicle.chargingState} · 최근 차량 데이터 {formatHyundaiTimestamp(vehicle.dataTimestamp)}</small></div><Metric icon={BatteryCharging} label="현재 배터리" value={formatMetric(vehicle.batterySoc, '%')} detail="현대차 전송값" /><Metric icon={Zap} label="목표 충전" value={formatMetric(vehicle.chargingTargetSoc, '%')} detail={vehicle.chargingPlugType ?? '충전기 정보 미제공'} /><Metric icon={Clock3} label="남은 시간" value={formatMetric(vehicle.chargingRemainingMinutes, '분')} detail="목표 충전까지" /></section>}
       <section className={`location-status ${usingCurrentLocation ? 'current' : 'default'}`} aria-live="polite">
         <div><MapPin size={18} /><span><small>{usingCurrentLocation ? '현재 위치 기준' : '기본 위치 기준'}</small><strong>{chargerFeed.search?.locationLabel ?? '서울 성수'} · 반경 {Math.round(chargerFeed.search?.radiusKm ?? 30)}km</strong></span></div>
         <p>{usingCurrentLocation ? '현재 위치를 기준으로 가까운 순서로 보여드리고, 위치는 저장하지 않아요.' : '내 위치로 찾기를 누르고 위치 권한을 허용하면 주변 순서가 바뀝니다.'}</p>
@@ -1119,8 +1130,8 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
       {vehicle ? <>
       <section className="vehicle-live-summary panel reveal" data-reveal>
         <div><span className="live-label"><i /> 내 차 상태</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · 마지막 확인 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '방금 전'}</p></div>
-        <div className="live-summary-metrics"><Metric icon={BatteryCharging} label="구동 배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '아직 확인되지 않음' : vehicle.chargingState} /><Metric icon={Navigation} label="주행 가능" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '아직 확인되지 않음' : '최근 확인한 값'} /></div>
-        <small>확인된 정보만 보여드리고, 알 수 없는 값은 억지로 채우지 않아요.</small>
+        <div className="live-summary-metrics"><Metric icon={BatteryCharging} label="구동 배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '아직 확인되지 않음' : vehicle.chargingState} /><Metric icon={Navigation} label="주행 가능" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Zap} label="목표 충전" value={formatMetric(vehicle.chargingTargetSoc, '%')} detail={vehicle.chargingPlugType ?? '충전기 정보 미제공'} /><Metric icon={Clock3} label="남은 충전" value={formatMetric(vehicle.chargingRemainingMinutes, '분')} detail="목표 충전까지" /></div>
+        <small>확인된 정보만 보여드리고, 알 수 없는 값은 억지로 채우지 않아요. · 차량 전송 {formatHyundaiTimestamp(vehicle.dataTimestamp)}</small>
       </section>
       <section className="care-next-action panel reveal" data-reveal aria-label="다음 추천 행동">
         <div className="care-next-icon"><Route size={20} /></div>
@@ -1217,6 +1228,7 @@ function SettingsPage({ vehicle, platform, actions, busy, navigate, notify }) {
           <div className="settings-icon"><Smartphone size={22} /></div><span>모바일 앱</span><h2>홈 화면에 설치</h2><p>브라우저 메뉴의 ‘홈 화면에 추가’를 선택하면 앱처럼 전체 화면으로 사용할 수 있습니다.</p><InstallButton notify={notify} />
         </section>
       </div>
+      <ApiCoveragePanel />
       <section className="panel policy-links"><button onClick={() => navigate('guide')}><Route size={18} /><span><strong>처음 사용하는 방법</strong><small>무슨 서비스이고 무엇을 연결해야 하는지</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('privacy')}><LockKeyhole size={18} /><span><strong>개인정보 처리 안내</strong><small>수집·보관·철회 및 삭제 정책</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('terms')}><FileCheck2 size={18} /><span><strong>서비스 이용안내</strong><small>외부 데이터와 제공 기능 범위</small></span><ChevronRight size={17} /></button><a href="https://github.com/boclair98/hyundai-life-pass/issues" target="_blank" rel="noreferrer"><Wrench size={18} /><span><strong>지원 및 오류 신고</strong><small>GitHub Issues</small></span><ChevronRight size={17} /></a></section>
     </div>
   );
@@ -1257,6 +1269,11 @@ function formatMetric(value, unit) {
   return value == null ? '미제공' : `${Number(value).toLocaleString()}${unit}`;
 }
 
+function formatHyundaiTimestamp(value) {
+  if (!value || !/^\d{14}$/.test(value)) return '시각 미제공';
+  return `${value.slice(4, 6)}.${value.slice(6, 8)} ${value.slice(8, 10)}:${value.slice(10, 12)}`;
+}
+
 function formatHyundaiDate(value) {
   if (!value || !/^\d{8}$/.test(value)) return '미제공';
   return `${value.slice(0, 4)}.${value.slice(4, 6)}.${value.slice(6, 8)}`;
@@ -1283,11 +1300,16 @@ function SectionHeading({ eyebrow, title, description }) {
 }
 
 function PageIntro({ eyebrow, title, description, actions }) {
-  return <div className="page-intro"><div><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{actions && <div>{actions}</div>}</div>;
+  const visual = pageHeroVisuals[eyebrow] ?? { src: '/space-drive-08-v1.webp', index: '00', label: 'LIFE PASS' };
+  return <section className="page-intro"><img className="page-intro-media" src={visual.src} alt="" fetchPriority="high" /><div className="page-intro-shade" /><div className="page-intro-orbit" aria-hidden="true"><i /></div><div className="page-intro-content"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{actions && <div className="page-intro-actions">{actions}</div>}<div className="page-intro-scene" aria-hidden="true"><span>{visual.index}</span><i /><small>{visual.label}</small></div></section>;
 }
 
 function FeaturePurpose({ icon: Icon, title, description, steps }) {
   return <section className="feature-purpose reveal" data-reveal aria-label="기능 설명"><div className="feature-purpose-icon"><Icon size={19} /></div><div className="feature-purpose-copy"><span>이 기능은 무엇인가요?</span><strong>{title}</strong><p>{description}</p></div><ol>{steps.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol></section>;
+}
+
+function ApiCoveragePanel() {
+  return <section className="api-coverage reveal" data-reveal aria-labelledby="api-coverage-title"><div className="api-coverage-heading"><span>CONNECTED DATA MAP</span><h2 id="api-coverage-title">어떤 API가 실제로 연결되어 있나요?</h2><p>공개 규격과 현재 프로젝트 승인 범위를 분리해 보여드립니다. 제공되지 않는 값은 추정하지 않습니다.</p></div><div className="api-coverage-grid"><article><span>01 · ACCOUNT</span><strong>계정·차량 연결</strong><p>현대 통합계정 OAuth, 사용자 확인, 동의 차량 목록, 커넥티드 서비스 계약기간</p><small>현재 연동</small></article><article><span>02 · VEHICLE STATUS</span><strong>차량 상태 11종+</strong><p>배터리, 주행 가능 거리, 누적 주행거리, 충전 여부·목표량·남은 시간, 7종 경고</p><small>현재 연동</small></article><article><span>03 · NEARBY LIFE</span><strong>충전·정비 인프라</strong><p>한국환경공단 충전기 현황과 Kakao 위치·지도·블루핸즈 검색</p><small>현재 연동</small></article><article className="planned"><span>04 · NEXT APPROVAL</span><strong>다음 확장 후보</strong><p>차량 제원·옵션, 운행 기록, 최종 주차 위치, 고장코드, 안전운전점수</p><small>현대차 추가 승인·규격 확인 필요</small></article></div></section>;
 }
 
 function Metric({ icon: Icon, label, value, detail }) {

@@ -21,6 +21,7 @@ import java.nio.ByteBuffer
 import java.security.SecureRandom
 import java.time.Duration
 import java.time.Instant
+import kotlin.math.roundToInt
 import java.util.Base64
 import java.util.UUID
 import javax.crypto.Cipher
@@ -277,22 +278,40 @@ class HyundaiIntegrationService(
             else -> Powertrain.ICE
         }
         vehicle.plate = vehicle.plate.ifBlank { "현대 계정 연동" }
-        val battery = safeGet("/api/v1/car/status/$carId/ev/battery", accessToken)?.path("soc")
+        val batteryPayload = safeGet("/api/v1/car/status/$carId/ev/battery", accessToken)
+        recordTimestamp(vehicle, batteryPayload)
+        val battery = batteryPayload?.path("soc")
         vehicle.batteryStatusAvailable = battery?.isNumber == true
         if (vehicle.batteryStatusAvailable) vehicle.batterySoc = battery!!.asInt()
-        val range = safeGet("/api/v1/car/status/$carId/dte", accessToken)?.path("value")
+        val rangePayload = safeGet("/api/v1/car/status/$carId/dte", accessToken)
+        recordTimestamp(vehicle, rangePayload)
+        val range = rangePayload?.path("value")
         vehicle.rangeStatusAvailable = range?.isNumber == true
-        if (vehicle.rangeStatusAvailable) vehicle.rangeKm = range!!.asDouble().toInt()
-        val odometer = safeGet("/api/v1/car/status/$carId/odometer", accessToken)?.path("odometers")?.firstOrNull()?.path("value")
-        vehicle.odometerStatusAvailable = odometer?.isNumber == true
-        if (vehicle.odometerStatusAvailable) vehicle.odometerKm = odometer!!.asInt()
+        if (vehicle.rangeStatusAvailable) vehicle.rangeKm = distanceToKm(range!!.asDouble(), rangePayload.path("unit").asInt(1))
+        val odometerPayload = safeGet("/api/v1/car/status/$carId/odometer", accessToken)
+        val odometer = odometerPayload?.path("odometers")?.firstOrNull()
+        recordTimestamp(vehicle, odometer)
+        vehicle.odometerStatusAvailable = odometer?.path("value")?.isNumber == true
+        if (vehicle.odometerStatusAvailable) vehicle.odometerKm = distanceToKm(odometer!!.path("value").asDouble(), odometer.path("unit").asInt(1))
         val charging = safeGet("/api/v1/car/status/$carId/ev/charging", accessToken)
+        recordTimestamp(vehicle, charging)
         vehicle.chargingStatusAvailable = charging != null
         vehicle.chargingState = when {
             charging == null -> "상태 조회 불가"
             charging.path("batteryCharge").asBoolean(false) -> "충전 중"
             charging.path("batteryPlugin").asInt(0) > 0 -> "충전기 연결"
             else -> "연결 안 됨"
+        }
+        if (charging?.path("soc")?.isNumber == true) {
+            vehicle.batterySoc = charging.path("soc").asInt()
+            vehicle.batteryStatusAvailable = true
+        }
+        vehicle.chargingTargetSoc = charging?.path("targetSOC")?.path("targetSOClevel")?.takeIf(JsonNode::isNumber)?.asInt()
+        vehicle.chargingRemainingMinutes = charging?.path("remainTime")?.let { remaining ->
+            remaining.path("value").takeIf(JsonNode::isNumber)?.asDouble()?.let { value -> timeToMinutes(value, remaining.path("unit").asInt(1)) }
+        }
+        vehicle.chargingPlugType = charging?.path("batteryPlugin")?.takeIf(JsonNode::isNumber)?.asInt()?.let {
+            when (it) { 1 -> "급속 충전기"; 2 -> "일반 충전기"; else -> "연결 안 됨" }
         }
         vehicle.lowFuelWarning = warningStatus("/api/v1/car/status/warning/$carId/lowFuel", accessToken)
         vehicle.tirePressureWarning = warningStatus("/api/v1/car/status/warning/$carId/tirePressure", accessToken)
@@ -310,6 +329,25 @@ class HyundaiIntegrationService(
         vehicle.updatedAt = Instant.now()
         vehicleRepository.save(vehicle)
     }
+
+    private fun recordTimestamp(vehicle: Vehicle, payload: JsonNode?) {
+        val timestamp = payload?.path("timestamp")?.asText()?.takeIf { it.matches(Regex("\\d{14}")) } ?: return
+        if (vehicle.dataTimestamp == null || timestamp > vehicle.dataTimestamp!!) vehicle.dataTimestamp = timestamp
+    }
+
+    private fun distanceToKm(value: Double, unit: Int): Int = when (unit) {
+        0 -> value / 3280.839895
+        2 -> value / 1000.0
+        3 -> value * 1.609344
+        else -> value
+    }.roundToInt()
+
+    private fun timeToMinutes(value: Double, unit: Int): Int = when (unit) {
+        0 -> value * 60
+        2 -> value / 60000
+        3 -> value / 60
+        else -> value
+    }.roundToInt().coerceAtLeast(0)
 
     private fun warningStatus(path: String, accessToken: String): Boolean? {
         val status = safeGet(path, accessToken)?.path("status")

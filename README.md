@@ -80,7 +80,7 @@ npm run dev
 
 ## 실제 서비스 전환
 
-- `LIFEPASS_HYUNDAI_MODE=live`: 현대 통합계정 OAuth·프로필 식별, 개인정보 제3자 제공 동의, 차량 목록·주행거리·배터리·충전 상태·7종 차량 경고·커넥티드 서비스 계약일
+- `LIFEPASS_HYUNDAI_MODE=live`: 현대 통합계정 OAuth·프로필 식별, 개인정보 제3자 제공 동의, 차량 목록·주행거리·배터리·충전 상태(목표 충전량·남은 시간·플러그 유형 포함)·7종 차량 경고·커넥티드 서비스 계약일
 - 현대 로그인 세션: PostgreSQL-backed 30일 HttpOnly/SameSite=Lax 쿠키. 운영에서는 Secure 쿠키를 강제하며 임의 사용자 헤더를 신뢰하지 않음
 - `LIFEPASS_EV_CHARGER_MODE=live`: 한국환경공단 충전소 위치·실시간 충전기 상태
 - `KAKAO_JAVASCRIPT_KEY`: 모바일 실지도 표시; 키가 없으면 사용 예시 지도만 표시

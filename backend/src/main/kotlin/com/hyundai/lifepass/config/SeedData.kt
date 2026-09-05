@@ -36,6 +36,8 @@ class SeedData {
                     location = "서울 성수동",
                     softwareVersion = "v2.4.0",
                     chargingState = "연결 안 됨",
+                    chargingTargetSoc = 80,
+                    chargingPlugType = "연결 안 됨",
                 ),
             )
             val ioniq5 = vehicleRepository.save(
@@ -54,6 +56,9 @@ class SeedData {
                     location = "경기 판교",
                     softwareVersion = "v2.4.0",
                     chargingState = "급속 충전 중",
+                    chargingTargetSoc = 80,
+                    chargingRemainingMinutes = 24,
+                    chargingPlugType = "급속 충전기",
                 ),
             )
             val kona = vehicleRepository.save(
@@ -72,6 +77,9 @@ class SeedData {
                     location = "부산 해운대",
                     softwareVersion = "v2.3.8",
                     chargingState = "완속 충전 중",
+                    chargingTargetSoc = 90,
+                    chargingRemainingMinutes = 58,
+                    chargingPlugType = "일반 충전기",
                 ),
             )
             val ioniqEvents = listOf(
