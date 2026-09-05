@@ -581,6 +581,22 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
         </div>
       </section>
 
+      <section className="service-explainer reveal" data-reveal aria-labelledby="service-explainer-title">
+        <div className="container service-explainer-inner">
+          <div className="service-explainer-heading"><span>WHAT IS HYUNDAI LIFE PASS?</span><h2 id="service-explainer-title">차량을 연결하면,<br /><em>다음 행동까지</em> 한 화면에 보여요.</h2><p>이 서비스는 현대차 오너를 위한 차량 생활 공간입니다. 로그인 한 번으로 내 차의 현재 상태를 살피고, 충전·정비·차량 기록으로 바로 이어집니다.</p></div>
+          <div className="service-explainer-flow" aria-label="서비스 이용 흐름">
+            <article><div><CarFront size={19} /></div><span>01</span><h3>내 차 연결</h3><p>현대 통합 계정에서 차량을 선택해요.</p></article>
+            <i aria-hidden="true"><ArrowRight size={16} /></i>
+            <article><div><Activity size={19} /></div><span>02</span><h3>상태 확인</h3><p>배터리·주행거리·안전 신호를 봐요.</p></article>
+            <i aria-hidden="true"><ArrowRight size={16} /></i>
+            <article><div><BatteryCharging size={19} /></div><span>03</span><h3>바로 행동</h3><p>충전소와 블루핸즈를 찾아요.</p></article>
+            <i aria-hidden="true"><ArrowRight size={16} /></i>
+            <article><div><FileCheck2 size={19} /></div><span>04</span><h3>기록으로 남기기</h3><p>확인된 차량 정보를 필요할 때 공유해요.</p></article>
+          </div>
+          <div className="service-explainer-actions"><button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 상태 확인하기' : '내 차 연결부터 시작'} <ArrowRight size={16} /></button><button className="explainer-link" onClick={() => navigate('charge')}>차량 연결 없이 충전소 먼저 보기 <ArrowUpRight size={16} /></button></div>
+        </div>
+      </section>
+
       <section className="home-manifesto reveal" data-reveal id="mission">
         <div className="container home-manifesto-inner">
           <span>WHAT IS HYUNDAI LIFE PASS?</span>

@@ -1639,3 +1639,54 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 @media (prefers-reduced-motion: reduce) {
   .page-intro-media { animation: none; }
 }
+
+/* Clear product explanation — make the first visit understandable in one glance */
+.service-explainer { position: relative; overflow: hidden; padding: 148px 0 132px; background: #f4f4f1; }
+.service-explainer::before { content: 'LIFE PASS'; position: absolute; top: 38px; right: -24px; color: rgba(16,17,22,.035); font: 800 clamp(90px,17vw,230px)/1 'Inter',sans-serif; letter-spacing: -.1em; white-space: nowrap; pointer-events: none; }
+.service-explainer-inner { position: relative; z-index: 1; }
+.service-explainer-heading { max-width: 700px; }
+.service-explainer-heading > span { color: var(--orange); font: 600 9px 'DM Mono',monospace; letter-spacing: .17em; }
+.service-explainer-heading h2 { max-width: 650px; margin: 20px 0 18px; color: var(--navy); font-size: clamp(43px,6.2vw,82px); line-height: 1.04; letter-spacing: -.08em; }
+.service-explainer-heading h2 em { color: var(--orange); font-style: normal; }
+.service-explainer-heading p { max-width: 560px; margin: 0; color: #63656b; font-size: 14px; line-height: 1.85; }
+.service-explainer-flow { margin-top: 66px; display: grid; grid-template-columns: 1fr 30px 1fr 30px 1fr 30px 1fr; align-items: stretch; gap: 10px; }
+.service-explainer-flow article { min-height: 194px; padding: 23px 21px; position: relative; border: 1px solid rgba(16,17,22,.1); border-radius: 18px; background: rgba(255,255,255,.82); box-shadow: 0 16px 38px rgba(16,17,22,.055); transition: transform .3s,box-shadow .3s,border-color .3s; }
+.service-explainer-flow article:hover { transform: translateY(-6px); border-color: rgba(239,107,63,.35); box-shadow: 0 24px 46px rgba(16,17,22,.1); }
+.service-explainer-flow article > div { width: 42px; height: 42px; margin-bottom: 27px; display: grid; place-items: center; border-radius: 13px; background: #fff0e9; color: var(--orange); }
+.service-explainer-flow article:nth-of-type(2) > div { background: #edf3ff; color: #4e73c8; }
+.service-explainer-flow article:nth-of-type(3) > div { background: #eaf8f1; color: #2d805e; }
+.service-explainer-flow article:nth-of-type(4) > div { background: #f0ecfb; color: #705bb0; }
+.service-explainer-flow article > span { color: #999aa0; font: 600 8px 'DM Mono',monospace; letter-spacing: .12em; }
+.service-explainer-flow h3 { margin: 8px 0 7px; color: var(--navy); font-size: 16px; letter-spacing: -.035em; }
+.service-explainer-flow p { margin: 0; color: #707177; font-size: 10px; line-height: 1.6; }
+.service-explainer-flow > i { align-self: center; width: 30px; height: 30px; display: grid; place-items: center; color: var(--orange); }
+.service-explainer-actions { margin-top: 34px; display: flex; align-items: center; gap: 24px; }
+.service-explainer-actions .button { background: var(--navy); }
+.explainer-link { padding: 8px 0; border: 0; border-bottom: 1px solid rgba(16,17,22,.24); display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--navy); font-size: 11px; font-weight: 700; cursor: pointer; }
+.explainer-link:hover { color: var(--orange); border-color: var(--orange); }
+
+@media (max-width: 900px) {
+  .service-explainer { padding: 110px 0 100px; }
+  .service-explainer-flow { grid-template-columns: 1fr 22px 1fr; }
+  .service-explainer-flow article:nth-of-type(3), .service-explainer-flow article:nth-of-type(4) { margin-top: 10px; }
+  .service-explainer-flow > i:last-of-type { display: none; }
+}
+
+@media (max-width: 600px) {
+  .service-explainer { padding: 88px 0 83px; }
+  .service-explainer::before { top: 27px; right: -38px; font-size: 88px; }
+  .service-explainer-heading > span { font-size: 7px; }
+  .service-explainer-heading h2 { margin: 16px 0 17px; font-size: clamp(39px,11.5vw,53px); line-height: 1.05; }
+  .service-explainer-heading p { font-size: 12px; line-height: 1.75; }
+  .service-explainer-flow { margin-top: 40px; grid-template-columns: 1fr; gap: 7px; }
+  .service-explainer-flow article, .service-explainer-flow article:nth-of-type(3), .service-explainer-flow article:nth-of-type(4) { min-height: 0; margin-top: 0; padding: 17px; display: grid; grid-template-columns: 45px 1fr; grid-template-rows: auto auto; column-gap: 13px; align-items: center; }
+  .service-explainer-flow article > div { grid-row: 1 / 3; margin: 0; }
+  .service-explainer-flow article > span { align-self: end; }
+  .service-explainer-flow h3 { margin: 4px 0 2px; font-size: 14px; }
+  .service-explainer-flow p { font-size: 9px; }
+  .service-explainer-flow > i { width: 100%; height: 17px; transform: rotate(90deg); }
+  .service-explainer-flow > i:last-of-type { display: grid; }
+  .service-explainer-actions { margin-top: 27px; display: grid; gap: 16px; justify-items: start; }
+  .service-explainer-actions .button { width: 100%; }
+  .explainer-link { font-size: 10px; }
+}
