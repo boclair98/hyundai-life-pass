@@ -1136,3 +1136,150 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .orbit-intro-frame,.orbit-intro-frame > img,.orbit-intro-copy,.motion-story-media figure,.motion-story-media img { transition: none; will-change: auto; }
   .orbit-scroll-cue i::after { animation: none; top: 65%; }
 }
+
+/* 2026-09 product story refresh — smaller type, clearer use cases, richer scroll scenes */
+.orbit-intro-frame > img { object-position: 57% center; }
+.orbit-intro-shade {
+  background:
+    radial-gradient(circle at 72% 57%, transparent 0 20%, rgba(5,8,14,.1) 42%, rgba(5,8,14,.58) 84%),
+    linear-gradient(90deg, rgba(5,7,12,.94) 0%, rgba(5,7,12,.76) 34%, rgba(5,7,12,.16) 66%),
+    linear-gradient(0deg, rgba(5,7,12,.86), transparent 38%, rgba(5,7,12,.2));
+}
+.orbit-intro-copy { padding-top: 128px; padding-bottom: 166px; }
+.orbit-intro-copy h1 {
+  max-width: 850px;
+  margin: 22px 0 20px;
+  font-size: clamp(48px, 5.65vw, 82px);
+  line-height: 1.05;
+  letter-spacing: -.075em;
+}
+.orbit-intro-copy p { max-width: 680px; font-size: 14px; line-height: 1.8; }
+.orbit-intro-copy .hero-buttons { margin-top: 28px; }
+.hero-proof {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hero-proof span {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(5,11,20,.34);
+  color: rgba(255,255,255,.66);
+  font-size: 9px;
+  backdrop-filter: blur(10px);
+}
+.hero-proof strong { color: #fff; font-weight: 700; }
+
+.home-manifesto {
+  min-height: 106svh;
+  padding-block: 17vh 13vh;
+  align-items: center;
+}
+.home-manifesto h2 {
+  max-width: 980px;
+  margin: 26px 0 42px;
+  font-size: clamp(42px, 5.5vw, 74px);
+  line-height: 1.07;
+  letter-spacing: -.072em;
+}
+.home-manifesto .manifesto-answer {
+  max-width: 780px;
+  margin-left: auto;
+  grid-template-columns: 1fr 96px;
+  gap: 34px;
+}
+.manifesto-answer p { font-size: 14px; line-height: 1.8; }
+.manifesto-answer strong { display: block; margin-bottom: 8px; color: #17181d; font-size: 17px; line-height: 1.55; }
+.home-manifesto .project-definition {
+  max-width: none;
+  margin: 76px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: stretch;
+  gap: 0;
+  border-top: 1px solid rgba(16,17,22,.16);
+  border-bottom: 1px solid rgba(16,17,22,.16);
+}
+.project-definition article { min-height: 172px; padding: 28px 30px 26px 0; border-right: 1px solid rgba(16,17,22,.13); }
+.project-definition article:not(:first-child) { padding-left: 30px; }
+.project-definition article:last-child { border-right: 0; }
+.project-definition span { color: var(--orange); font: 700 8px 'DM Mono', monospace; letter-spacing: .16em; }
+.project-definition strong { display: block; margin: 20px 0 9px; color: #15161b; font-size: 20px; letter-spacing: -.035em; }
+.project-definition p { margin: 0; color: #6b6d73; font-size: 11px; line-height: 1.72; }
+
+.motion-story { height: 350svh; }
+.motion-story-media figure:nth-child(1) img { object-position: 49% center; }
+.motion-story-media figure:nth-child(2) img { object-position: 42% center; }
+.motion-story-media figure:nth-child(3) img { object-position: 42% center; }
+.motion-story-copy article { width: min(530px, 47%); }
+.motion-story-copy h2 {
+  margin: 18px 0 18px;
+  font-size: clamp(38px, 4.1vw, 58px);
+  line-height: 1.12;
+  letter-spacing: -.065em;
+}
+.motion-story-copy p { max-width: 500px; font-size: 14px; line-height: 1.78; }
+.motion-story-copy button { margin-top: 25px; }
+.motion-story-orbit { opacity: .74; }
+
+.section-heading { max-width: 650px; }
+.section-heading h2 { font-size: clamp(32px, 3.6vw, 46px); line-height: 1.18; letter-spacing: -.055em; }
+.page-intro h1 { font-size: clamp(38px, 4.5vw, 58px); }
+.service-scene .service-card { min-height: 315px; }
+.service-scene .service-card h3 { font-size: 20px; }
+.tutorial-scene .section-heading { max-width: 690px; }
+
+@media (max-width: 760px) {
+  .desktop-only { display: none; }
+  .orbit-intro { height: 148svh; }
+  .orbit-intro-frame > img { object-position: 67% center; }
+  .orbit-intro-copy { padding: 108px 0 158px; }
+  .orbit-intro-copy h1 {
+    max-width: 350px;
+    margin: 14px 0 15px;
+    font-size: clamp(34px, 10.5vw, 43px);
+    line-height: 1.08;
+    letter-spacing: -.068em;
+  }
+  .orbit-intro-copy p { max-width: 345px; font-size: 12px; line-height: 1.68; }
+  .orbit-intro-copy .hero-buttons { margin-top: 20px; }
+  .orbit-intro-copy .hero-buttons .button { height: 43px; padding-inline: 14px; font-size: 10px; }
+  .hero-proof { margin-top: 15px; gap: 5px; }
+  .hero-proof span { min-height: 25px; padding-inline: 8px; font-size: 7px; }
+
+  .home-manifesto { min-height: auto; padding: 110px 0 92px; }
+  .home-manifesto h2 {
+    margin: 22px 0 35px;
+    font-size: clamp(35px, 10.7vw, 44px);
+    line-height: 1.1;
+  }
+  .home-manifesto .manifesto-answer { margin: 0; display: block; }
+  .manifesto-answer p { font-size: 12px; line-height: 1.75; }
+  .manifesto-answer strong { font-size: 14px; }
+  .manifesto-answer i { display: none; }
+  .home-manifesto .project-definition { margin-top: 52px; grid-template-columns: 1fr; }
+  .project-definition article,
+  .project-definition article:not(:first-child) { min-height: 0; padding: 22px 0; border-right: 0; border-bottom: 1px solid rgba(16,17,22,.12); }
+  .project-definition article:last-child { border-bottom: 0; }
+  .project-definition strong { margin: 10px 0 5px; font-size: 17px; }
+
+  .motion-story { height: 330svh; }
+  .motion-story-media figure:nth-child(1) img { object-position: 64% center; }
+  .motion-story-media figure:nth-child(2) img { object-position: 66% center; }
+  .motion-story-media figure:nth-child(3) img { object-position: 67% center; }
+  .motion-story-copy article { width: calc(100% - 32px); right: 16px; bottom: 104px; }
+  .motion-story-copy h2 { margin: 12px 0 14px; font-size: clamp(30px, 8.9vw, 38px); line-height: 1.12; }
+  .motion-story-copy p { font-size: 11px; line-height: 1.68; }
+  .motion-story-copy button { margin-top: 18px; font-size: 11px; }
+  .motion-story-chapter { top: 82px; }
+
+  .section-heading h2 { font-size: 30px; line-height: 1.22; }
+  .page-intro h1 { font-size: 36px; line-height: 1.12; }
+  .service-scene .service-card { min-height: 310px; }
+}

@@ -65,11 +65,11 @@ const navigation = [
 ];
 
 const homeScenes = [
-  { id: '01', label: '시작' },
-  { id: '02', label: '하나의 흐름' },
-  { id: '03', label: '서비스' },
+  { id: '01', label: '무엇인가' },
+  { id: '02', label: '문제 해결' },
+  { id: '03', label: '바로 쓰기' },
   { id: '04', label: '내 차' },
-  { id: '05', label: '가이드' },
+  { id: '05', label: '시작하기' },
 ];
 
 const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide']);
@@ -513,21 +513,26 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
         <div className="orbit-intro-sticky">
           <div className="orbit-intro-frame">
             <img
-              src="/orbit-drive-hero-v3.jpg"
-              alt="지구 위 궤도형 도로를 달리는 미래형 전기차"
+              src="/life-pass-hero-v4.webp"
+              alt="서울의 강변 도로 위에서 차량 상태와 연결된 전기차"
               fetchPriority="high"
             />
             <div className="orbit-intro-shade" />
             <div className="orbit-grid" aria-hidden="true" />
-            <div className="orbit-system-label" aria-hidden="true"><span>01</span><i /><small>CAR LIFE IN ORBIT</small></div>
+            <div className="orbit-system-label" aria-hidden="true"><span>01</span><i /><small>MY CAR, ONE CLEAR FLOW</small></div>
             <div className="orbit-intro-copy container">
-              <div className="overline"><i /> MY HYUNDAI · ONE CONTINUOUS LIFE</div>
-              <h1>자동차 생활의 모든 순간을<br /><em>하나의 궤도로.</em></h1>
-              <p>차량 상태를 이해하고, 충전과 정비를 찾고, 중요한 기록을 이어갑니다.<br />내 차를 중심으로 움직이는 새로운 카 라이프 플랫폼.</p>
+              <div className="overline"><i /> 내 차 상태에서 다음 행동까지</div>
+              <h1>내 차가 보내는 신호,<br /><em>다음 행동까지 한 번에.</em></h1>
+              <p>배터리와 안전 경고를 확인하고, 가까운 충전소와 블루핸즈를 찾고,<br className="desktop-only" /> 중요한 차량 기록까지 이어서 관리하는 현대차 오너 플랫폼입니다.</p>
               <div className="hero-buttons">
-                <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 상태 새로고침' : '현대차 연결하기'} <ArrowRight size={17} /></button>
-                <button className="button glass" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>서비스 시작</button>
+                <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 상태 새로고침' : '내 차 연결하기'} <ArrowRight size={17} /></button>
+                <button className="button glass" onClick={() => navigate('charge')}>충전소 먼저 찾기</button>
                 <button className="button glass hero-share-button" onClick={() => sharePage({ title: 'HYUNDAI LIFE PASS', text: '차량 상태·충전·정비·기록을 하나의 흐름으로 연결하는 카라이프 플랫폼', notify })}><Share2 size={16} /> 공유</button>
+              </div>
+              <div className="hero-proof" aria-label="서비스 이용 범위">
+                <span><strong>비로그인</strong> 충전·정비 탐색</span>
+                <span><strong>차량 연결 후</strong> 실차 상태 확인</span>
+                <span><strong>동의 기반</strong> 데이터만 사용</span>
               </div>
             </div>
             <div className="orbit-function-rail" aria-label="주요 차량 생활 기능">
@@ -542,39 +547,44 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
 
       <section className="home-manifesto reveal" data-reveal id="mission">
         <div className="container home-manifesto-inner">
-          <span>A CAR, ALWAYS IN MOTION</span>
-          <h2>차는 멈춰 있어도<br />당신의 카 라이프는 움직입니다.</h2>
-          <div><p>차량 상태부터 충전과 정비, 차량 기록까지. 흩어져 있던 자동차 생활을 하나의 궤도로 연결하고 다음 행동을 먼저 보여드립니다.</p><i /></div>
+          <span>WHAT IS HYUNDAI LIFE PASS?</span>
+          <h2>내 차가 궁금할 때,<br />여러 앱과 정보를 헤매지 않도록.</h2>
+          <div className="manifesto-answer"><p><strong>HYUNDAI LIFE PASS는 현대차 오너를 위한 차량 생활 허브입니다.</strong> 차량이 보내는 상태를 이해하기 쉬운 말로 보여주고, 필요한 충전과 정비 행동으로 바로 연결합니다.</p><i /></div>
+          <div className="project-definition" aria-label="프로젝트 핵심 설명">
+            <article><span>FOR</span><strong>현대차 오너</strong><p>내 차 상태와 주변 인프라를 한곳에서 보고 싶은 사람</p></article>
+            <article><span>SOLVES</span><strong>흩어진 정보</strong><p>차량 신호를 확인한 뒤 무엇을 해야 할지 바로 알 수 있게</p></article>
+            <article><span>CONNECTS</span><strong>상태 → 행동 → 기록</strong><p>확인에서 끝나지 않고 충전·정비·차량 여권으로 연결</p></article>
+          </div>
         </div>
       </section>
 
       <section className="motion-story" data-scene="02" data-active="0" aria-label="차량 생활 주요 가치">
         <div className="motion-story-sticky">
           <div className="motion-story-media" aria-hidden="true">
-            <figure><img src="/orbit-vehicle-scan-v3.jpg" alt="" loading="lazy" /></figure>
-            <figure><img src="/orbit-charge-network-v3.jpg" alt="" loading="lazy" /></figure>
-            <figure><img src="/orbit-drive-hero-v3.jpg" alt="" loading="lazy" /></figure>
+            <figure><img src="/life-pass-hero-v4.webp" alt="" loading="lazy" /></figure>
+            <figure><img src="/life-pass-charge-v4.webp" alt="" loading="lazy" /></figure>
+            <figure><img src="/life-pass-care-v4.webp" alt="" loading="lazy" /></figure>
           </div>
           <div className="motion-story-shade" />
           <div className="motion-story-orbit" aria-hidden="true"><i /><b /></div>
-          <div className="motion-story-chapter"><span>02</span><i /><small>THE CAR LIFE SYSTEM</small></div>
+          <div className="motion-story-chapter"><span>02</span><i /><small>ONE SIGNAL, ONE NEXT STEP</small></div>
           <div className="motion-story-copy container">
             <article>
-              <span>UNDERSTAND</span>
-              <h2>내 차의 모든 신호를<br />한눈에 읽습니다.</h2>
-              <p>배터리와 주행거리, 타이어와 안전 경고까지 지금 필요한 정보만 선명하게 보여드립니다.</p>
+              <span>01 · CHECK</span>
+              <h2>출발 전 10초,<br />내 차 상태를 확인합니다.</h2>
+              <p>배터리 잔량, 주행 가능 거리, 누적 주행거리와 7가지 안전 경고를 한 화면에서 확인합니다. 제공되지 않는 값은 추정하지 않습니다.</p>
               <button onClick={() => navigate('care')}>내 차 상태 보기 <ArrowRight size={18} /></button>
             </article>
             <article>
-              <span>CONNECT</span>
-              <h2>지금 갈 수 있는 충전과 정비를<br />내 위치에서 연결합니다.</h2>
-              <p>가까운 충전기와 블루핸즈를 실제 위치에서 찾고, 선택한 곳까지 바로 길 안내를 시작합니다.</p>
+              <span>02 · ACT</span>
+              <h2>충전이 필요하면,<br />지금 갈 수 있는 곳을 찾습니다.</h2>
+              <p>현재 위치 주변 충전기의 운영 상태와 거리를 비교하고 길 안내로 이어집니다. 점검이 필요할 때는 가까운 블루핸즈도 같은 흐름에서 찾습니다.</p>
               <button onClick={() => navigate('charge')}>주변 충전소 찾기 <ArrowRight size={18} /></button>
             </article>
             <article>
-              <span>REMEMBER</span>
-              <h2>차와 함께한 모든 시간을<br />신뢰할 기록으로 남깁니다.</h2>
-              <p>점검과 소프트웨어 변경, 차량의 중요한 순간을 이어서 보고 필요할 때 안전하게 공유합니다.</p>
+              <span>03 · REMEMBER</span>
+              <h2>점검과 변화는<br />신뢰할 기록으로 남습니다.</h2>
+              <p>Life Pass가 실제로 받은 차량 상태 이벤트를 서명해 시간순으로 보관합니다. 중고차 거래나 차량 관리 이력을 확인할 때 출처를 함께 볼 수 있습니다.</p>
               <button onClick={() => navigate('passport')}>차량 기록 보기 <ArrowRight size={18} /></button>
             </article>
           </div>
@@ -584,7 +594,7 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
 
       <section className="section service-scene reveal" data-reveal data-scene="03" id="services">
         <div className="container service-scene-inner">
-          <SectionHeading eyebrow="FOR YOUR EVERYDAY DRIVE" title="차를 아끼는 가장 쉬운 방법." description="충전이 필요할 때, 점검이 걱정될 때, 내 차 기록이 필요할 때 한 번에 찾아보세요." />
+          <SectionHeading eyebrow="START WITH TODAY'S NEED" title="오늘 필요한 일을 바로 시작하세요." description="로그인하지 않아도 주변 충전소와 서비스 거점을 찾을 수 있고, 차량 연결 후에는 내 차 상태와 기록까지 이어집니다." />
           <div className="service-grid">
             <ServiceCard number="01" icon={BatteryCharging} title="충전소 찾기" description="내 주변에서 사용 가능한 충전기를 찾고 길 안내까지 바로 이어갑니다." action="주변 충전소 보기" onClick={() => navigate('charge')} tone="blue" />
             <ServiceCard number="02" icon={Activity} title="블루핸즈 찾기" description="가까운 서비스 거점을 살펴보고 전화나 길 안내를 바로 이용하세요." action="가까운 곳 찾기" onClick={() => navigate('care')} tone="sky" />
@@ -603,7 +613,7 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
 
       <section className="section container tutorial-scene reveal" data-reveal data-scene="05">
         <div className="tutorial-heading">
-          <SectionHeading eyebrow="CAR LIFE TUTORIAL" title="처음부터 한 단계씩." description="내 차를 연결하고, 주변을 찾고, 오늘의 안전을 확인하는 순서대로 안내해 드려요." />
+          <SectionHeading eyebrow="HOW IT WORKS" title="처음이라면, 이 순서로 시작하세요." description="탐색은 바로, 실차 데이터는 동의 후에. 실제로 제공되는 범위를 분명하게 나눴습니다." />
           <div className="tutorial-progress" aria-label="차량 생활 준비도">
             <div><strong>{connected ? '2' : '1'} / 4</strong><span>{connected ? '내 차가 준비됐어요' : '첫 단계부터 시작해요'}</span></div>
             <i><b style={{ width: connected ? '50%' : '25%' }} /></i>
