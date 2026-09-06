@@ -58,8 +58,9 @@ import {
 import { OwnerHome, OwnershipPage, useVehicleJournal } from './OwnerExperience';
 import './app.css';
 import './platform.css';
-import { MobilityBackdrop } from './MobilityBackdrop';
+import { MobilityBackdrop, useMobilityTour, FeatureImage } from './MobilityBackdrop';
 import './mobility.css';
+import './journey.css';
 
 const navigation = [
   { id: 'home', label: '내 차', icon: CarFront },
@@ -405,7 +406,8 @@ export default function App() {
     markNotification: (id) => transact(() => readNotification(id), '알림을 확인했습니다.'),
   };
 
-  const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget };
+  const tour = useMobilityTour(page, sectionTarget, Boolean(modal));
+  const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget, tour };
   useEffect(() => { document.title = `${navigation.find((item) => item.id === page)?.label ?? '이용 안내'} · LIFE PASS`; }, [page]);
   useEffect(() => {
     const panel = document.getElementById('main-content');
@@ -414,7 +416,7 @@ export default function App() {
 
   return (
     <div className={`app platform mobility-shell page-${page}`} ref={appRef}>
-      <MobilityBackdrop page={page} />
+      <MobilityBackdrop scene={tour.scene} paused={tour.paused} />
       <a className="skip-to-content" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>본문 바로가기</a>
       <div className="page-progress" aria-hidden="true"><i /></div>
       <Header
@@ -653,6 +655,7 @@ function TirePressureCard({ vehicle, compact = false, onDetails }) {
   const overallLabel = check.state === 'UNAVAILABLE' ? (vehicle ? '미수신' : '차량 연결 필요') : check.state === 'WARNING' ? '경고 수신' : '수신한 경고 없음';
   return (
     <article className={`tire-pressure-card panel ${compact ? 'compact' : ''}`}>
+      <div className="feature-art tire-art"><FeatureImage scene="tires" /></div>
       <div className="tire-card-heading"><div><span>안전하게 달리기</span><h3>타이어 공기압</h3></div><strong className={`tire-status ${check.state.toLowerCase()}`}>{overallLabel}</strong></div>
       <div className="tire-grid" aria-label="타이어 위치별 상태">{tirePositions.map(({ id, label, key }) => { const value = tireValue(vehicle, key); const valueLabel = value == null ? '미제공' : `${value}${unit ? ` ${unit}` : ''}`; return <div className={`tire-wheel ${check.state.toLowerCase()}`} key={id} aria-label={`${label} ${valueLabel}`}><i /><span>{label}</span><strong>{valueLabel}</strong></div>; })}</div>
       <div className="tire-card-note"><CircleGauge size={15} /><span>{exactCount ? `${exactCount}개 바퀴의 수치를 확인했어요.` : vehicle?.source === 'HYUNDAI_DEVELOPERS' ? '현재는 타이어 경고 여부를 먼저 보여드려요.' : '차량을 연결하면 타이어 상태를 확인할 수 있어요.'}</span></div>
@@ -671,6 +674,7 @@ function VehicleEnergyCard({ vehicle, onConnect }) {
   const charging = /charging|충전\s*중|급속\s*충전|완속\s*충전/i.test(vehicle?.chargingState ?? '');
   return (
     <section className={`vehicle-energy-card ${vehicle ? 'connected' : 'guest'} reveal`} data-reveal aria-label="내 차 충전 상태">
+      <div className="feature-art energy-art"><FeatureImage scene="battery" /></div>
       <div className="energy-card-copy">
         <span><i /> {vehicle ? 'MY EV ENERGY' : 'CONNECT MY HYUNDAI'}</span>
         <h2>{vehicle ? `${vehicle.name} 충전 상태` : '내 차의 배터리를 한눈에'}</h2>
@@ -1021,7 +1025,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   );
 }
 
-function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget }) {
+function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget, tour }) {
   const [driveTab, setDriveTab] = useState(sectionTarget || 'plan');
   useEffect(() => { if (sectionTarget) setDriveTab(sectionTarget); }, [sectionTarget]);
   const [tripDistance, setTripDistance] = useState(120);
@@ -1102,7 +1106,7 @@ function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget }) {
       <PageIntro eyebrow="SMART DRIVE" title="출발부터 주차까지 한 번에" description="예상 주행 여유와 이동 비용을 계산하고, 출발 체크와 주차 위치를 관리하세요." actions={<button className="button primary" onClick={() => navigate('charge')}><BatteryCharging size={17} /> 주변 충전소</button>} />
       <FeaturePurpose icon={Route} title="오늘 이동에 필요한 판단과 기록을 한곳에 모았습니다." description="차량 연결 전에는 예상 에너지와 비용을 계산하고, 연결 후에는 실제 주행 가능 거리로 출발 여부까지 확인합니다." steps={['이동 거리 입력', '잔량·비용 판단', '주차 위치 저장']} />
 
-      <nav className="workspace-tabs" aria-label="드라이브 도구">{[['plan', '주행·비용 계산'], ['checklist', '출발 체크'], ['parking', '주차 위치']].map(([id, label]) => <button key={id} className={driveTab === id ? 'active' : ''} aria-pressed={driveTab === id} onClick={() => setDriveTab(id)}>{label}</button>)}</nav>
+      <nav className="workspace-tabs" aria-label="드라이브 도구">{[['plan', '주행·비용 계산'], ['checklist', '출발 체크'], ['parking', '주차 위치']].map(([id, label]) => <button key={id} className={driveTab === id ? 'active' : ''} aria-pressed={driveTab === id} onClick={() => { setDriveTab(id); tour.select(id === 'parking' ? 'parking' : id === 'checklist' ? 'tires' : 'road'); }}>{label}</button>)}</nav>
 
       {driveTab === 'plan' && <section className="drive-planner panel" id="range-planner">
         <div className="drive-planner-heading">
@@ -1136,6 +1140,7 @@ function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget }) {
 
       <div className="drive-support-grid">
         {driveTab === 'checklist' && <section className="departure-check panel" id="drive-checklist">
+          <div className="feature-art"><FeatureImage scene="tires" /></div>
           <div className="drive-tool-heading"><div><span>BEFORE DRIVE</span><h2>오늘의 출발 체크</h2></div><strong>{checkedCount}/{driveChecklistItems.length}</strong></div>
           <div className="departure-progress"><i style={{ width: `${(checkedCount / driveChecklistItems.length) * 100}%` }} /></div>
           <div className="departure-list">{driveChecklistItems.map((item) => {
@@ -1146,6 +1151,7 @@ function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget }) {
         </section>}
 
         {driveTab === 'parking' && <section className="parking-memory panel" id="parking-memory">
+          <div className="feature-art"><FeatureImage scene="parking" /></div>
           <div className="drive-tool-heading"><div><span>PARKING MEMORY</span><h2>내 차 어디에 세웠지?</h2></div><MapPin size={23} /></div>
           {parkingSpot ? <>
             <div className="parking-map-preview" aria-label="저장된 주차 위치"><i /><div><Navigation size={19} fill="currentColor" /></div><span>{parkingSpot.latitude.toFixed(4)}, {parkingSpot.longitude.toFixed(4)}</span></div>
@@ -1462,6 +1468,7 @@ function LegalPage({ type }) {
           <h2>관리 기록과 일정의 범위</h2><p>직접 입력한 기록은 공식 정비 이력이나 정비소 예약이 아닙니다. 예정 일정은 앱 안에서 확인하며 푸시 알림은 제공하지 않습니다. 차량에서 받은 정보는 별도 기록 탭에서 구분해 보여드립니다.</p>
           <h2>출발 전 한 번 더 확인해 주세요</h2><p>충전기 사용 가능 여부와 서비스 거점 운영 시간은 현장 상황에 따라 달라질 수 있습니다. 출발 전 한 번 더 확인하면 더 안심할 수 있어요.</p>
           <h2>현대자동차와의 관계</h2><p>HYUNDAI LIFE PASS는 현대자동차 공식 홈페이지가 아닌 독립 서비스입니다. 차량 정보는 사용자가 직접 허락한 경우에만 확인합니다.</p>
+          <h2>화면 이미지 안내</h2><p>배경과 기능 안내 이미지는 생성형 이미지로 연출한 장면입니다. 실제 사용자 차량, 충전소 시설, 차량 구조나 정비 결과를 촬영한 사진이 아닙니다. 차량 수치와 위치 정보는 별도로 표시합니다.</p>
         </>}
         <div className="legal-contact"><strong>문의 및 개선 제안</strong><a href="https://github.com/boclair98/hyundai-life-pass/issues" target="_blank" rel="noreferrer">GitHub Issues에서 문의하기 <ArrowRight size={14} /></a></div>
       </section>

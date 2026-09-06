@@ -1,0 +1,106 @@
+/* Image-led destinations, with data and map controls remaining real accessible DOM. */
+.mobility-backdrop img { transition:opacity .55s ease,transform 1.1s cubic-bezier(.2,.7,.2,1); }
+.mobility-backdrop img.active { animation:journey-drift 12s ease-out both; }
+.mobility-backdrop.is-paused img { animation-play-state:paused; }
+.mobility-backdrop-shade { background:linear-gradient(90deg,#04172bbb,#061b3630 78%),linear-gradient(0deg,#03152baf,transparent 70%); }
+.journey-controls { display:flex; align-items:center; width:fit-content; max-width:100%; gap:4px; padding:8px 8px 8px 14px; margin-top:24px; border:1px solid #ffffff30; border-radius:16px; background:#071e38b8; backdrop-filter:blur(14px); }
+.journey-controls > div { display:grid; gap:5px; min-width:150px; padding-right:10px; }
+.journey-controls span { font-size:9px; color:#9ed7eb; letter-spacing:.13em; }
+.journey-controls strong { font-size:12px; color:#fff; font-weight:500; }
+.journey-controls button { width:40px; height:42px; display:grid; place-items:center; border:0; border-radius:10px; background:#ffffff0d; color:#e1f6ff; }
+.journey-controls button:hover { background:#ffffff26; }
+.journey-controls button:disabled { opacity:.5; }
+.journey-image { display:block; width:100%; height:100%; object-fit:cover; object-position:center; }
+.platform.mobility-shell .owner-shortcuts { padding:0; gap:12px; background:none; border:0; backdrop-filter:none; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.platform.mobility-shell .owner-shortcuts button { position:relative; isolation:isolate; min-height:150px; overflow:hidden; border:1px solid #ffffff38; padding:14px; border-radius:18px; background:#071e38; text-align:left; align-items:flex-start; justify-content:flex-end; }
+.platform.mobility-shell .owner-shortcuts button::after { content:''; position:absolute; inset:0; background:linear-gradient(0deg,#021429f5,transparent 85%); z-index:-1; pointer-events:none; }
+.platform.mobility-shell .owner-shortcuts .journey-image { position:absolute; inset:0; z-index:-2; transition:transform .5s ease; }
+.platform.mobility-shell .owner-shortcuts button:hover .journey-image,.platform.mobility-shell .owner-shortcuts button:focus-visible .journey-image { transform:scale(1.09); }
+.platform.mobility-shell .owner-shortcuts button:hover { background:#071e38; transform:translateY(-3px); }
+.platform.mobility-shell .owner-shortcuts .shortcut-icon { position:absolute; top:11px; left:11px; width:30px; height:30px; border-radius:10px; background:#04172b80; margin:0; backdrop-filter:blur(8px); }
+.platform.mobility-shell .owner-shortcuts .shortcut-icon svg { width:17px; height:17px; }
+.journey-card-copy { display:grid; gap:5px; position:relative; padding-right:16px; }
+.platform.mobility-shell .journey-card-copy strong { font-size:14px; }
+.platform.mobility-shell .journey-card-copy small { color:#c5dce9; font-size:10px; margin:0; }
+.journey-card-arrow { position:absolute; right:12px; bottom:25px; color:#b4edff; }
+.journey-garage { position:relative; height:210px; overflow:hidden; border-radius:17px; margin-bottom:20px; background:#071b30; }
+.journey-garage::after { content:''; position:absolute; inset:0; background:linear-gradient(0deg,#04172bcc,transparent 60%); }
+.journey-garage > span { position:absolute; left:18px; bottom:16px; z-index:1; color:white; font-size:13px; }
+.platform.mobility-shell .home-car-section { align-self:start; background:#08253dde; border-color:#ffffff30; }
+.platform.mobility-shell .home-car-section .workspace-section-title h2,.platform.mobility-shell .home-car-section .workspace-section-title button { color:#f1f9ff; }
+.platform.mobility-shell .home-car-section .workspace-section-title > div > span,.platform.mobility-shell .home-car-section .owner-data-note { color:#b7d5e5; }
+.platform.mobility-shell .owner-vital { min-height:145px; justify-content:flex-end; border:1px solid #ffffff30; background:linear-gradient(0deg,#021429f5,#02142942),url('/journey/battery-v1-800.webp') center / cover; }
+.platform.mobility-shell .owner-vital:nth-child(2) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/road-v1-800.webp'); }
+.platform.mobility-shell .owner-vital:nth-child(3) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/journal-v1-800.webp'); }
+.platform.mobility-shell .owner-vital:nth-child(4) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/tires-v1-800.webp'); }
+.platform.mobility-shell .owner-vital > span { color:#d4eaf6; }
+.platform.mobility-shell .owner-vital > strong,.platform.mobility-shell .owner-vital > svg { color:#fff; }
+.platform.mobility-shell .owner-agenda,.platform.mobility-shell .owner-cost { position:relative; overflow:hidden; padding-top:146px; }
+.platform.mobility-shell .owner-agenda::before,.platform.mobility-shell .owner-cost::before { content:''; position:absolute; top:0; left:0; right:0; height:120px; background:center 52% / cover no-repeat url('/journey/care-v1-800.webp'); }
+.platform.mobility-shell .owner-cost::before { background-image:url('/journey/journal-v1-800.webp'); }
+.platform.mobility-shell main > .page { background:transparent; border:0; box-shadow:none; padding:0; animation:journey-enter .38s ease-out both; }
+.platform.mobility-shell .page .workspace-heading { padding:30px; min-height:240px; border:1px solid #ffffff38; border-radius:23px; align-items:flex-end; background:linear-gradient(90deg,#03162ce8,#03162c15),var(--journey-heading) center 60% / cover no-repeat; }
+.platform.mobility-shell .drive-page { --journey-heading:url('/journey/road-v1-1536.webp'); }
+.platform.mobility-shell.page-care { --journey-heading:url('/journey/care-v1-1536.webp'); }
+.platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v1-1536.webp'); }
+.platform.mobility-shell .settings-page { --journey-heading:url('/journey/connect-v1-1536.webp'); }
+.platform.mobility-shell .guide-page,.platform.mobility-shell .legal-page { --journey-heading:url('/orbit/orbit-hero-v1-1536.webp'); }
+.platform.mobility-shell .page .workspace-heading h1 { color:#fff; }
+.platform.mobility-shell .page .workspace-heading p { color:#d1e5f2; max-width:530px; }
+.platform.mobility-shell .page .workspace-heading > div > span { color:#a9e2f2; }
+.platform.mobility-shell .page .workspace-heading-actions .button { background:#fff; color:#002c5f; }
+.platform.mobility-shell .feature-help { color:#e0eef5; }
+.platform.mobility-shell .workspace-tabs { background:#08253de8; border:1px solid #ffffff2a; padding:5px; }
+.platform.mobility-shell .workspace-tabs button { color:#c7dfef; }
+.platform.mobility-shell .workspace-tabs button.active { background:#fff; color:#002c5f; }
+.platform.mobility-shell .charge-hero { background:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v1-1536.webp') center 56% / cover; border:1px solid #ffffff30; }
+.platform.mobility-shell .charge-quick-filters { color:#e0eff9; }
+.platform.mobility-shell .charge-quick-filters > div:first-child strong { color:#e0eff9; }
+.platform.mobility-shell .charge-quick-filters button { background:#f3f8fc; }
+.platform.mobility-shell .charge-section-heading h2,.platform.mobility-shell .charge-section-heading > span { color:#f0f8ff; }
+.platform.mobility-shell .service-center-heading h2,.platform.mobility-shell .service-center-heading p { color:#e6f4ff; }
+.platform.mobility-shell .journal-footnote { color:#d4e7f3; }
+.feature-art { height:170px; border-radius:16px; overflow:hidden; margin:0 0 22px; background:#071b30; }
+.platform.mobility-shell .energy-art { grid-column:1/-1; width:100%; height:225px; margin-bottom:0; }
+.platform.mobility-shell .tire-art { height:150px; }
+.platform.mobility-shell .vehicle-energy-card { grid-template-columns:1fr 1fr; }
+.platform.mobility-shell .parking-memory .feature-art { height:205px; }
+.platform.mobility-shell .modal { padding-top:160px; overflow-y:auto; }
+.platform.mobility-shell .modal::before { content:''; position:absolute; left:0; top:0; right:0; width:100%; margin:0; transform:none; height:140px; background:url('/journey/connect-v1-800.webp') center 48% / cover; border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0; pointer-events:none; }
+.platform.mobility-shell .service-center-heading { gap:12px; }
+.platform.mobility-shell .service-center-heading > button { margin:0; }
+.platform.mobility-shell .modal .modal-icon { display:none; }
+.platform.mobility-shell .modal-close { z-index:2; background:#fff; }
+@keyframes journey-drift { from { transform:scale(1.1) translateX(-1%); } to { transform:scale(1) translateX(0); } }
+@keyframes journey-enter { from { opacity:0; transform:translateX(16px) scale(.99); } to { opacity:1; transform:none; } }
+@media(max-width:760px) {
+  .platform.mobility-shell main > .page { padding:0; }
+  .platform.mobility-shell .cinematic-home { gap:18px; }
+  .mobility-welcome { padding:16px 6px 5px; }
+  .mobility-welcome h1 { font-size:35px; }
+  .journey-controls { margin-top:18px; width:100%; padding:8px 6px 8px 12px; }
+  .journey-controls > div { min-width:0; flex:1; }
+  .journey-controls strong { font-size:11px; }
+  .journey-controls button { width:37px; }
+  .platform.mobility-shell .owner-shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .platform.mobility-shell .owner-shortcuts button { min-height:139px; padding:14px 12px; border-radius:16px; }
+  .platform.mobility-shell .journey-card-copy strong { font-size:13px; }
+  .platform.mobility-shell .journey-card-copy small { font-size:9px; }
+  .journey-garage { height:165px; margin-bottom:18px; }
+  .platform.mobility-shell .page .workspace-heading { min-height:206px; padding:22px 18px; border-radius:20px; }
+  .platform.mobility-shell .page .workspace-heading h1 { font-size:27px; }
+  .platform.mobility-shell .page .workspace-heading p { font-size:12px; }
+  .platform.mobility-shell .charge-hero { min-height:172px; padding:18px; }
+  .platform.mobility-shell .vehicle-energy-card { grid-template-columns:1fr; }
+  .platform.mobility-shell .energy-art { height:180px; }
+  .platform.mobility-shell .parking-memory .feature-art { height:170px; }
+  .platform.mobility-shell .modal { padding-top:142px; max-height:90dvh; }
+  .platform.mobility-shell .modal::before { height:125px; }
+  .mobility-backdrop-shade { background:linear-gradient(90deg,#04172bb8,#061b3640),linear-gradient(0deg,#03152ba8,transparent); }
+  .platform.mobility-shell .drive-page { --journey-heading:url('/journey/road-v1-800.webp'); }
+  .platform.mobility-shell.page-care { --journey-heading:url('/journey/care-v1-800.webp'); }
+  .platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v1-800.webp'); }
+  .platform.mobility-shell .settings-page { --journey-heading:url('/journey/connect-v1-800.webp'); }
+  .platform.mobility-shell .charge-hero { background-image:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v1-800.webp'); }
+}
+@media(prefers-reduced-motion:reduce) { .platform.mobility-shell *, .platform.mobility-shell *::before { animation:none!important; transition:none!important; } }

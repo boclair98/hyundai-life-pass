@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, ChevronRight, CircleGauge, Download, FileText, Fuel, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
 import { loadJournal, createJournalEntry, changeJournalStatus } from './api';
 import './cinematic.css';
+import { FeatureImage, SceneControls } from './MobilityBackdrop';
 
 export const categories = { MAINTENANCE: '정비', CHARGE: '충전', FUEL: '주유', INSURANCE: '보험', WASH: '세차', PARKING: '주차', OTHER: '기타' };
 const categoryIcons = { MAINTENANCE: Wrench, CHARGE: BatteryCharging, FUEL: Fuel, INSURANCE: ShieldCheck, WASH: Sparkles, PARKING: MapPin, OTHER: FileText };
@@ -31,7 +32,7 @@ export function useVehicleJournal(vehicleId) {
   return { entries: state.vehicleId === vehicleId ? state.entries : [], loading: Boolean(vehicleId) && (state.vehicleId !== vehicleId || state.loading), error: state.vehicleId === vehicleId ? state.error : '', refresh };
 }
 
-export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy, journal }) {
+export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy, journal, tour }) {
   const homeRoot = useRef(null);
   const tasks = journal.entries.filter((item) => item.status === 'PLANNED').sort((a, b) => a.entryDate.localeCompare(b.entryDate)).slice(0, 3);
   const month = dateKey().slice(0, 7);
@@ -53,10 +54,11 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <h1 id="owner-title">내 차와 함께하는<br /><em>모든 순간.</em></h1>
       <p>차량 상태, 가까운 충전소, 정비와 기록.<br />필요한 곳으로 이동해 보세요.</p>
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
-      <small>배경은 AI 콘셉트 이미지입니다.</small>
+      <SceneControls tour={tour} />
     </section>
-    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }) => <button key={label} onClick={() => navigate(page, target)}><span className={`shortcut-icon ${tone}`}><Icon size={25} strokeWidth={1.6} /></span><strong>{label}</strong><small>{detail}</small></button>)}</nav>
+    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
+      <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
       <div className="workspace-section-title"><div><span>MY HYUNDAI</span><h2 id="home-car-heading">오늘의 내 차</h2></div><button onClick={() => navigate('care', 'status')}>자세히 보기 <ChevronRight size={15} /></button></div>
       <div className="owner-vitals">
         {[{ icon: BatteryCharging, label: '배터리 잔량', value: metric(vehicle?.batterySoc, '%'), className: 'battery' }, { icon: Navigation, label: '주행 가능 거리', value: metric(vehicle?.range, ' km') }, { icon: CircleGauge, label: '누적 주행거리', value: metric(vehicle?.odometer, ' km') }, { icon: ShieldCheck, label: '차량 경고', value: vehicle ? (checked ? (warnings ? `${warnings}건 확인 필요` : '수신한 경고 없음') : '수신 정보 없음') : '연결 후 확인' }].map(({ icon: Icon, label, value, className }) => <button key={label} className={`owner-vital ${className ?? ''}`} onClick={() => vehicle ? navigate('care', 'status') : setModal('connect')}><Icon size={20} /><span>{label}</span><strong className={!vehicle ? 'unconnected-value' : ''}>{value}</strong>{label === '배터리 잔량' && <i className="vital-battery"><b style={{ width: `${vehicle?.batterySoc ?? 0}%` }} /></i>}</button>)}
