@@ -1162,7 +1162,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
       <div className="map-live-chip"><i /> 충전기 현황</div>
       {key && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
       <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>
-      {selectedStation && <button className="map-selected-card" onClick={() => onSelect(selectedStation)}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed}</small><ChevronRight size={17} /></button>}
+      {selectedStation && <button className="map-selected-card" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(selectedStation.name)},${selectedStation.latitude},${selectedStation.longitude}`, '_blank', 'noopener,noreferrer')} aria-label={`${selectedStation.name} 카카오맵 길찾기`}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed} · 눌러서 길찾기</small><Navigation size={17} /></button>}
     </div>
   );
 }
