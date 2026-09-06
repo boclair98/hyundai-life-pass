@@ -763,6 +763,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
   const availableChargerCount = visibleStations.reduce((sum, station) => sum + Number(station.available || 0), 0);
   const chargerProvider = chargerFeed.provider ?? platform.providers?.find((provider) => provider.id === 'ev-charger');
   const chargerLive = chargerProvider?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(chargerProvider.state);
+  const chargerError = chargerProvider?.state === 'ERROR';
 
   useEffect(() => {
     if (usingCurrentLocation || !(platform.stations?.length)) return;
@@ -873,7 +874,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
             <div className="station-detail-heading"><div><span>선택한 충전소</span><strong>{activeStation.name}</strong><p>{activeStation.address}</p></div><button className={`station-favorite ${favoriteIds.includes(favoriteKey(activeStation)) ? 'active' : ''}`} onClick={() => toggleFavorite(activeStation)} aria-label={favoriteIds.includes(favoriteKey(activeStation)) ? '즐겨찾기 삭제' : '즐겨찾기 추가'} aria-pressed={favoriteIds.includes(favoriteKey(activeStation))}><Star size={18} fill={favoriteIds.includes(favoriteKey(activeStation)) ? 'currentColor' : 'none'} /></button></div>
             <div className="charge-price"><span>충전 요금</span><strong>운영사에서 확인</strong><small>회원·로밍·충전기별로 달라 현장 요금을 확인해 주세요.</small></div>
             <button className="button primary full" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(activeStation.name)},${activeStation.latitude},${activeStation.longitude}`, '_blank', 'noopener,noreferrer')}><Navigation size={16} />길찾기 시작</button>
-          </div> : <div className="station-empty"><MapPin size={22} /><strong>{stationList.length ? '검색 결과가 없습니다.' : '충전소를 불러오는 중입니다.'}</strong><span>{stationList.length ? '다른 충전소명이나 지역을 입력해 보세요.' : '데이터 연결에 실패하면 잠시 후 다시 시도해 주세요.'}</span></div>}
+          </div> : <div className="station-empty" role={chargerError ? 'alert' : undefined}><MapPin size={22} /><strong>{stationList.length ? '검색 결과가 없습니다.' : chargerError ? '충전소 연결이 잠시 지연되고 있어요.' : '충전소를 불러오는 중입니다.'}</strong><span>{stationList.length ? '다른 충전소명이나 지역을 입력해 보세요.' : chargerError ? '실시간 데이터를 받지 못했습니다. 잠시 후 다시 확인해 주세요.' : '데이터를 확인하는 동안 잠시만 기다려 주세요.'}</span>{chargerError && <button className="button compact" onClick={refreshStations} disabled={locationBusy}><RefreshCcw size={14} /> 다시 확인</button>}</div>}
         </aside>
       </div>
       <section className="charge-vehicle-section">
@@ -1049,11 +1050,11 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
 
   return (
     <div className={`map-experience ${mapReady ? 'ready' : ''}`}>
-      {key ? <div ref={mapElement} className="map-surface kakao-map" aria-label="충전소 지도" /> : <div className="map-unavailable"><MapPin size={26} /><strong>지도 연결이 필요해요</strong><span>아래 목록에서 충전소를 선택해 길찾기를 이용하세요.</span></div>}
+      {key && stationItems.length ? <div ref={mapElement} className="map-surface kakao-map" aria-label="충전소 지도" /> : <div className="map-unavailable" role="status"><MapPin size={26} /><strong>{key ? '충전소 데이터를 받으면 지도가 열려요.' : '지도 연결이 필요해요'}</strong><span>{key ? '잠시 후 다시 확인하거나 아래 목록에서 길찾기를 이용하세요.' : '아래 목록에서 충전소를 선택해 길찾기를 이용하세요.'}</span></div>}
       {mapError && <div className="map-unavailable" role="status"><MapPin size={26} /><strong>지도를 표시하지 못했어요</strong><span>{mapError}</span><button className="button compact map-retry" type="button" onClick={() => setMapRetryKey((value) => value + 1)}>다시 불러오기</button></div>}
       <div className="map-live-chip"><i /> 충전기 현황</div>
-      {key && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
-      <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>
+      {key && mapReady && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
+      {mapReady && <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>}
       {selectedStation && <button className="map-selected-card" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(selectedStation.name)},${selectedStation.latitude},${selectedStation.longitude}`, '_blank', 'noopener,noreferrer')} aria-label={`${selectedStation.name} 카카오맵 길찾기`}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed} · 눌러서 길찾기</small><Navigation size={17} /></button>}
     </div>
   );
@@ -1213,6 +1214,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
   useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
   const [centerFeed, setCenterFeed] = useState({ centers: [], provider: null });
   const [centerBusy, setCenterBusy] = useState(true);
+  const [centerError, setCenterError] = useState('');
   const [centerLocation, setCenterLocation] = useState({ current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
   const nextAction = vehicle?.warningCount > 0
     ? { title: '경고 항목부터 확인하세요', detail: `차량 경고 ${vehicle.warningCount}건이 현대 데이터에 보고되었습니다. 가까운 서비스 거점에서 점검을 예약할 수 있습니다.`, button: '서비스 거점 보기' }
@@ -1222,6 +1224,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
 
   const findCenters = useCallback(async (coordinates) => {
     setCenterBusy(true);
+    setCenterError('');
     setCenterLocation(coordinates ? {
       current: true,
       label: '현재 위치',
@@ -1231,8 +1234,12 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
     try {
       const result = await loadServiceCenters(coordinates);
       setCenterFeed(result);
-      if (result.provider?.state === 'ERROR') notify(result.provider.message);
+      if (result.provider?.state === 'ERROR') {
+        setCenterError('실시간 서비스 거점 연결이 잠시 지연되고 있어요.');
+        notify('실시간 서비스 거점 연결이 잠시 지연되고 있어요.');
+      }
     } catch (error) {
+      setCenterError(error.message || '주변 서비스 거점을 불러오지 못했습니다.');
       notify(error.message || '주변 서비스 거점을 불러오지 못했습니다.');
     } finally {
       setCenterBusy(false);
@@ -1247,6 +1254,10 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       .then(({ coords }) => findCenters({ latitude: coords.latitude, longitude: coords.longitude, radius: 20000 }))
       .catch((error) => { setCenterBusy(false); notify(locationErrorMessage(error)); });
   }
+
+  const retryCenters = () => findCenters(centerLocation.current
+    ? { latitude: centerLocation.latitude, longitude: centerLocation.longitude, radius: 20000 }
+    : undefined);
 
   return (
     <div className="page container">
@@ -1286,9 +1297,9 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
           <p>{centerLocation.current ? '현재 위치를 기준으로 가까운 순서로 보여드려요.' : '내 위치로 다시 찾기를 누르면 주변 순서가 바뀝니다.'}</p>
         </section>
         <div className={`provider-inline ${centerFeed.provider?.state === 'CONNECTED' || centerFeed.provider?.state === 'STALE' ? 'live' : 'sample'}`}>
-          <span>{centerFeed.provider?.state === 'CONNECTED' ? '지금 확인됨' : centerFeed.provider?.state === 'STALE' ? '최근 확인됨' : '확인 중'}</span>
+          <span>{centerBusy ? '주변 거점 확인 중' : centerError ? '연결 지연' : centerFeed.provider?.state === 'CONNECTED' ? '지금 확인됨' : centerFeed.provider?.state === 'STALE' ? '최근 확인됨' : '확인 중'}</span>
           <strong>주변 블루핸즈</strong>
-          <small>{centerFeed.provider?.state === 'CONNECTED' ? '가까운 순서로 보여드려요.' : '잠시 후 다시 확인해 주세요.'}</small>
+          <small>{centerError ? '잠시 후 다시 확인해 주세요.' : centerFeed.provider?.state === 'CONNECTED' ? '가까운 순서로 보여드려요.' : '잠시 후 다시 확인해 주세요.'}</small>
         </div>
         <div className="service-center-grid">
           {centerFeed.centers?.slice(0, 6).map((center) => (
@@ -1304,7 +1315,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
             </article>
           ))}
           {centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel"><LoaderCircle className="spin" size={22} /><strong>가까운 블루핸즈를 찾는 중이에요.</strong><span>잠시만 기다려 주세요.</span></div>}
-          {!centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel"><MapPin size={22} /><strong>서비스 거점을 찾지 못했습니다.</strong><span>위치 권한을 허용하거나 잠시 후 다시 시도해 주세요.</span></div>}
+          {!centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel" role={centerError ? 'alert' : 'status'}><MapPin size={22} /><strong>{centerError ? '서비스 거점 연결이 잠시 지연되고 있어요.' : '서비스 거점을 찾지 못했습니다.'}</strong><span>{centerError ? '실시간 데이터를 받지 못했습니다. 잠시 후 다시 확인해 주세요.' : '위치 권한을 허용하거나 잠시 후 다시 시도해 주세요.'}</span>{centerError && <button className="button compact" onClick={retryCenters} disabled={centerBusy}><RefreshCcw size={14} /> 다시 확인</button>}</div>}
         </div>
       </section>}
     </div>
