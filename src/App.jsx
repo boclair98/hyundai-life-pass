@@ -988,7 +988,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
           <button className={quickFilter === 'fast' ? 'active' : ''} onClick={() => setQuickFilter('fast')}><Zap size={14} /> 100kW 이상</button>
         </div>
       </div>
-      {recommendedStation && <section className="recommended-charger reveal" data-reveal>
+      {recommendedStation && <section className="recommended-charger">
         <div className="charger-visual" aria-hidden="true"><div className="charger-head"><Zap size={23} fill="currentColor" /></div><div className="charger-body"><i /><span /></div><div className="charger-cable" /></div>
         <div className="recommended-copy"><span><i /> 지금 가기 좋은 충전소</span><h2>{recommendedStation.name}</h2><p>{recommendedStation.address}</p></div>
         <div className="recommended-stats"><div><strong>{recommendedStation.available}<small>/{recommendedStation.total}</small></strong><span>사용 가능</span></div><div><strong>{recommendedStation.speed}</strong><span>충전 출력</span></div><div><strong>{recommendedStation.distance}</strong><span>현재 거리</span></div></div>
