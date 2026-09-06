@@ -1,0 +1,92 @@
+/* Viewport shell: header, scrollable workspace and navigation never overlap. */
+.platform.mobility-shell { height:100dvh; min-height:0; overflow:hidden; display:flex; flex-direction:column; isolation:isolate; background:#071b30; padding:0; }
+.mobility-backdrop { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; background:#071b30; }
+.mobility-backdrop img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; object-position:62% center; opacity:0; transform:scale(1.055); transition:opacity .9s ease,transform 1.4s cubic-bezier(.2,.7,.2,1); }
+.mobility-backdrop img.active { opacity:1; transform:scale(1); }
+.mobility-backdrop-shade { position:absolute; inset:0; background:linear-gradient(90deg,#04172be6,#061b3650 70%),linear-gradient(0deg,#03152bb8,transparent 70%); }
+.platform.mobility-shell .site-header.site-header { position:relative; flex:none; height:78px; inset:auto; background:#06182f70; border-bottom:1px solid #ffffff20; backdrop-filter:blur(18px); z-index:60; }
+.platform.mobility-shell .header-inner { width:calc(100% - 64px); max-width:1440px; }
+.platform.mobility-shell .brand-copy strong,.platform.mobility-shell .desktop-nav button,.platform.mobility-shell .header-icon,.platform.mobility-shell .mobile-menu-button { color:#fff; }
+.platform.mobility-shell .brand-copy small { color:#c4d9e8; }
+.platform.mobility-shell .desktop-nav button.active { color:#9ee8fb; border-color:#9ee8fb; }
+.platform.mobility-shell .account-button { display:flex; background:#fff; color:#002c5f; border:1px solid #fff; min-height:44px; flex-shrink:0; }
+.platform.mobility-shell .account-button strong,.platform.mobility-shell .account-button small { color:#002c5f; }
+.platform.mobility-shell main { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; scrollbar-width:thin; scrollbar-color:#b5d6e577 transparent; padding:28px 32px 24px; scroll-padding-top:24px; }
+.platform.mobility-shell .page-progress { display:none; }
+.platform.mobility-shell main > .container { width:100%; max-width:1280px; margin:0 auto; }
+.platform.mobility-shell main > .page { background:#f4f8fbf5; border:1px solid #ffffff8f; border-radius:24px; padding:24px; box-shadow:0 24px 80px #0003; animation:mobility-arrive .55s cubic-bezier(.2,.7,.2,1) both; }
+.platform.mobility-shell .cinematic-home { display:grid; grid-template-columns:1.1fr 1fr; gap:22px 32px; padding:12px 0 20px; animation:mobility-arrive .55s ease both; }
+.platform.mobility-shell .home-greeting { display:none; }
+.mobility-welcome { grid-column:1; padding:24px 0 12px; color:#fff; }
+.mobility-eyebrow { font-size:11px; letter-spacing:.2em; color:#b0e4ef; }
+.mobility-welcome h1 { font-size:clamp(36px,4vw,58px); line-height:1.2; letter-spacing:-.06em; margin:18px 0; font-weight:650; }
+.mobility-welcome h1 em { color:#bcf0ff; font-style:normal; }
+.mobility-welcome p { font-size:14px; line-height:1.85; color:#d3e2ed; margin:0 0 24px; }
+.platform.mobility-shell .mobility-welcome .button { background:#fff; color:#002c5f; border:0; min-height:48px; border-radius:12px; }
+.mobility-welcome > small { display:block; margin-top:18px; font-size:10px; color:#bdd0df; }
+.platform.mobility-shell .owner-shortcuts { grid-column:1; grid-row:2; margin:0; padding:16px; border:1px solid #ffffff38; border-radius:22px; background:#082640cf; backdrop-filter:blur(18px); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; box-shadow:none; }
+.platform.mobility-shell .owner-shortcuts button { min-height:94px; border-radius:14px; padding:10px 3px; color:white; transition:background .2s,transform .2s; }
+.platform.mobility-shell .owner-shortcuts button:hover { background:#ffffff18; transform:translateY(-3px); }
+.platform.mobility-shell .owner-shortcuts strong { color:white; font-size:13px; }
+.platform.mobility-shell .owner-shortcuts small { color:#c0d8e7; font-size:10px; }
+.platform.mobility-shell .shortcut-icon { background:#ffffff16; color:#adeaff; width:40px; height:40px; border:1px solid #ffffff20; margin-bottom:9px; }
+.platform.mobility-shell .home-car-section { grid-column:2; grid-row:1 / 3; align-self:end; margin:0; padding:24px; border:1px solid #ffffff80; background:#f4f9fced; border-radius:24px; backdrop-filter:blur(18px); }
+.platform.mobility-shell .owner-vitals { grid-template-columns:1fr 1fr; gap:12px; }
+.platform.mobility-shell .owner-vital { min-height:125px; background:#fff; }
+.platform.mobility-shell .owner-lower-grid { grid-column:1 / -1; margin:0; gap:22px; }
+.platform.mobility-shell .owner-agenda,.platform.mobility-shell .owner-cost { background:#f4f9fced; border-color:#ffffff70; }
+.platform.mobility-shell .owner-bottom-links { grid-column:1 / -1; margin:0; }
+.platform.mobility-shell .owner-bottom-links button { background:#f4f9fced; }
+.platform.mobility-shell .site-footer { background:transparent; color:#d2dfeb; border-color:#ffffff25; margin-top:24px; padding-bottom:0; }
+.platform.mobility-shell .site-footer p,.platform.mobility-shell .site-footer span,.platform.mobility-shell .site-footer button,.platform.mobility-shell .site-footer strong,.platform.mobility-shell .site-footer small { color:#d2dfeb; }
+.platform.mobility-shell .connectivity-banner { position:relative; flex:none; inset:auto; }
+.platform.mobility-shell :is(button,a,input,select,textarea):focus-visible { outline:3px solid #00aad2; outline-offset:3px; }
+.platform.mobility-shell .button.primary { background:#002c5f; color:#fff; }
+.platform.mobility-shell .button.primary svg { color:inherit; }
+.platform.mobility-shell .workspace-heading { min-height:0; padding:0 0 18px; background:none; color:#002c5f; border-radius:0; }
+.platform.mobility-shell .workspace-heading h1 { color:#002c5f; }
+.platform.mobility-shell .workspace-heading p,.platform.mobility-shell .workspace-heading > div > span { color:#4e687e; }
+.platform.mobility-shell .workspace-heading::after { display:none; }
+.platform.mobility-shell .workspace-heading-actions .button { background:#002c5f; color:#fff; }
+.platform.mobility-shell .mobile-drawer { max-height:calc(100dvh - 150px); overflow-y:auto; }
+@keyframes mobility-arrive { from { opacity:0; transform:translateY(14px) scale(.99); } to { opacity:1; transform:none; } }
+@media(max-width:1100px) { .platform.mobility-shell .header-inner { width:calc(100% - 32px); }.platform.mobility-shell .desktop-nav { gap:0; }.platform.mobility-shell .desktop-nav button { padding:0 10px; } }
+@media(max-width:760px) {
+  .platform.mobility-shell .site-header.site-header { height:68px; }
+  .platform.mobility-shell .header-inner { width:calc(100% - 28px); gap:8px; }
+  .platform.mobility-shell .brand-copy strong { font-size:20px; }
+  .platform.mobility-shell .brand-copy small { font-size:8px; }
+  .platform.mobility-shell .header-actions { gap:5px; margin-left:auto; }
+  .platform.mobility-shell .account-button { padding:8px 10px; gap:6px; min-height:42px; border-radius:12px; }
+  .platform.mobility-shell .account-button small { display:none; }
+  .platform.mobility-shell .account-button strong { font-size:12px; white-space:nowrap; }
+  .platform.mobility-shell .mobile-menu-button { width:34px; height:42px; }
+  .platform.mobility-shell .vehicle-picker { display:none; }
+  .platform.mobility-shell .mobile-drawer { top:68px; }
+  .platform.mobility-shell main { padding:16px 14px 20px; scroll-padding-top:16px; }
+  .platform.mobility-shell main > .page { padding:16px 12px; border-radius:20px; }
+  .platform.mobility-shell .cinematic-home { grid-template-columns:1fr; gap:16px; padding:0; }
+  .mobility-backdrop img { object-position:64% center; }
+  .mobility-backdrop-shade { background:linear-gradient(90deg,#04172bd9,#061b3644),linear-gradient(0deg,#03152bba,transparent); }
+  .mobility-welcome { padding:20px 6px 12px; }
+  .mobility-welcome h1 { font-size:38px; margin:14px 0; }
+  .mobility-welcome p { font-size:12px; margin-bottom:18px; }
+  .mobility-welcome > small { font-size:9px; margin-top:12px; }
+  .platform.mobility-shell .owner-shortcuts { grid-row:auto; padding:10px; gap:4px; border-radius:20px; }
+  .platform.mobility-shell .owner-shortcuts button { min-height:89px; }
+  .platform.mobility-shell .owner-shortcuts strong { font-size:12px; }
+  .platform.mobility-shell .owner-shortcuts small { font-size:9px; }
+  .platform.mobility-shell .home-car-section { grid-column:1; grid-row:auto; padding:20px 16px; border-radius:20px; }
+  .platform.mobility-shell .owner-vital { min-height:115px; padding:15px; }
+  .platform.mobility-shell .owner-lower-grid { gap:16px; }
+  .platform.mobility-shell .mobile-nav { position:relative; flex:none; inset:auto; transform:none; z-index:50; width:100%; margin:0; padding:7px 8px max(8px,env(safe-area-inset-bottom)); background:#061b30f5; border-top:1px solid #ffffff25; border-radius:0; }
+  .platform.mobility-shell .mobile-nav button { color:#b3c9da; min-height:48px; }
+  .platform.mobility-shell .mobile-nav button.active { background:#19435d; color:#b7f0ff; }
+  .platform.mobility-shell .mobile-nav button span { font-size:11px; }
+  .platform.mobility-shell .charge-map,.platform.mobility-shell .map-experience { height:430px; min-height:430px; }
+  .platform.mobility-shell .station-tools { flex-wrap:wrap; }
+  .platform.mobility-shell .map-live-chip { display:none; }
+  .platform.mobility-shell .station-panel { max-height:360px; }
+  .platform.mobility-shell .toast { bottom:calc(88px + env(safe-area-inset-bottom)); }
+}
+@media(prefers-reduced-motion:reduce) { .platform.mobility-shell *, .platform.mobility-shell *::before,.platform.mobility-shell *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }

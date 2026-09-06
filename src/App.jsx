@@ -58,6 +58,8 @@ import {
 import { OwnerHome, OwnershipPage, useVehicleJournal } from './OwnerExperience';
 import './app.css';
 import './platform.css';
+import { MobilityBackdrop } from './MobilityBackdrop';
+import './mobility.css';
 
 const navigation = [
   { id: 'home', label: '내 차', icon: CarFront },
@@ -405,9 +407,14 @@ export default function App() {
 
   const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget };
   useEffect(() => { document.title = `${navigation.find((item) => item.id === page)?.label ?? '이용 안내'} · LIFE PASS`; }, [page]);
+  useEffect(() => {
+    const panel = document.getElementById('main-content');
+    panel?.scrollTo({ top: 0, behavior: 'instant' });
+  }, [page]);
 
   return (
-    <div className={`app platform page-${page}`} ref={appRef}>
+    <div className={`app platform mobility-shell page-${page}`} ref={appRef}>
+      <MobilityBackdrop page={page} />
       <a className="skip-to-content" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>본문 바로가기</a>
       <div className="page-progress" aria-hidden="true"><i /></div>
       <Header
@@ -440,9 +447,8 @@ export default function App() {
         {page === 'privacy' && <LegalPage type="privacy" />}
         {page === 'terms' && <LegalPage type="terms" />}
         {page === 'guide' && <GuidePage navigate={navigate} />}
-      </main>
-
       <SiteFooter navigate={navigate} />
+      </main>
       <MobileNav page={page} navigate={navigate} />
       {modal && <Modal type={modal} vehicle={vehicle} platform={platform} close={() => setModal(null)} notify={notify} navigate={navigate} actions={actions} busy={busy} />}
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
@@ -530,7 +536,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
             <button className="header-icon" onClick={() => setAlertsOpen((value) => !value)} aria-label={`알림 ${platform.unreadNotifications ?? 0}개`}><Bell size={18} />{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
             {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{vehicle ? '내 차 소식' : '주변 생활 소식'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
           </div>
-          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>현대 통합계정</small><strong>{connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</strong></span></button>
+          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>현대 통합계정</small><strong>{connected ? '내 계정' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '계정 연결'}</strong></span></button>
           <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}>{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
         </div>
       </div>
