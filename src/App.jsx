@@ -59,6 +59,7 @@ import './app.css';
 
 const navigation = [
   { id: 'home', label: '홈', icon: CarFront },
+  { id: 'drive', label: '드라이브', icon: Route },
   { id: 'charge', label: '충전', icon: BatteryCharging },
   { id: 'care', label: '내 차 케어', icon: Activity },
   { id: 'passport', label: '차량 여권', icon: FileCheck2 },
@@ -85,6 +86,7 @@ const spaceGallery = [
 ];
 
 const pageHeroVisuals = {
+  'SMART DRIVE': { src: '/space-drive-02-v1.webp', index: '01', label: 'ROUTE & RANGE' },
   'CHARGE NEAR YOU': { src: '/space-drive-03-v1.webp', index: '01', label: 'ENERGY & ROUTE' },
   'MY CAR CARE': { src: '/space-drive-04-v1.webp', index: '02', label: 'STATUS & CARE' },
   'MY CAR STORY': { src: '/space-drive-05-v1.webp', index: '03', label: 'TRUSTED HISTORY' },
@@ -111,6 +113,15 @@ const hyundaiStatusLabel = (provider) => {
 };
 
 const FAVORITES_STORAGE_KEY = 'life-pass:favorites:v1';
+const DRIVE_CHECKLIST_STORAGE_KEY = 'life-pass:drive-checklist:v1';
+const PARKING_STORAGE_KEY = 'life-pass:parking-position:v1';
+
+const driveChecklistItems = [
+  { id: 'surroundings', title: '차량 주변 확인', detail: '보행자·장애물·바닥 누유 확인' },
+  { id: 'tires', title: '타이어 육안 점검', detail: '눌림·손상·이물질 확인' },
+  { id: 'cable', title: '충전 케이블 분리', detail: '커넥터와 충전구 닫힘 확인' },
+  { id: 'route', title: '거리와 잔량 확인', detail: '목적지까지 필요한 여유 확인' },
+];
 
 function sharePage({ title, text, path = window.location.hash || '#home', notify }) {
   const normalizedPath = path.startsWith('#') ? path : `#${path.replace(/^\//, '')}`;
@@ -413,6 +424,7 @@ export default function App() {
 
       <main>
         {page === 'home' && <HomePage {...shared} />}
+        {page === 'drive' && <DrivePage {...shared} />}
         {page === 'charge' && <ChargePage {...shared} />}
         {page === 'care' && <CarePage {...shared} />}
         {page === 'passport' && <PassportPage {...shared} />}
@@ -572,6 +584,7 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
               </nav>
             </div>
             <div className="orbit-function-rail" aria-label="주요 차량 생활 기능">
+              <button onClick={() => navigate('drive')}><Route size={17} /><span><small>DRIVE</small><strong>주행 계획</strong></span><ArrowUpRight size={15} /></button>
               <button onClick={() => navigate('care')}><Activity size={17} /><span><small>VEHICLE</small><strong>내 차 상태</strong></span><ArrowUpRight size={15} /></button>
               <button onClick={() => navigate('charge')}><BatteryCharging size={17} /><span><small>ENERGY</small><strong>주변 충전</strong></span><ArrowUpRight size={15} /></button>
               <button onClick={() => navigate('passport')}><FileCheck2 size={17} /><span><small>HISTORY</small><strong>차량 기록</strong></span><ArrowUpRight size={15} /></button>
@@ -661,10 +674,10 @@ function HomePage({ vehicle, navigate, setModal, notify, platform }) {
         <div className="container service-scene-inner">
           <SectionHeading eyebrow="START WITH TODAY'S NEED" title="오늘 필요한 일을 바로 시작하세요." description="로그인하지 않아도 주변 충전소와 서비스 거점을 찾을 수 있고, 차량 연결 후에는 내 차 상태와 기록까지 이어집니다." />
           <div className="service-grid">
-            <ServiceCard number="01" icon={BatteryCharging} title="충전소 찾기" description="내 주변에서 사용 가능한 충전기를 찾고 길 안내까지 바로 이어갑니다." action="주변 충전소 보기" onClick={() => navigate('charge')} tone="blue" />
-            <ServiceCard number="02" icon={Activity} title="블루핸즈 찾기" description="가까운 서비스 거점을 살펴보고 전화나 길 안내를 바로 이용하세요." action="가까운 곳 찾기" onClick={() => navigate('care')} tone="sky" />
-            <ServiceCard number="03" icon={CloudCog} title="내 차 상태" description="배터리와 주행 정보, 타이어·안전 점검 결과를 한 화면에서 확인합니다." action="차량 상태 보기" onClick={() => navigate('care')} tone="navy" />
-            <ServiceCard number="04" icon={FileCheck2} title="차량 기록" description="차량과 함께 남은 중요한 기록을 시간 순서로 확인하고 필요할 때 공유합니다." action="차량 기록 보기" onClick={() => navigate('passport')} tone="ice" />
+            <ServiceCard number="01" icon={Route} title="주행 계획" description="주행거리와 여유 배터리를 계산해 지금 출발해도 되는지 먼저 확인합니다." action="드라이브 준비" onClick={() => navigate('drive')} tone="blue" />
+            <ServiceCard number="02" icon={BatteryCharging} title="충전소 찾기" description="내 주변에서 사용 가능한 충전기를 찾고 길 안내까지 바로 이어갑니다." action="주변 충전소 보기" onClick={() => navigate('charge')} tone="sky" />
+            <ServiceCard number="03" icon={Activity} title="차량 케어" description="배터리·타이어·안전 경고를 확인하고 가까운 블루핸즈를 찾습니다." action="내 차 점검" onClick={() => navigate('care')} tone="navy" />
+            <ServiceCard number="04" icon={FileCheck2} title="차량 여권" description="차량과 함께 남은 중요한 기록을 시간 순서로 확인하고 필요할 때 공유합니다." action="차량 기록 보기" onClick={() => navigate('passport')} tone="ice" />
           </div>
           <p className="swipe-hint" aria-hidden="true"><span /> 옆으로 넘겨 기능을 살펴보세요</p>
         </div>
@@ -1153,6 +1166,158 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
       {key && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
       <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>
       {selectedStation && <button className="map-selected-card" onClick={() => onSelect(selectedStation)}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed}</small><ChevronRight size={17} /></button>}
+    </div>
+  );
+}
+
+function DrivePage({ vehicle, navigate, notify, setModal }) {
+  const [tripDistance, setTripDistance] = useState(120);
+  const [reservePercent, setReservePercent] = useState(20);
+  const [efficiency, setEfficiency] = useState(5.2);
+  const [energyPrice, setEnergyPrice] = useState(347);
+  const [parkingBusy, setParkingBusy] = useState(false);
+  const todayKey = useMemo(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()), []);
+  const [checkedItems, setCheckedItems] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DRIVE_CHECKLIST_STORAGE_KEY) ?? '{}');
+      return saved.date === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()) && Array.isArray(saved.items) ? saved.items : [];
+    } catch {
+      return [];
+    }
+  });
+  const [parkingSpot, setParkingSpot] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY) ?? 'null');
+      return saved && Number.isFinite(saved.latitude) && Number.isFinite(saved.longitude) ? saved : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const currentRange = vehicle?.range == null ? null : Math.max(0, Number(vehicle.range));
+  const batterySoc = vehicle?.batterySoc == null ? null : Math.max(0, Math.min(100, Number(vehicle.batterySoc)));
+  const requiredRange = Math.ceil(Number(tripDistance) * (1 + Number(reservePercent) / 100));
+  const requiredEnergy = Number(efficiency) > 0 ? Number(tripDistance) / Number(efficiency) : 0;
+  const estimatedCost = Math.round(requiredEnergy * Math.max(0, Number(energyPrice)));
+  const arrivalRange = currentRange == null ? null : Math.round(currentRange - Number(tripDistance));
+  const canCompleteTrip = currentRange == null ? null : currentRange >= requiredRange;
+  const minimumDepartureSoc = currentRange && batterySoc != null ? Math.min(100, Math.ceil((batterySoc * requiredRange) / currentRange)) : null;
+  const checkedCount = checkedItems.length;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRIVE_CHECKLIST_STORAGE_KEY, JSON.stringify({ date: todayKey, items: checkedItems }));
+    } catch {
+      // The checklist still works in memory if storage is unavailable.
+    }
+  }, [checkedItems, todayKey]);
+
+  const toggleChecklist = (id) => setCheckedItems((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+
+  const saveParkingSpot = () => {
+    setParkingBusy(true);
+    getCurrentPosition()
+      .then(({ coords }) => {
+        const nextSpot = { latitude: coords.latitude, longitude: coords.longitude, savedAt: new Date().toISOString() };
+        setParkingSpot(nextSpot);
+        try { localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(nextSpot)); } catch { /* Keep the current-session position. */ }
+        notify('현재 위치를 내 차 주차 위치로 저장했습니다.');
+      })
+      .catch((error) => notify(locationErrorMessage(error)))
+      .finally(() => setParkingBusy(false));
+  };
+
+  const clearParkingSpot = () => {
+    setParkingSpot(null);
+    try { localStorage.removeItem(PARKING_STORAGE_KEY); } catch { /* Nothing else to clear. */ }
+    notify('저장한 주차 위치를 삭제했습니다.');
+  };
+
+  const openParkingSpot = () => {
+    if (!parkingSpot) return;
+    window.open(`https://map.kakao.com/link/map/${encodeURIComponent('내 차 주차 위치')},${parkingSpot.latitude},${parkingSpot.longitude}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const plannerState = canCompleteTrip == null
+    ? { className: 'connect', eyebrow: '차량 연결 필요', title: '내 차 주행 가능 거리를 연결해 주세요.', detail: '이동 에너지와 예상 비용은 지금도 계산할 수 있어요.' }
+    : canCompleteTrip
+      ? { className: 'ready', eyebrow: '출발 가능', title: `도착 후 약 ${Math.max(0, arrivalRange)}km가 남아요.`, detail: `${reservePercent}%의 여유를 포함해도 현재 주행 가능 거리 안에 있습니다.` }
+      : { className: 'charge', eyebrow: '충전 먼저', title: `최소 ${Math.max(0, requiredRange - currentRange)}km의 여유가 더 필요해요.`, detail: '출발 전에 가까운 충전소를 확인하는 것을 권장합니다.' };
+
+  return (
+    <div className="page container drive-page">
+      <PageIntro eyebrow="SMART DRIVE" title="출발부터 주차까지 한 번에" description="내 차의 실제 주행 가능 거리로 출발을 판단하고, 이동 비용과 주차 위치까지 관리하세요." actions={<button className="button primary" onClick={() => navigate('charge')}><BatteryCharging size={17} /> 주변 충전소</button>} />
+      <FeaturePurpose icon={Route} title="오늘 이동에 필요한 판단과 기록을 한곳에 모았습니다." description="차량 연결 전에는 예상 에너지와 비용을 계산하고, 연결 후에는 실제 주행 가능 거리로 출발 여부까지 확인합니다." steps={['이동 거리 입력', '잔량·비용 판단', '주차 위치 저장']} />
+
+      <nav className="drive-command-deck" aria-label="드라이브 기능 바로가기">
+        <button onClick={() => document.getElementById('range-planner')?.scrollIntoView({ behavior: 'smooth' })}><Route size={20} /><span><strong>주행 가능 판단</strong><small>거리와 여유 잔량 계산</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => document.getElementById('drive-checklist')?.scrollIntoView({ behavior: 'smooth' })}><CheckCircle2 size={20} /><span><strong>출발 체크</strong><small>오늘의 준비 상태 저장</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => navigate('charge')}><BatteryCharging size={20} /><span><strong>실시간 충전</strong><small>가용 충전기와 길찾기</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => document.getElementById('parking-memory')?.scrollIntoView({ behavior: 'smooth' })}><MapPin size={20} /><span><strong>주차 위치</strong><small>현재 위치 저장·다시 찾기</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => navigate('care')}><Wrench size={20} /><span><strong>차량 점검</strong><small>경고·공기압·블루핸즈</small></span><ChevronRight size={16} /></button>
+        <button onClick={() => navigate('passport')}><ShieldCheck size={20} /><span><strong>차량 기록</strong><small>검증 이력과 공유</small></span><ChevronRight size={16} /></button>
+      </nav>
+
+      <section className="drive-planner panel" id="range-planner">
+        <div className="drive-planner-heading">
+          <div><span>RANGE GUARD</span><h2>이번 이동, 지금 출발해도 될까요?</h2><p>왕복 또는 전체 이동 거리를 입력하면 여유 배터리까지 포함해 판단합니다.</p></div>
+          {vehicle ? <div className="drive-vehicle-chip"><CarFront size={18} /><span><small>{vehicle.name}</small><strong>{formatMetric(vehicle.range, 'km')} 주행 가능</strong></span></div> : <button className="button outline" onClick={() => setModal('connect')}>내 차 연결 <ArrowRight size={15} /></button>}
+        </div>
+        <div className="drive-planner-grid">
+          <div className="drive-inputs">
+            <label><span><strong>전체 이동 거리</strong><b>{tripDistance}km</b></span><input type="range" min="10" max="600" step="10" value={tripDistance} onChange={(event) => setTripDistance(Number(event.target.value))} /></label>
+            <label><span><strong>도착 후 남길 여유</strong><b>{reservePercent}%</b></span><input type="range" min="0" max="40" step="5" value={reservePercent} onChange={(event) => setReservePercent(Number(event.target.value))} /></label>
+            <div className="drive-number-inputs">
+              <label><span>내 차 전비</span><div><input type="number" min="1" max="15" step="0.1" value={efficiency} onChange={(event) => setEfficiency(event.target.value)} /><small>km/kWh</small></div></label>
+              <label><span>충전 단가</span><div><input type="number" min="0" step="1" value={energyPrice} onChange={(event) => setEnergyPrice(event.target.value)} /><small>원/kWh</small></div></label>
+            </div>
+            <small className="drive-assumption">전비와 충전 단가는 차량·계절·충전소에 맞게 직접 바꿀 수 있는 계산 기준입니다.</small>
+          </div>
+          <div className={`drive-verdict ${plannerState.className}`} aria-live="polite">
+            <span>{plannerState.eyebrow}</span><h3>{plannerState.title}</h3><p>{plannerState.detail}</p>
+            <div className="drive-verdict-meter"><i style={{ width: `${currentRange == null ? 18 : Math.min(100, (currentRange / Math.max(requiredRange, 1)) * 100)}%` }} /></div>
+            <div className="drive-verdict-range"><span>필요 거리 <strong>{requiredRange}km</strong></span><span>현재 가능 <strong>{formatMetric(currentRange, 'km')}</strong></span></div>
+            {canCompleteTrip === false && <button onClick={() => navigate('charge')}>충전소 찾기 <ArrowRight size={15} /></button>}
+          </div>
+        </div>
+        <div className="drive-calculation-grid" aria-label="이동 계산 결과">
+          <article><CircleGauge size={18} /><span>예상 필요 에너지</span><strong>{requiredEnergy.toFixed(1)}<small>kWh</small></strong></article>
+          <article><Bookmark size={18} /><span>예상 충전 비용</span><strong>{estimatedCost.toLocaleString()}<small>원</small></strong></article>
+          <article><BatteryCharging size={18} /><span>최소 출발 잔량</span><strong>{minimumDepartureSoc == null ? '—' : minimumDepartureSoc}<small>{minimumDepartureSoc == null ? '' : '%'}</small></strong></article>
+          <article><Navigation size={18} /><span>도착 예상 거리</span><strong>{arrivalRange == null ? '—' : Math.max(0, arrivalRange)}<small>{arrivalRange == null ? '' : 'km'}</small></strong></article>
+        </div>
+      </section>
+
+      <div className="drive-support-grid">
+        <section className="departure-check panel" id="drive-checklist">
+          <div className="drive-tool-heading"><div><span>BEFORE DRIVE</span><h2>오늘의 출발 체크</h2></div><strong>{checkedCount}/{driveChecklistItems.length}</strong></div>
+          <div className="departure-progress"><i style={{ width: `${(checkedCount / driveChecklistItems.length) * 100}%` }} /></div>
+          <div className="departure-list">{driveChecklistItems.map((item) => {
+            const checked = checkedItems.includes(item.id);
+            return <button key={item.id} className={checked ? 'checked' : ''} onClick={() => toggleChecklist(item.id)} aria-pressed={checked}><span>{checked ? <Check size={16} /> : null}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div></button>;
+          })}</div>
+          <button className="drive-reset" onClick={() => setCheckedItems([])} disabled={!checkedCount}><RefreshCcw size={14} /> 오늘 체크 초기화</button>
+        </section>
+
+        <section className="parking-memory panel" id="parking-memory">
+          <div className="drive-tool-heading"><div><span>PARKING MEMORY</span><h2>내 차 어디에 세웠지?</h2></div><MapPin size={23} /></div>
+          {parkingSpot ? <>
+            <div className="parking-map-preview" aria-label="저장된 주차 위치"><i /><div><Navigation size={19} fill="currentColor" /></div><span>{parkingSpot.latitude.toFixed(4)}, {parkingSpot.longitude.toFixed(4)}</span></div>
+            <div className="parking-saved"><span>저장한 시각</span><strong>{formatDateTime(parkingSpot.savedAt)}</strong><small>주차 위치는 이 기기에만 저장됩니다.</small></div>
+            <div className="parking-actions"><button className="button primary" onClick={openParkingSpot}>카카오맵으로 찾기 <Navigation size={15} /></button><button className="button outline" onClick={clearParkingSpot}><Trash2 size={15} /> 삭제</button></div>
+          </> : <>
+            <div className="parking-empty"><MapPin size={31} /><strong>현재 위치를 주차 위치로 남겨보세요.</strong><p>다시 차로 돌아올 때 카카오맵 길찾기로 바로 이어집니다.</p></div>
+            <button className="button primary full" onClick={saveParkingSpot} disabled={parkingBusy}>{parkingBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />}{parkingBusy ? '현재 위치 확인 중' : '이곳을 주차 위치로 저장'}</button>
+          </>}
+        </section>
+      </div>
+
+      <section className="drive-next-actions">
+        <div><span>NEXT</span><h2>판단 다음 행동도 바로 이어집니다.</h2></div>
+        <button onClick={() => navigate('charge')}><BatteryCharging size={19} /><span><strong>충전이 필요해요</strong><small>실시간 가용 충전기 찾기</small></span><ArrowRight size={16} /></button>
+        <button onClick={() => navigate('care')}><Wrench size={19} /><span><strong>차량이 걱정돼요</strong><small>경고 확인·블루핸즈 찾기</small></span><ArrowRight size={16} /></button>
+        <button onClick={() => navigate('passport')}><FileCheck2 size={19} /><span><strong>기록을 확인할래요</strong><small>차량 여권과 변화 이력</small></span><ArrowRight size={16} /></button>
+      </section>
     </div>
   );
 }
