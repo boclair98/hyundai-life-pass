@@ -849,6 +849,21 @@ function VehicleEnergyCard({ vehicle, onConnect }) {
   );
 }
 
+function ChargeHero({ availableCount, locationLabel, radiusKm, usingCurrentLocation, live, busy, onLocate }) {
+  return (
+    <section className="charge-hero" aria-labelledby="charge-title">
+      <div className="charge-hero-copy">
+        <span><i /> {live ? '실시간 충전 현황' : '충전 현황 확인 중'}</span>
+        <h1 id="charge-title">가까운 충전소</h1>
+        <p><MapPin size={14} /> {locationLabel} · 반경 {Math.round(radiusKm)}km</p>
+      </div>
+      <div className="charge-hero-count"><strong>{live ? availableCount : '—'}</strong><span>대 사용 가능</span><small>{usingCurrentLocation ? '내 위치 기준' : '서울 성수 기본 위치 기준'}</small></div>
+      <button onClick={onLocate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}<span><strong>{busy ? '위치 확인 중' : '내 위치로 다시 찾기'}</strong><small>위치는 저장하지 않아요</small></span><ChevronRight size={17} /></button>
+      <div className="charge-hero-symbol" aria-hidden="true"><Zap size={30} fill="currentColor" /><i /><i /></div>
+    </section>
+  );
+}
+
 function ChargePage({ vehicle, notify, platform, setModal }) {
   const [chargerFeed, setChargerFeed] = useState(() => ({
     stations: platform.stations ?? [],
@@ -896,15 +911,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
       return left.distanceValue - right.distanceValue;
     });
   }, [stationList, search, favoritesOnly, favoriteIds, sortMode, quickFilter]);
-  const activeStation = visibleStations.find((station) => station.id === selectedStation?.id) ?? visibleStations[0] ?? null;
-  const recommendedStation = useMemo(() => {
-    const candidates = visibleStations.filter((station) => Number(station.available) > 0);
-    return [...candidates].sort((left, right) => {
-      const leftScore = Number(left.distanceValue) * 24 - Number(left.available) * 4 - Math.min(Number(left.speedKw), 350) / 20;
-      const rightScore = Number(right.distanceValue) * 24 - Number(right.available) * 4 - Math.min(Number(right.speedKw), 350) / 20;
-      return leftScore - rightScore;
-    })[0] ?? null;
-  }, [visibleStations]);
+  const activeStation = visibleStations.find((station) => station.id === selectedStation?.id) ?? visibleStations.find((station) => Number(station.available) > 0) ?? visibleStations[0] ?? null;
   const availableChargerCount = visibleStations.reduce((sum, station) => sum + Number(station.available || 0), 0);
   const chargerProvider = chargerFeed.provider ?? platform.providers?.find((provider) => provider.id === 'ev-charger');
   const chargerLive = chargerProvider?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(chargerProvider.state);
@@ -984,30 +991,16 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
   }, [findFromCurrentLocation]);
 
   return (
-    <div className="page container">
-      <PageIntro eyebrow="CHARGE NEAR YOU" title="내 주변 충전소" description="지금 갈 수 있는 충전소를 찾고, 도착까지 편하게 안내받으세요." actions={<button className="button primary location-button" onClick={findFromCurrentLocation} disabled={locationBusy}>{locationBusy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}{locationBusy ? '위치 확인 중' : '내 위치로 찾기'}</button>} />
-      <FeaturePurpose icon={BatteryCharging} title="현재 위치 주변의 충전소를 찾아 길 안내까지 연결합니다." description="차량을 연결하지 않아도 이용할 수 있습니다. 충전기 사용 가능 수와 거리, 충전 출력을 비교해 목적지를 선택하세요." steps={['내 위치 확인', '충전기 비교', '길찾기 시작']} />
-      <VehicleEnergyCard vehicle={vehicle} onConnect={() => setModal('connect')} />
-      <section className={`location-status ${usingCurrentLocation ? 'current' : 'default'}`} aria-live="polite">
-        <div><MapPin size={18} /><span><small>{usingCurrentLocation ? '현재 위치 기준' : '기본 위치 기준'}</small><strong>{chargerFeed.search?.locationLabel ?? '서울 성수'} · 반경 {Math.round(chargerFeed.search?.radiusKm ?? 30)}km</strong></span></div>
-        <p>{usingCurrentLocation ? '현재 위치를 기준으로 가까운 순서로 보여드리고, 위치는 저장하지 않아요.' : '내 위치로 찾기를 누르고 위치 권한을 허용하면 주변 순서가 바뀝니다.'}</p>
-      </section>
-      {chargerProvider && <div className={`provider-inline ${chargerLive ? 'live' : 'sample'}`}><span>{chargerLive ? '지금 확인됨' : '확인 중'}</span><strong>주변 충전소</strong><small>{chargerLive ? '사용 가능한 충전기를 먼저 보여드려요.' : '잠시 후 다시 확인해 주세요.'}</small></div>}
+    <div className="page container charge-page">
+      <ChargeHero availableCount={availableChargerCount} locationLabel={chargerFeed.search?.locationLabel ?? '서울 성수'} radiusKm={chargerFeed.search?.radiusKm ?? 30} usingCurrentLocation={usingCurrentLocation} live={chargerLive} busy={locationBusy} onLocate={findFromCurrentLocation} />
       <div className="charge-quick-filters" aria-label="충전소 빠른 필터">
-        <div><span>LIVE CHARGE</span><strong>{availableChargerCount}대 사용 가능</strong></div>
+        <div><span>빠른 조건</span><strong>{visibleStations.length}곳 비교 중</strong></div>
         <div>
           <button className={quickFilter === 'all' ? 'active' : ''} onClick={() => setQuickFilter('all')}>전체</button>
           <button className={quickFilter === 'available' ? 'active' : ''} onClick={() => setQuickFilter('available')}><CheckCircle2 size={14} /> 사용 가능</button>
           <button className={quickFilter === 'fast' ? 'active' : ''} onClick={() => setQuickFilter('fast')}><Zap size={14} /> 100kW 이상</button>
         </div>
       </div>
-      {recommendedStation && <section className="recommended-charger">
-        <div className="charger-visual" aria-hidden="true"><div className="charger-head"><Zap size={23} fill="currentColor" /></div><div className="charger-body"><i /><span /></div><div className="charger-cable" /></div>
-        <div className="recommended-copy"><span><i /> 지금 가기 좋은 충전소</span><h2>{recommendedStation.name}</h2><p>{recommendedStation.address}</p></div>
-        <div className="recommended-stats"><div><strong>{recommendedStation.available}<small>/{recommendedStation.total}</small></strong><span>사용 가능</span></div><div><strong>{recommendedStation.speed}</strong><span>충전 출력</span></div><div><strong>{recommendedStation.distance}</strong><span>현재 거리</span></div></div>
-        <div className="recommended-actions"><button onClick={() => { setSelectedStation(recommendedStation); document.querySelector('.charge-layout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>지도에서 보기</button><button onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(recommendedStation.name)},${recommendedStation.latitude},${recommendedStation.longitude}`, '_blank', 'noopener,noreferrer')}>길찾기 <Navigation size={15} /></button></div>
-      </section>}
-      <OperationBanner tone={chargerLive ? 'ready' : 'active'} icon={BatteryCharging} label="충전소 둘러보기" title={chargerLive ? '사용 가능한 충전기를 확인하고 바로 길찾기 하세요.' : '충전소를 불러오는 중이에요.'} detail={chargerLive ? '출발 전 충전기 상태를 한 번 더 확인하면 더 안심할 수 있어요.' : '잠시 후 새로고침해 주세요.'} />
       <div className="charge-layout">
         <section className="charge-map panel">
           <div className="map-search"><Search size={18} /><input value={search} placeholder="충전소명·주소·운영기관 검색" onChange={(event) => setSearch(event.target.value)} aria-label="충전소 검색" /><button aria-label="검색어 지우기" onClick={() => setSearch('')}><X size={17} /></button></div>
@@ -1019,8 +1012,8 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
           <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} notify={notify} userLocation={usingCurrentLocation ? chargerFeed.search : null} />
         </section>
         <aside className="station-panel panel">
-          <div className="station-panel-head"><span>가까운 충전소</span><small>{chargerLive ? '지금 이용 가능' : '확인 중'}</small></div>
-          {visibleStations.map((station) => (
+          <div className="station-panel-head"><span>가까운 순서</span><small>{chargerLive ? `${Math.min(6, visibleStations.length)}곳 추천` : '확인 중'}</small></div>
+          {visibleStations.slice(0, 6).map((station) => (
             <button key={station.id} className={`station-row ${activeStation?.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className={`station-availability ${station.available > 0 ? 'available' : 'busy'}`}><strong>{station.available}</strong><span>/{station.total}</span><i /></div>
               <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel}</small></div>
@@ -1034,6 +1027,10 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
           </div> : <div className="station-empty"><MapPin size={22} /><strong>{stationList.length ? '검색 결과가 없습니다.' : '충전소를 불러오는 중입니다.'}</strong><span>{stationList.length ? '다른 충전소명이나 지역을 입력해 보세요.' : '데이터 연결에 실패하면 잠시 후 다시 시도해 주세요.'}</span></div>}
         </aside>
       </div>
+      <section className="charge-vehicle-section">
+        <div className="charge-section-heading"><span>MY EV</span><h2>충전소를 정했다면, 내 차 잔량도 확인하세요.</h2></div>
+        <VehicleEnergyCard vehicle={vehicle} onConnect={() => setModal('connect')} />
+      </section>
       <div className="charge-plan-grid">
         <div className="panel plan-card"><div className="plan-icon"><Clock3 size={20} /></div><div><span>마지막 확인</span><strong>{chargerProvider?.refreshedAt ? formatDateTime(chargerProvider.refreshedAt) : '확인 중'}</strong><p>충전기 상태는 현장 상황에 따라 달라질 수 있어요.</p></div></div>
         <div className="panel plan-card"><div className="plan-icon"><Route size={20} /></div><div><span>이용 안내</span><strong>길찾기까지 한 번에</strong><p>도착 후 충전기 화면에서 이용 방법을 확인해 주세요.</p></div></div>
