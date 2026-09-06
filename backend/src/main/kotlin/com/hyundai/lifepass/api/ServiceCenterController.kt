@@ -13,6 +13,6 @@ class ServiceCenterController(private val serviceCenterProvider: ServiceCenterPr
     fun search(
         @RequestParam(defaultValue = "37.5446") latitude: Double,
         @RequestParam(defaultValue = "127.0559") longitude: Double,
-        @RequestParam(defaultValue = "15000") radius: Int,
+        @RequestParam(defaultValue = "20000") radius: Int,
     ) = serviceCenterProvider.search(latitude, longitude, radius)
 }

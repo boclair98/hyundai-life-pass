@@ -104,3 +104,72 @@
   .platform.mobility-shell .charge-hero { background-image:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v1-800.webp'); }
 }
 @media(prefers-reduced-motion:reduce) { .platform.mobility-shell *, .platform.mobility-shell *::before { animation:none!important; transition:none!important; } }
+
+/* Typography pass: a calmer Korean rhythm keeps the cinematic layout easy to scan. */
+.platform.mobility-shell {
+  font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:15px;
+  line-height:1.62;
+  letter-spacing:-.012em;
+  font-synthesis:none;
+  text-rendering:optimizeLegibility;
+}
+.platform.mobility-shell :where(p,li,dd,dt,label,button,a,input,select,textarea) { letter-spacing:-.012em; }
+.platform.mobility-shell :where(p,li,dd,dt) { line-height:1.7; }
+.platform.mobility-shell :where(button,a,input,select,textarea) { line-height:1.35; }
+.platform.mobility-shell :where(h1,h2,h3,h4) { word-break:keep-all; }
+.platform.mobility-shell .mobility-welcome h1,
+.platform.mobility-shell .page .workspace-heading h1,
+.platform.mobility-shell .owner-hero h1,
+.platform.mobility-shell .workspace-heading h1,
+.platform.mobility-shell .page-intro h1,
+.platform.mobility-shell .section-heading h2,
+.platform.mobility-shell .drive-tool-heading h2,
+.platform.mobility-shell .tire-card-heading h3,
+.platform.mobility-shell .settings-card h2,
+.platform.mobility-shell .journal-summary article > strong {
+  letter-spacing:-.035em;
+  line-height:1.22;
+}
+.platform.mobility-shell .mobility-eyebrow,
+.platform.mobility-shell .owner-tag,
+.platform.mobility-shell .command-eyebrow,
+.platform.mobility-shell .live-label,
+.platform.mobility-shell .section-heading > span,
+.platform.mobility-shell .page-intro > div > span {
+  letter-spacing:.08em;
+}
+.platform.mobility-shell .mobility-welcome p,
+.platform.mobility-shell .workspace-heading p,
+.platform.mobility-shell .section-heading p,
+.platform.mobility-shell .page-intro p,
+.platform.mobility-shell .owner-hero p,
+.platform.mobility-shell .settings-card p,
+.platform.mobility-shell .journal-connect p {
+  line-height:1.75;
+}
+.platform.mobility-shell .owner-shortcuts,
+.platform.mobility-shell .owner-lower-grid,
+.platform.mobility-shell .workspace-tabs,
+.platform.mobility-shell .service-center-grid,
+.platform.mobility-shell .drive-planner-grid,
+.platform.mobility-shell .journal-summary { gap:14px; }
+.platform.mobility-shell .page .workspace-heading { padding:32px 34px; }
+.platform.mobility-shell .workspace-tabs button { letter-spacing:-.01em; }
+.platform.mobility-shell .map-unavailable { gap:11px; line-height:1.65; }
+.platform.mobility-shell .map-retry { min-height:40px; margin-top:3px; background:#002c5f; color:#fff; }
+@media(max-width:760px) {
+  .platform.mobility-shell { font-size:14px; line-height:1.65; }
+  .platform.mobility-shell .page .workspace-heading { padding:24px 20px; }
+  .platform.mobility-shell .mobility-welcome h1 { letter-spacing:-.03em; line-height:1.2; }
+  .platform.mobility-shell .mobility-welcome p,
+  .platform.mobility-shell .workspace-heading p,
+  .platform.mobility-shell .section-heading p,
+  .platform.mobility-shell .page-intro p { line-height:1.72; }
+  .platform.mobility-shell .owner-shortcuts,
+  .platform.mobility-shell .owner-lower-grid,
+  .platform.mobility-shell .workspace-tabs,
+  .platform.mobility-shell .service-center-grid,
+  .platform.mobility-shell .drive-planner-grid,
+  .platform.mobility-shell .journal-summary { gap:12px; }
+}

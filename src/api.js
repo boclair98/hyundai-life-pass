@@ -85,7 +85,7 @@ export const createJournalEntry = (vehicleId, entry) => request(`/api/v1/vehicle
 export const changeJournalStatus = (vehicleId, entryId, status) => request(`/api/v1/vehicles/${vehicleId}/journal/${entryId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
 export const connectVehicle = (externalId) => request(`/api/v1/platform/vehicles/${externalId}/connect`, { method: 'POST' });
 export const hyundaiAuthorizationPath = '/api/v1/integrations/hyundai/authorize';
-export const loadServiceCenters = ({ latitude = 37.5446, longitude = 127.0559, radius = 15000 } = {}) => {
+export const loadServiceCenters = ({ latitude = 37.5446, longitude = 127.0559, radius = 20000 } = {}) => {
   const query = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), radius: String(radius) });
   return request(`/api/v1/service-centers?${query}`);
 };

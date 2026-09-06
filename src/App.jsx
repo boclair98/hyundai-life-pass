@@ -889,38 +889,67 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
 }
 
 let kakaoSdkPromise;
-function loadKakaoSdk(key) {
+let kakaoSdkScript;
+function loadKakaoSdk(key, retry = 0) {
   if (!key) return Promise.reject(new Error('지도 화면을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.'));
   if (window.kakao?.maps?.Map) return Promise.resolve(window.kakao);
-  if (!kakaoSdkPromise) {
-    kakaoSdkPromise = new Promise((resolve, reject) => {
-      let settled = false;
-      const finish = (error) => {
-        if (settled) return;
-        settled = true;
-        window.clearTimeout(timeout);
-        if (error) {
-          kakaoSdkPromise = undefined;
-          reject(error);
-        } else {
-          resolve(window.kakao);
-        }
-      };
-      const script = document.createElement('script');
-      const timeout = window.setTimeout(() => finish(new Error('Kakao Maps SDK load timeout')), 10000);
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`;
-      script.async = true;
-      script.onload = () => {
-        if (!window.kakao?.maps?.load) {
-          finish(new Error('지도 화면을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.'));
+  if (kakaoSdkPromise) return kakaoSdkPromise;
+
+  const load = () => new Promise((resolve, reject) => {
+    let settled = false;
+    let readyChecks = 0;
+    const timeout = window.setTimeout(() => finish(new Error('Kakao Maps SDK load timeout')), 12000);
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve(window.kakao);
+    };
+    const startMapLoad = () => {
+      if (settled) return;
+      if (!window.kakao?.maps?.load) {
+        if (readyChecks++ < 40) {
+          window.setTimeout(startMapLoad, 50);
           return;
         }
-        window.kakao.maps.load(() => finish());
-      };
-      script.onerror = () => finish(new Error('지도 화면을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
-      document.head.appendChild(script);
-    });
-  }
+        finish(new Error('지도 화면을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.'));
+        return;
+      }
+      window.kakao.maps.load(() => {
+        if (window.kakao?.maps?.Map) finish();
+        else finish(new Error('지도 화면을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.'));
+      });
+    };
+
+    const existing = kakaoSdkScript || document.querySelector('script[data-lifepass-kakao-sdk]');
+    if (existing) {
+      kakaoSdkScript = existing;
+      existing.addEventListener('load', startMapLoad, { once: true });
+      existing.addEventListener('error', () => finish(new Error('지도 화면을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')), { once: true });
+      startMapLoad();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.dataset.lifepassKakaoSdk = 'true';
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`;
+    script.async = true;
+    script.onload = startMapLoad;
+    script.onerror = () => finish(new Error('지도 화면을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
+    kakaoSdkScript = script;
+    document.head.appendChild(script);
+  });
+
+  kakaoSdkPromise = load().catch((error) => {
+    kakaoSdkPromise = undefined;
+    if (kakaoSdkScript && !window.kakao?.maps?.Map) {
+      kakaoSdkScript.remove();
+      kakaoSdkScript = undefined;
+    }
+    if (retry < 1) return new Promise((resolve) => window.setTimeout(resolve, 350)).then(() => loadKakaoSdk(key, retry + 1));
+    throw error;
+  });
   return kakaoSdkPromise;
 }
 
@@ -932,14 +961,17 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   const markerElements = useRef([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState('');
+  const [mapRetryKey, setMapRetryKey] = useState(0);
   const key = window.__LIFEPASS_CONFIG__?.kakaoJavascriptKey || import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
 
   useEffect(() => { notifyRef.current = notify; }, [notify]);
 
   useEffect(() => {
+    setMapError('');
+    setMapReady(false);
     if (!key || !mapElement.current || !stationItems.length) return undefined;
     let cancelled = false;
-  loadKakaoSdk(key).then((kakao) => {
+    loadKakaoSdk(key).then((kakao) => {
       if (cancelled || !mapElement.current) return;
       const centerStation = selectedStation ?? stationItems[0];
       const map = new kakao.maps.Map(mapElement.current, {
@@ -982,14 +1014,16 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
       if (stationItems.length > 1) map.setBounds(bounds, 48, 48, 48, 48);
       setMapReady(true);
       map.__lifePassOverlays = overlays;
-  }).catch(() => setMapError('지도 연결을 확인해 주세요. 아래 목록에서 길찾기를 이용할 수 있어요.'));
+    }).catch(() => {
+      if (!cancelled) setMapError('지도 연결을 확인해 주세요. 아래 목록에서 길찾기를 이용할 수 있어요.');
+    });
     return () => {
       cancelled = true;
       mapRef.current?.__lifePassOverlays?.forEach((overlay) => overlay.setMap(null));
       mapRef.current = null;
       kakaoRef.current = null;
     };
-  }, [key, stationItems, onSelect, userLocation?.latitude, userLocation?.longitude]);
+  }, [key, stationItems, onSelect, userLocation?.latitude, userLocation?.longitude, mapRetryKey]);
 
   useEffect(() => {
     markerElements.current.forEach(({ id, marker, overlay }) => {
@@ -1016,7 +1050,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   return (
     <div className={`map-experience ${mapReady ? 'ready' : ''}`}>
       {key ? <div ref={mapElement} className="map-surface kakao-map" aria-label="충전소 지도" /> : <div className="map-unavailable"><MapPin size={26} /><strong>지도 연결이 필요해요</strong><span>아래 목록에서 충전소를 선택해 길찾기를 이용하세요.</span></div>}
-      {mapError && <div className="map-unavailable" role="status"><MapPin size={26} /><strong>지도를 표시하지 못했어요</strong><span>{mapError}</span></div>}
+      {mapError && <div className="map-unavailable" role="status"><MapPin size={26} /><strong>지도를 표시하지 못했어요</strong><span>{mapError}</span><button className="button compact map-retry" type="button" onClick={() => setMapRetryKey((value) => value + 1)}>다시 불러오기</button></div>}
       <div className="map-live-chip"><i /> 충전기 현황</div>
       {key && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
       <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>
