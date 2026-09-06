@@ -953,9 +953,9 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
         const label = document.createElement('span');
         label.textContent = station.available > 0 ? '가능' : '대기';
         marker.append(count, label);
-        markerElements.current.push({ id: station.id, marker });
         marker.addEventListener('click', () => onSelect(station));
         const overlay = new kakao.maps.CustomOverlay({ position, content: marker, yAnchor: 1.2, zIndex: selectedStation?.id === station.id ? 5 : 3 });
+        markerElements.current.push({ id: station.id, marker, overlay });
         overlay.setMap(map);
         overlays.push(overlay);
       });
@@ -982,7 +982,11 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   }, [key, stationItems, onSelect, userLocation?.latitude, userLocation?.longitude]);
 
   useEffect(() => {
-    markerElements.current.forEach(({ id, marker }) => marker.classList.toggle('active', id === selectedStation?.id));
+    markerElements.current.forEach(({ id, marker, overlay }) => {
+      const active = id === selectedStation?.id;
+      marker.classList.toggle('active', active);
+      overlay.setZIndex(active ? 5 : 3);
+    });
     if (mapRef.current && kakaoRef.current && selectedStation) mapRef.current.panTo(new kakaoRef.current.maps.LatLng(selectedStation.latitude, selectedStation.longitude));
   }, [selectedStation?.id, mapReady]);
 

@@ -10,7 +10,7 @@ function requestTimeout(timeoutMs) {
   return { signal: controller.signal, cleanup: () => window.clearTimeout(timer) };
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, attempt = 0) {
   const timeout = requestTimeout(20000);
   try {
     const response = await fetch(`${API_BASE}${path}`, {
@@ -30,11 +30,21 @@ async function request(path, options = {}) {
 
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error ?? `요청을 처리하지 못했습니다. (${response.status})`);
+      const failure = new Error(payload.error ?? `요청을 처리하지 못했습니다. (${response.status})`);
+      failure.retryable = [502, 503, 504].includes(response.status);
+      throw failure;
     }
 
     return response.status === 204 ? null : response.json();
   } catch (error) {
+    const timedOut = error?.name === 'AbortError' || error?.name === 'TimeoutError';
+    const isRead = (options.method ?? 'GET').toUpperCase() === 'GET';
+    // A sleeping server may need a second read. Never repeat a write automatically.
+    if (attempt === 0 && isRead && (timedOut || error?.name === 'TypeError' || error?.retryable)) {
+      timeout.cleanup();
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      return request(path, options, 1);
+    }
     if (error?.name === 'AbortError' || error?.name === 'TimeoutError') throw new Error('요청 시간이 초과되었습니다. 네트워크 상태를 확인하고 다시 시도해 주세요.');
     throw error;
   } finally {

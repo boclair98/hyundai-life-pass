@@ -141,3 +141,12 @@ textarea { font:inherit; }
   .journal-connect { padding:18px; gap:12px; flex-wrap:wrap; }.journal-connect > div { flex-basis:calc(100% - 50px); }.journal-connect .button { width:100%; margin-top:4px; }.journal-connect strong { font-size:14px; }.journal-history { padding:19px 15px; }.journal-toolbar { flex-wrap:wrap; gap:12px; }.journal-filters { width:100%; }.journal-filters button { flex:1; font-size:12px; padding:0 8px; }.journal-search { width:100%; }.journal-search input { flex:1; font-size:16px; }.journal-form { padding:19px 16px; }.journal-form-grid { gap:14px 10px; }.journal-form-grid label { font-size:11px; }.journal-form > p { font-size:11px; }.journal-entry { gap:10px; align-items:flex-start; }.journal-entry-icon { width:35px; height:35px; border-radius:10px; }.journal-entry-copy > span { font-size:10px; }.journal-entry h3 { font-size:14px; }.journal-entry-actions > strong { font-size:13px; }.journal-entry-actions button { padding:5px 7px; }.journal-footnote { line-height:1.7; }
 }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; }.platform *, .platform *::before, .platform *::after { animation:none!important; transition:none!important; }.owner-shortcuts button:hover { transform:none; } }
+/* Compact map markers keep nearby streets legible; the selected location stays prominent. */
+.platform .kakao-station-marker { min-width: 26px; width: 26px; height: 26px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: #002c5f; color: #fff; transform: none; box-shadow: 0 2px 7px #002c5f35; transition: width .18s, height .18s, background .18s; }
+.platform .kakao-station-marker > * { transform: none; }
+.platform .kakao-station-marker strong { font-size: 11px; line-height: 1; }
+.platform .kakao-station-marker span { display: none; }
+.platform .kakao-station-marker.active { width: 42px; height: 42px; min-width: 42px; background: #008da8; transform: none; box-shadow: 0 0 0 5px #008da822, 0 3px 10px #002c5f30; }
+.platform .kakao-station-marker.active strong { font-size: 15px; }
+.platform .kakao-station-marker.active span { display: block; margin-top: 2px; font-size: 9px; color: #fff; }
+.platform .kakao-station-marker:focus-visible { outline: 3px solid #00aad2; outline-offset: 3px; }
