@@ -4,25 +4,25 @@
   background: #f5f5f2;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --navy: #101116;
-  --navy-2: #252831;
-  --blue: #e85832;
-  --bright-blue: #f47b54;
-  --ice: #fff0e9;
-  --soft-blue: #f6f6f2;
-  --ink: #1d1e24;
-  --muted: #686a72;
-  --quiet: #95969d;
-  --line: rgba(16, 17, 22, .12);
-  --line-strong: rgba(16, 17, 22, .22);
-  --green: #2d805e;
-  --orange: #ef6b3f;
-  --shadow: 0 24px 60px rgba(16, 17, 22, .13);
+  --navy: #002c5f;
+  --navy-2: #003b70;
+  --blue: #00aad2;
+  --bright-blue: #46c8e5;
+  --ice: #e9f7fb;
+  --soft-blue: #f2f7f9;
+  --ink: #0b2239;
+  --muted: #607283;
+  --quiet: #8b9aa7;
+  --line: rgba(0, 44, 95, .13);
+  --line-strong: rgba(0, 44, 95, .24);
+  --green: #00a67e;
+  --orange: #00aad2;
+  --shadow: 0 24px 60px rgba(0, 44, 95, .14);
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; background: #f5f5f2; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: #f5f5f2; }
+html { scroll-behavior: smooth; background: #f3f7f9; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #f3f7f9; }
 [data-coders-support] { display: none !important; }
 button, input, select { font: inherit; }
 button { color: inherit; }
@@ -1689,4 +1689,84 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .service-explainer-actions { margin-top: 27px; display: grid; gap: 16px; justify-items: start; }
   .service-explainer-actions .button { width: 100%; }
   .explainer-link { font-size: 10px; }
+}
+
+/* Hyundai design system refresh — deep ocean blue, clean white, electric cyan */
+.app { background: #f3f7f9; color: var(--ink); }
+.page { position: relative; }
+.site-header { border-bottom-color: rgba(255,255,255,.13); background: rgba(0,31,69,.9); }
+.page-home .site-header,.page-home.is-scrolled .site-header { background: rgba(0,31,69,.9); }
+.desktop-nav button:hover,.desktop-nav button.active { border-bottom-color: var(--blue); }
+.life-mark,.hyundai-mark { border-color: #fff; color: #fff; }
+.brand-copy strong { color: #fff; }.brand-copy small { color: rgba(255,255,255,.58); }
+.concept-chip { background: rgba(0,170,210,.14); color: #7edcf0; }
+.button.primary,.hero-buttons .button.primary,.provenance-action,.lab-button { background: var(--blue); color: #002c5f; }
+.button.primary:hover,.hero-buttons .button.primary:hover { background: #39c4e4; }
+.orbit-intro-copy h1 em,.service-explainer-heading h2 em { color: #60d5ee; }
+.orbit-system-label i,.overline i,.motion-story-chapter i,.motion-story-progress b,.page-progress i,.scene-rail button.active i,.hero-scroll-cue i::after { background: var(--blue); }
+.scene-rail button.active::after { background: var(--blue); box-shadow: 0 0 0 5px rgba(0,170,210,.16); }
+.space-gallery-ui nav > span button.active { background: var(--blue); }
+.page-intro-content > span,.page-intro-scene span,.home-manifesto-inner > span,.project-definition span,.feature-purpose-copy > span,.service-explainer-heading > span { color: #48cbe8; }
+.page-intro-orbit { border-color: rgba(0,170,210,.34); }.page-intro-orbit i { background: var(--blue); box-shadow: 0 0 0 9px rgba(0,170,210,.13); }
+.page-intro-shade { background: linear-gradient(90deg,rgba(0,22,52,.96) 0%,rgba(0,37,79,.73) 43%,rgba(0,44,95,.12) 79%),linear-gradient(0deg,rgba(0,25,57,.86) 0%,transparent 56%); }
+.service-explainer { background: #f3f7f9; }.service-explainer-flow article > div { background: #e9f7fb; color: var(--blue); }.service-explainer-flow article:hover { border-color: rgba(0,170,210,.38); box-shadow: 0 24px 46px rgba(0,44,95,.12); }.explainer-link:hover { color: var(--blue); border-color: var(--blue); }
+.service-scene { background: #002c5f; }.service-scene::after { background: radial-gradient(circle at 75% 22%,rgba(0,170,210,.18),transparent 37%); }.service-scene .section-heading > span,.service-scene .service-action { color: #59d3eb; }.service-scene .service-card-top > div { background: rgba(0,170,210,.14); color: #72dcef; }.service-scene .service-card:hover { border-color: #00aad2; background: #04396c; }
+.open-beta-panel,.api-coverage { background: #002c5f; }.api-coverage-heading > span,.api-coverage-grid article > span,.vehicle-charge-strip > div:first-child span,.vehicle-charge-strip .metric > svg { color: #59d3eb; }.api-coverage-grid .planned { background: linear-gradient(145deg,rgba(0,170,210,.14),transparent 65%); }.api-coverage-grid .planned small { border-color: rgba(0,170,210,.44); color: #6ed9ef; }
+.map-search button,.map-recenter { color: var(--blue); }.station-tools > button:hover,.station-tools > button.active { border-color: rgba(0,170,210,.3); background: #e9f7fb; color: #007fa8; }.kakao-station-marker.active { background: var(--blue); }.kakao-current-marker { background: var(--blue); box-shadow: 0 0 0 9px rgba(0,170,210,.2),0 8px 24px rgba(0,44,95,.24); }.station-row.active { background: #eaf7fb; box-shadow: inset 3px 0 var(--blue); }.station-detail { background: #002c5f; }.station-detail .button { background: var(--blue); color: #002c5f; }
+.mobile-nav button.active { background: #e9f7fb; color: #002c5f; }.mobile-nav button.active:before { background: var(--blue); }
+.life-mark .life-mark-dot { fill: #00aad2; }
+.open-beta-eyebrow,.motion-story-copy article > span,.orbit-function-rail button > svg:first-child,.orbit-scroll-cue i::after,.space-reel-heading > span,.space-reel figcaption span,.map-selected-card > span,.map-selected-card > svg { color: #64d7ee; }
+.orbit-scroll-cue i::after { background: var(--blue); }.motion-story-orbit i,.motion-story-orbit b { background: var(--blue); box-shadow: 0 0 0 9px rgba(0,170,210,.13),0 0 24px rgba(0,170,210,.62); }
+.open-beta-panel::after { border-color: rgba(0,170,210,.42); box-shadow: 0 0 0 52px rgba(0,170,210,.05),0 0 0 104px rgba(0,170,210,.025); }.open-beta-panel .button.light,.mobile-account > button { background: var(--blue); color: #002c5f; }
+.space-gallery-ui nav > span button.active { background: var(--blue); }.feature-purpose-icon { background: #002c5f; color: #65d8ef; }.feature-purpose li > span { color: #002c5f; }
+.action-icon.orange,.garage-action-icon.orange,.maintenance-icon { background: #e9f7fb; color: #007fa8; }
+.map-selected-card { background: rgba(0,35,76,.92); }.kakao-station-marker { background: #002c5f; box-shadow: 0 10px 28px rgba(0,44,95,.3); }
+.page-intro-media { filter: saturate(.82) contrast(1.04); }.page-intro-shade { background: linear-gradient(90deg,rgba(0,22,52,.97) 0%,rgba(0,44,95,.78) 45%,rgba(0,73,118,.25) 100%),linear-gradient(0deg,rgba(0,25,57,.9) 0%,transparent 60%); }
+
+/* Vehicle battery visual */
+.vehicle-energy-card { min-height: 290px; margin: -8px 0 32px; padding: 32px 34px; position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(220px,1fr) minmax(260px,.9fr) minmax(250px,1fr); align-items: center; gap: 34px; border-radius: 26px; background: linear-gradient(128deg,#001d43 0%,#002c5f 52%,#004577 100%); color: #fff; box-shadow: 0 28px 70px rgba(0,44,95,.22); }
+.vehicle-energy-card::before { content: ''; position: absolute; inset: 0; opacity: .23; background-image: linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px); background-size: 54px 54px; mask-image: radial-gradient(circle at 50% 50%,#000,transparent 72%); }
+.vehicle-energy-card::after { content: ''; width: 410px; aspect-ratio: 1; position: absolute; right: 18%; top: 50%; border: 1px solid rgba(76,207,235,.13); border-radius: 50%; transform: translateY(-50%); box-shadow: inset 0 0 90px rgba(0,170,210,.06); }
+.energy-card-copy,.battery-visual-wrap,.energy-card-stats { position: relative; z-index: 2; }
+.energy-card-copy > span { display: flex; align-items: center; gap: 8px; color: #68d7ed; font: 700 8px 'DM Mono',monospace; letter-spacing: .14em; }.energy-card-copy > span i { width: 7px; height: 7px; border-radius: 50%; background: #00aad2; box-shadow: 0 0 0 6px rgba(0,170,210,.13); }
+.energy-card-copy h2 { margin: 18px 0 10px; font-size: clamp(24px,2.7vw,36px); line-height: 1.12; letter-spacing: -.06em; }.energy-card-copy p { max-width: 330px; margin: 0; color: rgba(255,255,255,.62); font-size: 10px; line-height: 1.7; }.energy-card-copy button { margin-top: 23px; padding: 0 0 7px; border: 0; border-bottom: 1px solid rgba(255,255,255,.38); display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; font-size: 10px; font-weight: 700; cursor: pointer; }
+.battery-visual-wrap { display: grid; place-items: center; }
+.battery-visual { width: 100%; max-width: 285px; position: relative; filter: drop-shadow(0 18px 28px rgba(0,13,35,.28)); }
+.battery-shell { height: 132px; position: relative; overflow: hidden; border: 5px solid rgba(255,255,255,.88); border-radius: 29px; background: rgba(1,20,50,.72); box-shadow: inset 0 0 0 1px rgba(0,170,210,.15); }
+.battery-terminal { width: 13px; height: 50px; position: absolute; z-index: 3; right: -12px; top: 41px; border-radius: 0 8px 8px 0; background: rgba(255,255,255,.88); }
+.battery-liquid { width: var(--battery-level); min-width: 0; position: absolute; inset: 8px auto 8px 8px; overflow: hidden; border-radius: 17px; background: linear-gradient(90deg,#007fa8,#00aad2 58%,#64dcf1); box-shadow: 0 0 28px rgba(0,170,210,.35); transition: width 1.1s cubic-bezier(.2,.75,.2,1); }
+.battery-liquid::after { content: ''; width: 55px; height: 220%; position: absolute; top: -60%; right: -18px; border-radius: 42%; background: rgba(255,255,255,.17); animation: battery-wave 4.8s linear infinite; }
+.battery-liquid i { width: 5px; height: 5px; position: absolute; left: 28%; bottom: 16%; border-radius: 50%; background: rgba(255,255,255,.45); animation: battery-bubble 3s ease-in infinite; }.battery-liquid i:nth-child(2) { left: 58%; bottom: 25%; animation-delay: .8s; }.battery-liquid i:nth-child(3) { left: 78%; bottom: 12%; animation-delay: 1.4s; }
+.battery-target { width: 1px; height: 24px; position: absolute; z-index: 2; left: var(--target-level); top: 8px; background: rgba(255,255,255,.7); }.battery-target::after { content: '목표'; position: absolute; left: 4px; top: 0; color: rgba(255,255,255,.58); font-size: 6px; }
+.battery-readout { position: absolute; z-index: 3; inset: 0; display: grid; place-content: center; justify-items: center; text-shadow: 0 2px 12px rgba(0,23,52,.55); }.battery-readout strong { font-size: 39px; letter-spacing: -.06em; }.battery-readout strong small { font-size: 14px; }.battery-readout span { margin-top: 2px; color: rgba(255,255,255,.7); font-size: 8px; }
+.vehicle-energy-card.guest .battery-visual { opacity: .58; }.vehicle-energy-card.guest .battery-target { display: none; }
+.energy-card-stats { display: grid; grid-template-columns: 1fr; border-top: 1px solid rgba(255,255,255,.14); }
+.energy-card-stats > div { min-height: 67px; padding: 14px 0; display: grid; grid-template-columns: 27px 1fr auto; align-items: center; border-bottom: 1px solid rgba(255,255,255,.12); }.energy-card-stats > div:last-child { border-bottom: 0; }.energy-card-stats svg { color: #61d4eb; }.energy-card-stats span { color: rgba(255,255,255,.5); font-size: 9px; }.energy-card-stats strong { font-size: 16px; letter-spacing: -.035em; }
+@keyframes battery-wave { to { transform: rotate(360deg); } }
+@keyframes battery-bubble { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-78px); opacity: 0; } }
+
+/* Charger recommendation and live filters */
+.charge-quick-filters { min-height: 64px; margin: 18px 0 12px; padding: 10px 12px 10px 20px; border: 1px solid rgba(0,44,95,.12); border-radius: 17px; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #fff; }.charge-quick-filters > div:first-child { display: grid; gap: 3px; }.charge-quick-filters > div:first-child span { color: #008db5; font: 700 7px 'DM Mono',monospace; letter-spacing: .13em; }.charge-quick-filters > div:first-child strong { color: #002c5f; font-size: 12px; }.charge-quick-filters > div:last-child { display: flex; gap: 6px; }.charge-quick-filters button { min-height: 38px; padding: 0 14px; border: 1px solid rgba(0,44,95,.12); border-radius: 99px; display: inline-flex; align-items: center; gap: 6px; background: #f5f8fa; color: #607283; font-size: 9px; font-weight: 700; cursor: pointer; }.charge-quick-filters button.active { border-color: rgba(0,170,210,.38); background: #e9f7fb; color: #007fa8; }
+.recommended-charger { min-height: 186px; margin: 12px 0 32px; padding: 24px 26px; display: grid; grid-template-columns: 112px minmax(220px,1.2fr) minmax(300px,1fr) auto; align-items: center; gap: 26px; border-radius: 24px; background: #fff; box-shadow: 0 20px 55px rgba(0,44,95,.11); border: 1px solid rgba(0,44,95,.09); }
+.charger-visual { width: 88px; height: 126px; position: relative; justify-self: center; }.charger-head { width: 72px; height: 44px; position: absolute; z-index: 2; top: 4px; left: 4px; border-radius: 15px 15px 8px 8px; display: grid; place-items: center; background: #00aad2; color: #002c5f; box-shadow: 0 10px 24px rgba(0,170,210,.25); }.charger-body { width: 72px; height: 96px; position: absolute; left: 4px; bottom: 0; border-radius: 14px 14px 9px 9px; background: #002c5f; box-shadow: 0 14px 25px rgba(0,44,95,.18); }.charger-body i { width: 42px; height: 5px; position: absolute; top: 54px; left: 15px; border-radius: 4px; background: rgba(255,255,255,.14); }.charger-body span { width: 10px; height: 10px; position: absolute; bottom: 15px; left: 31px; border: 2px solid #64d7ee; border-radius: 50%; }.charger-cable { width: 34px; height: 66px; position: absolute; right: 0; top: 34px; border: 4px solid #002c5f; border-left: 0; border-radius: 0 18px 18px 0; }
+.recommended-copy > span { display: flex; align-items: center; gap: 7px; color: #008db5; font: 700 8px 'DM Mono',monospace; letter-spacing: .1em; }.recommended-copy > span i { width: 6px; height: 6px; border-radius: 50%; background: #00a67e; box-shadow: 0 0 0 5px rgba(0,166,126,.11); }.recommended-copy h2 { margin: 13px 0 7px; color: #002c5f; font-size: 22px; letter-spacing: -.04em; }.recommended-copy p { margin: 0; color: #6c7d8c; font-size: 9px; line-height: 1.55; }
+.recommended-stats { display: grid; grid-template-columns: repeat(3,1fr); border-left: 1px solid rgba(0,44,95,.11); }.recommended-stats > div { min-height: 70px; padding: 8px 18px; border-right: 1px solid rgba(0,44,95,.11); display: grid; align-content: center; gap: 6px; }.recommended-stats strong { color: #002c5f; font-size: 18px; }.recommended-stats strong small { color: #8797a4; font-size: 10px; }.recommended-stats span { color: #718292; font-size: 8px; }
+.recommended-actions { display: grid; gap: 7px; }.recommended-actions button { min-height: 40px; padding: 0 13px; border: 1px solid rgba(0,44,95,.18); border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #fff; color: #002c5f; font-size: 9px; font-weight: 700; cursor: pointer; }.recommended-actions button:last-child { border-color: #002c5f; background: #002c5f; color: #fff; }
+.station-availability { position: relative; overflow: hidden; border-radius: 13px; background: #eef3f6; }.station-availability i { width: 7px; height: 7px; position: absolute; right: 7px; top: 7px; border-radius: 50%; background: #aeb9c1; }.station-availability.available { background: #e6f7f3; color: #007b60; }.station-availability.available i { background: #00a67e; box-shadow: 0 0 0 4px rgba(0,166,126,.12); }.station-availability.busy { color: #788896; }
+
+@media (max-width: 980px) {
+  .vehicle-energy-card { grid-template-columns: 1fr 1fr; }.energy-card-stats { grid-column: 1/-1; grid-template-columns: repeat(3,1fr); }.energy-card-stats > div { padding-inline: 14px; border-bottom: 0; border-right: 1px solid rgba(255,255,255,.12); }.energy-card-stats > div:last-child { border-right: 0; }
+  .recommended-charger { grid-template-columns: 92px 1fr auto; }.recommended-stats { grid-column: 2/4; border-left: 0; border-top: 1px solid rgba(0,44,95,.1); }.recommended-stats > div { min-height: 58px; padding-left: 0; }.recommended-actions { grid-row: 1; grid-column: 3; }
+}
+
+@media (max-width: 650px) {
+  .page-intro-shade { background: linear-gradient(0deg,rgba(0,23,54,.96) 0%,rgba(0,44,95,.6) 55%,rgba(0,53,95,.2) 100%); }
+  .vehicle-energy-card { min-height: 0; margin-inline: calc(50% - 50vw); padding: 30px 16px 24px; border-radius: 0; grid-template-columns: 1fr; gap: 27px; }.vehicle-energy-card::after { width: 360px; right: -52%; top: 42%; }.energy-card-copy h2 { font-size: 26px; }.energy-card-copy p { font-size: 9.5px; }.battery-visual { max-width: 270px; }.battery-shell { height: 122px; }.battery-terminal { top: 37px; }.energy-card-stats { grid-column: auto; grid-template-columns: repeat(3,1fr); }.energy-card-stats > div { min-height: 76px; padding: 10px 7px; grid-template-columns: 1fr; gap: 4px; border-right: 1px solid rgba(255,255,255,.12); text-align: center; }.energy-card-stats svg { margin-inline: auto; }.energy-card-stats strong { font-size: 13px; }.energy-card-stats span { font-size: 7px; }
+  .charge-quick-filters { margin-inline: -1px; padding: 13px 12px; align-items: flex-start; flex-direction: column; gap: 11px; }.charge-quick-filters > div:last-child { width: 100%; overflow-x: auto; scrollbar-width: none; }.charge-quick-filters button { flex: 0 0 auto; }
+  .recommended-charger { margin-inline: -1px; padding: 20px 17px; grid-template-columns: 73px 1fr; gap: 17px; }.charger-visual { width: 68px; height: 104px; transform: scale(.82); transform-origin: center; }.recommended-copy h2 { margin-top: 9px; font-size: 17px; }.recommended-stats { grid-column: 1/-1; grid-template-columns: repeat(3,1fr); }.recommended-stats > div { padding: 10px 8px; }.recommended-stats strong { font-size: 14px; }.recommended-actions { grid-row: auto; grid-column: 1/-1; grid-template-columns: 1fr 1fr; }
+  .page-intro-content > span { color: #64d7ee; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battery-liquid,.battery-liquid::after,.battery-liquid i { animation: none; transition: none; }
 }
