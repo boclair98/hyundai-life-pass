@@ -4,11 +4,9 @@ Generated with the built-in image generation tool on 2026-09-06. Eight original 
 
 These are decorative editorial illustrations, never actual vehicle, battery construction, facility, or maintenance evidence. Main-screen boilerplate is removed; the service guide retains this distinction. All actual values and controls remain live DOM.
 
-## Final prompts
-
 ## Delivery and checks
 
-- Eight images, two responsive sizes each: 16 WebP files, 1,295,380 bytes combined.
+- Eight images, two responsive sizes each: 16 WebP files, under 2 MB combined.
 - Home background tour: 12 scenes, five-second intervals, manual previous/next,
   pause/play. Hidden pages, reduced motion, and open connection dialogs suspend autoplay.
 - New backgrounds retain the last loaded scene while the requested image loads.
