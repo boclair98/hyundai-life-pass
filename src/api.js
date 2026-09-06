@@ -11,7 +11,7 @@ function requestTimeout(timeoutMs) {
 }
 
 async function request(path, options = {}) {
-  const timeout = requestTimeout(8000);
+  const timeout = requestTimeout(20000);
   try {
     const response = await fetch(`${API_BASE}${path}`, {
       ...options,
@@ -70,6 +70,9 @@ export const loadChargingStations = ({ latitude = 37.5446, longitude = 127.0559,
 export const loadReleases = () => request('/api/v1/releases');
 export const loadAuditLogs = () => request('/api/v1/platform/audit-logs').catch(() => []);
 export const loadPassport = (vehicleDatabaseId) => request(`/api/v1/vehicles/${vehicleDatabaseId}/passport`);
+export const loadJournal = (vehicleId) => request(`/api/v1/vehicles/${vehicleId}/journal`);
+export const createJournalEntry = (vehicleId, entry) => request(`/api/v1/vehicles/${vehicleId}/journal`, { method: 'POST', body: JSON.stringify(entry) });
+export const changeJournalStatus = (vehicleId, entryId, status) => request(`/api/v1/vehicles/${vehicleId}/journal/${entryId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
 export const connectVehicle = (externalId) => request(`/api/v1/platform/vehicles/${externalId}/connect`, { method: 'POST' });
 export const hyundaiAuthorizationPath = '/api/v1/integrations/hyundai/authorize';
 export const loadServiceCenters = ({ latitude = 37.5446, longitude = 127.0559, radius = 15000 } = {}) => {

@@ -4,6 +4,7 @@ dist/
 .idea/
 *.iml
 backend/.gradle/
+backend/.kotlin/
 backend/build/
 .gradle-tools/
 .coders/

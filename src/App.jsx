@@ -55,14 +55,16 @@ import {
   syncHyundaiVehicles,
   loadVehicles,
 } from './api';
+import { OwnerHome, OwnershipPage, useVehicleJournal } from './OwnerExperience';
 import './app.css';
+import './platform.css';
 
 const navigation = [
-  { id: 'home', label: '홈', icon: CarFront },
+  { id: 'home', label: '내 차', icon: CarFront },
   { id: 'drive', label: '드라이브', icon: Route },
   { id: 'charge', label: '충전', icon: BatteryCharging },
-  { id: 'care', label: '내 차 케어', icon: Activity },
-  { id: 'passport', label: '차량 여권', icon: FileCheck2 },
+  { id: 'care', label: '정비·점검', icon: Activity },
+  { id: 'passport', label: '관리 기록', icon: FileCheck2 },
   { id: 'settings', label: '설정', icon: Settings2 },
 ];
 
@@ -203,6 +205,7 @@ export default function App() {
   const initialPage = window.location.hash.replace('#', '');
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
   const [activeScene, setActiveScene] = useState('01');
+  const [sectionTarget, setSectionTarget] = useState('');
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [dataSource, setDataSource] = useState('loading');
@@ -215,6 +218,7 @@ export default function App() {
   const [refreshError, setRefreshError] = useState('');
 
   const vehicle = vehicles.find((item) => item.id === selectedVehicleId) ?? vehicles[0] ?? null;
+  const journal = useVehicleJournal(vehicle?.databaseId);
 
   useEffect(() => {
     loadVehicles().then((result) => {
@@ -242,14 +246,17 @@ export default function App() {
   }, [refreshPlatform]);
 
   useEffect(() => {
-    if (!vehicle?.databaseId) return;
-    loadPassport(vehicle.databaseId).then(setPassport).catch(() => setPassport(null));
+    let active = true;
+    setPassport(null);
+    if (vehicle?.databaseId) loadPassport(vehicle.databaseId).then((result) => { if (active) setPassport(result); }).catch(() => undefined);
+    return () => { active = false; };
   }, [vehicle?.databaseId]);
 
   useEffect(() => {
     const onHashChange = () => {
       const nextPage = window.location.hash.replace('#', '');
-      if (validPages.has(nextPage)) setPage(nextPage);
+      setPage(validPages.has(nextPage) ? nextPage : 'home');
+      setMenuOpen(false); setSectionTarget(''); window.scrollTo({ top: 0, behavior: 'instant' });
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -357,11 +364,11 @@ export default function App() {
     window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash || '#home'}`);
   }, []);
 
-  function navigate(nextPage) {
-    setPage(nextPage);
-    setMenuOpen(false);
-    window.location.hash = nextPage;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  function navigate(nextPage, target = '') {
+    if (!validPages.has(nextPage)) return;
+    setPage(nextPage); setSectionTarget(target); setMenuOpen(false);
+    window.history.pushState({}, '', `#${nextPage}`);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   const notify = useCallback((message) => setToast(message), []);
@@ -396,10 +403,12 @@ export default function App() {
     markNotification: (id) => transact(() => readNotification(id), '알림을 확인했습니다.'),
   };
 
-  const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy };
+  const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget };
+  useEffect(() => { document.title = `${navigation.find((item) => item.id === page)?.label ?? '이용 안내'} · LIFE PASS`; }, [page]);
 
   return (
-    <div className={`app page-${page}`} ref={appRef}>
+    <div className={`app platform page-${page}`} ref={appRef}>
+      <a className="skip-to-content" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>본문 바로가기</a>
       <div className="page-progress" aria-hidden="true"><i /></div>
       <Header
         page={page}
@@ -417,17 +426,16 @@ export default function App() {
         busy={busy}
       />
 
-      {page === 'home' && <SceneRail activeScene={activeScene} />}
 
-      {page !== 'home' && <DataProvenanceBar platform={platform} actions={actions} busy={busy} />}
-      {page !== 'home' && refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
 
-      <main>
-        {page === 'home' && <HomePage {...shared} />}
+      {refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
+
+      <main id="main-content" tabIndex={-1}>
+        {page === 'home' && <OwnerHome {...shared} />}
         {page === 'drive' && <DrivePage {...shared} />}
         {page === 'charge' && <ChargePage {...shared} />}
         {page === 'care' && <CarePage {...shared} />}
-        {page === 'passport' && <PassportPage {...shared} />}
+        {page === 'passport' && <OwnershipPage key={vehicle?.databaseId ?? 'guest'} {...shared}><PassportPage {...shared} /></OwnershipPage>}
         {page === 'settings' && <SettingsPage {...shared} />}
         {page === 'privacy' && <LegalPage type="privacy" />}
         {page === 'terms' && <LegalPage type="terms" />}
@@ -491,7 +499,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
   const hyundai = platform.providers?.find((provider) => provider.id === 'hyundai-connected-car');
   const connected = hyundai?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(hyundai.state);
   const accountAction = () => {
-    if (connected) return actions.syncHyundai();
+    if (connected) return navigate('settings');
     if (hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED') return actions.resumeHyundaiAgreement();
     if (hyundai?.mode === 'LIVE' && !['MISCONFIGURED', 'ERROR'].includes(hyundai.state)) return actions.connectHyundai();
     notify('잠시 후 다시 시도하거나 현대 계정 연결 상태를 확인해 주세요.');
@@ -501,8 +509,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
       <div className="header-inner">
         <button className="brand" onClick={() => navigate('home')} aria-label="라이프패스 홈">
           <span className="life-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" /><path d="M13 13v18h11" /><path d="M25 31V13h5a6 6 0 0 1 0 12h-5" /><circle className="life-mark-dot" cx="35" cy="9" r="2.5" /></svg></span>
-          <span className="brand-copy"><strong>LIFE PASS</strong><small>HYUNDAI CAR DATA</small></span>
-          <span className="concept-chip">OWNER OS</span>
+          <span className="brand-copy"><strong>LIFE PASS<span>.</span></strong><small>현대차와 함께하는 일상</small></span>
         </button>
 
         <nav className="desktop-nav" aria-label="주요 메뉴">
@@ -539,177 +546,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
   );
 }
 
-function HomePage({ vehicle, navigate, setModal, notify, platform }) {
-  const connected = Boolean(vehicle);
-  const [galleryIndex, setGalleryIndex] = useState(0);
-  useEffect(() => {
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion) return undefined;
-    const timer = window.setInterval(() => setGalleryIndex((current) => (current + 1) % spaceGallery.length), 4600);
-    return () => window.clearInterval(timer);
-  }, []);
-  const showGalleryImage = (nextIndex) => setGalleryIndex((nextIndex + spaceGallery.length) % spaceGallery.length);
-  return (
-    <>
-      <section className="orbit-intro" data-scene="01" data-phase="open">
-        <div className="orbit-intro-sticky">
-          <div className="orbit-intro-frame">
-            <div className="space-gallery" aria-live="polite">
-              {spaceGallery.map((image, index) => <img key={image.src} className={galleryIndex === index ? 'active' : ''} src={image.src} alt={galleryIndex === index ? image.title : ''} fetchPriority={index === 0 ? 'high' : undefined} loading={index < 2 ? 'eager' : 'lazy'} />)}
-            </div>
-            <div className="orbit-intro-shade" />
-            <div className="orbit-grid" aria-hidden="true" />
-            <div className="orbit-system-label" aria-hidden="true"><span>01</span><i /><small>MY CAR, ONE CLEAR FLOW</small></div>
-            <div className="orbit-intro-copy container">
-              <div className="overline"><i /> 내 차 상태에서 다음 행동까지</div>
-              <h1>현대차 오너를 위한<br /><em>차량 관리 플랫폼.</em></h1>
-              <p>내 차 상태를 확인하고, 주변 충전소와 블루핸즈를 찾고, 중요한 차량 기록까지 한곳에서 관리하는 서비스입니다.</p>
-              <div className="hero-buttons">
-                <button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 상태 새로고침' : '내 차 연결하기'} <ArrowRight size={17} /></button>
-                <button className="button glass" onClick={() => navigate('charge')}>충전소 먼저 찾기</button>
-                <button className="button glass hero-share-button" onClick={() => sharePage({ title: 'HYUNDAI LIFE PASS', text: '차량 상태·충전·정비·기록을 하나의 흐름으로 연결하는 카라이프 플랫폼', notify })}><Share2 size={16} /> 공유</button>
-              </div>
-              <div className="hero-proof" aria-label="서비스 이용 범위">
-                <span><strong>비로그인</strong> 충전·정비 탐색</span>
-                <span><strong>차량 연결 후</strong> 실차 상태 확인</span>
-                <span><strong>동의 기반</strong> 데이터만 사용</span>
-              </div>
-            </div>
-            <div className="space-gallery-ui">
-              <div><small>{spaceGallery[galleryIndex].eyebrow}</small><strong>{spaceGallery[galleryIndex].title}</strong></div>
-              <nav aria-label="우주 자동차 이미지 선택">
-                <button onClick={() => showGalleryImage(galleryIndex - 1)} aria-label="이전 이미지"><ChevronLeft size={14} /></button>
-                <span>{spaceGallery.map((image, index) => <button key={image.src} className={galleryIndex === index ? 'active' : ''} onClick={() => showGalleryImage(index)} aria-label={`${index + 1}번 이미지 보기`} aria-current={galleryIndex === index ? 'true' : undefined} />)}</span>
-                <button onClick={() => showGalleryImage(galleryIndex + 1)} aria-label="다음 이미지"><ChevronRight size={14} /></button>
-              </nav>
-            </div>
-            <div className="orbit-function-rail" aria-label="주요 차량 생활 기능">
-              <button onClick={() => navigate('drive')}><Route size={17} /><span><small>DRIVE</small><strong>주행 계획</strong></span><ArrowUpRight size={15} /></button>
-              <button onClick={() => navigate('care')}><Activity size={17} /><span><small>VEHICLE</small><strong>내 차 상태</strong></span><ArrowUpRight size={15} /></button>
-              <button onClick={() => navigate('charge')}><BatteryCharging size={17} /><span><small>ENERGY</small><strong>주변 충전</strong></span><ArrowUpRight size={15} /></button>
-              <button onClick={() => navigate('passport')}><FileCheck2 size={17} /><span><small>HISTORY</small><strong>차량 기록</strong></span><ArrowUpRight size={15} /></button>
-            </div>
-            <button className="orbit-scroll-cue" onClick={() => document.getElementById('mission')?.scrollIntoView({ behavior: 'smooth' })} aria-label="다음 장면으로 이동"><span>SCROLL TO EXPLORE</span><i /></button>
-          </div>
-        </div>
-      </section>
 
-      <section className="service-explainer reveal" data-reveal aria-labelledby="service-explainer-title">
-        <div className="container service-explainer-inner">
-          <div className="service-explainer-heading"><span>WHAT IS HYUNDAI LIFE PASS?</span><h2 id="service-explainer-title">차량을 연결하면,<br /><em>다음 행동까지</em> 한 화면에 보여요.</h2><p>이 서비스는 현대차 오너를 위한 차량 생활 공간입니다. 로그인 한 번으로 내 차의 현재 상태를 살피고, 충전·정비·차량 기록으로 바로 이어집니다.</p></div>
-          <div className="service-explainer-flow" aria-label="서비스 이용 흐름">
-            <article><div><CarFront size={19} /></div><span>01</span><h3>내 차 연결</h3><p>현대 통합 계정에서 차량을 선택해요.</p></article>
-            <i aria-hidden="true"><ArrowRight size={16} /></i>
-            <article><div><Activity size={19} /></div><span>02</span><h3>상태 확인</h3><p>배터리·주행거리·안전 신호를 봐요.</p></article>
-            <i aria-hidden="true"><ArrowRight size={16} /></i>
-            <article><div><BatteryCharging size={19} /></div><span>03</span><h3>바로 행동</h3><p>충전소와 블루핸즈를 찾아요.</p></article>
-            <i aria-hidden="true"><ArrowRight size={16} /></i>
-            <article><div><FileCheck2 size={19} /></div><span>04</span><h3>기록으로 남기기</h3><p>확인된 차량 정보를 필요할 때 공유해요.</p></article>
-          </div>
-          <div className="service-explainer-actions"><button className="button primary" onClick={() => setModal('connect')}>{connected ? '내 차 상태 확인하기' : '내 차 연결부터 시작'} <ArrowRight size={16} /></button><button className="explainer-link" onClick={() => navigate('charge')}>차량 연결 없이 충전소 먼저 보기 <ArrowUpRight size={16} /></button></div>
-        </div>
-      </section>
-
-      <section className="home-manifesto reveal" data-reveal id="mission">
-        <div className="container home-manifesto-inner">
-          <span>WHAT IS HYUNDAI LIFE PASS?</span>
-          <h2>내 차가 궁금할 때,<br />여러 앱과 정보를 헤매지 않도록.</h2>
-          <div className="manifesto-answer"><p><strong>HYUNDAI LIFE PASS는 현대차 오너를 위한 차량 생활 허브입니다.</strong> 차량이 보내는 상태를 이해하기 쉬운 말로 보여주고, 필요한 충전과 정비 행동으로 바로 연결합니다.</p><i /></div>
-          <div className="project-definition" aria-label="프로젝트 핵심 설명">
-            <article><span>FOR</span><strong>현대차 오너</strong><p>내 차 상태와 주변 인프라를 한곳에서 보고 싶은 사람</p></article>
-            <article><span>SOLVES</span><strong>흩어진 정보</strong><p>차량 신호를 확인한 뒤 무엇을 해야 할지 바로 알 수 있게</p></article>
-            <article><span>CONNECTS</span><strong>상태 → 행동 → 기록</strong><p>확인에서 끝나지 않고 충전·정비·차량 여권으로 연결</p></article>
-          </div>
-        </div>
-      </section>
-
-      <section className="space-reel" aria-label="HYUNDAI LIFE PASS 이미지 여정">
-        <div className="container space-reel-heading reveal" data-reveal>
-          <span>ONE PLATFORM · EVERY CAR MOMENT</span>
-          <h2>상태 확인부터 충전, 정비, 기록까지.</h2>
-          <p>HYUNDAI LIFE PASS는 흩어진 차량 생활을 하나의 흐름으로 연결합니다.</p>
-        </div>
-        <div className="space-reel-window">
-          <div className="space-reel-track">
-            {[...spaceGallery, ...spaceGallery].map((image, index) => <figure key={`${image.src}-${index}`}><img src={image.src} alt="" loading="lazy" /><figcaption><span>{String((index % spaceGallery.length) + 1).padStart(2, '0')}</span><strong>{image.title}</strong></figcaption></figure>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="motion-story" data-scene="02" data-active="0" aria-label="차량 생활 주요 가치">
-        <div className="motion-story-sticky">
-          <div className="motion-story-media" aria-hidden="true">
-            <figure><img src="/space-drive-07-v1.webp" alt="" loading="lazy" /></figure>
-            <figure><img src="/space-drive-03-v1.webp" alt="" loading="lazy" /></figure>
-            <figure><img src="/space-drive-04-v1.webp" alt="" loading="lazy" /></figure>
-          </div>
-          <div className="motion-story-shade" />
-          <div className="motion-story-orbit" aria-hidden="true"><i /><b /></div>
-          <div className="motion-story-chapter"><span>02</span><i /><small>ONE SIGNAL, ONE NEXT STEP</small></div>
-          <div className="motion-story-copy container">
-            <article>
-              <span>01 · CHECK</span>
-              <h2>출발 전 10초,<br />내 차 상태를 확인합니다.</h2>
-              <p>배터리 잔량, 주행 가능 거리, 누적 주행거리와 7가지 안전 경고를 한 화면에서 확인합니다. 제공되지 않는 값은 추정하지 않습니다.</p>
-              <button onClick={() => navigate('care')}>내 차 상태 보기 <ArrowRight size={18} /></button>
-            </article>
-            <article>
-              <span>02 · ACT</span>
-              <h2>충전이 필요하면,<br />지금 갈 수 있는 곳을 찾습니다.</h2>
-              <p>현재 위치 주변 충전기의 운영 상태와 거리를 비교하고 길 안내로 이어집니다. 점검이 필요할 때는 가까운 블루핸즈도 같은 흐름에서 찾습니다.</p>
-              <button onClick={() => navigate('charge')}>주변 충전소 찾기 <ArrowRight size={18} /></button>
-            </article>
-            <article>
-              <span>03 · REMEMBER</span>
-              <h2>점검과 변화는<br />신뢰할 기록으로 남습니다.</h2>
-              <p>Life Pass가 실제로 받은 차량 상태 이벤트를 서명해 시간순으로 보관합니다. 중고차 거래나 차량 관리 이력을 확인할 때 출처를 함께 볼 수 있습니다.</p>
-              <button onClick={() => navigate('passport')}>차량 기록 보기 <ArrowRight size={18} /></button>
-            </article>
-          </div>
-          <div className="motion-story-progress" aria-hidden="true"><span>01</span><i><b /></i><span>03</span></div>
-        </div>
-      </section>
-
-      <section className="section service-scene reveal" data-reveal data-scene="03" id="services">
-        <div className="container service-scene-inner">
-          <SectionHeading eyebrow="START WITH TODAY'S NEED" title="오늘 필요한 일을 바로 시작하세요." description="로그인하지 않아도 주변 충전소와 서비스 거점을 찾을 수 있고, 차량 연결 후에는 내 차 상태와 기록까지 이어집니다." />
-          <div className="service-grid">
-            <ServiceCard number="01" icon={Route} title="주행 계획" description="주행거리와 여유 배터리를 계산해 지금 출발해도 되는지 먼저 확인합니다." action="드라이브 준비" onClick={() => navigate('drive')} tone="blue" />
-            <ServiceCard number="02" icon={BatteryCharging} title="충전소 찾기" description="내 주변에서 사용 가능한 충전기를 찾고 길 안내까지 바로 이어갑니다." action="주변 충전소 보기" onClick={() => navigate('charge')} tone="sky" />
-            <ServiceCard number="03" icon={Activity} title="차량 케어" description="배터리·타이어·안전 경고를 확인하고 가까운 블루핸즈를 찾습니다." action="내 차 점검" onClick={() => navigate('care')} tone="navy" />
-            <ServiceCard number="04" icon={FileCheck2} title="차량 여권" description="차량과 함께 남은 중요한 기록을 시간 순서로 확인하고 필요할 때 공유합니다." action="차량 기록 보기" onClick={() => navigate('passport')} tone="ice" />
-          </div>
-          <p className="swipe-hint" aria-hidden="true"><span /> 옆으로 넘겨 기능을 살펴보세요</p>
-        </div>
-      </section>
-
-      <section className="section section-soft garage-scene reveal" data-reveal data-scene="04">
-        <div className="container">
-          {connected ? <VehicleCommandCenter vehicle={vehicle} navigate={navigate} setModal={setModal} notify={notify} platform={platform} /> : <GuestGaragePanel setModal={setModal} navigate={navigate} />}
-        </div>
-      </section>
-
-      <section className="section container tutorial-scene reveal" data-reveal data-scene="05">
-        <div className="tutorial-heading">
-          <SectionHeading eyebrow="HOW IT WORKS" title="처음이라면, 이 순서로 시작하세요." description="탐색은 바로, 실차 데이터는 동의 후에. 실제로 제공되는 범위를 분명하게 나눴습니다." />
-          <div className="tutorial-progress" aria-label="차량 생활 준비도">
-            <div><strong>{connected ? '2' : '1'} / 4</strong><span>{connected ? '내 차가 준비됐어요' : '첫 단계부터 시작해요'}</span></div>
-            <i><b style={{ width: connected ? '50%' : '25%' }} /></i>
-          </div>
-        </div>
-        <div className="journey">
-          <JourneyStep icon={CarFront} number="01" title="내 차 연결" detail={connected ? '현대 계정과 차량이 연결되어 있어요.' : '공식 로그인에서 내 차를 선택해 주세요.'} done={connected} onClick={() => setModal('connect')} />
-          <JourneyStep icon={BatteryCharging} number="02" title="주변 충전" detail="현재 위치에서 쓸 수 있는 충전기를 바로 찾아요." onClick={() => navigate('charge')} />
-          <JourneyStep icon={ShieldCheck} number="03" title="오늘 안전" detail="배터리·타이어·안전 점검을 한 화면에 확인해요." onClick={() => navigate('care')} />
-          <JourneyStep icon={FileCheck2} number="04" title="내 차 기록" detail="차와 함께한 중요한 순간을 오래 남겨요." onClick={() => navigate('passport')} />
-        </div>
-      </section>
-
-      <OpenBetaPanel navigate={navigate} notify={notify} />
-
-    </>
-  );
-}
 
 function OpenBetaPanel({ navigate, notify }) {
   return (
@@ -807,11 +644,11 @@ function TirePressureCard({ vehicle, compact = false, onDetails }) {
   const check = tireCheck(vehicle);
   const exactCount = tirePositions.filter(({ key }) => tireValue(vehicle, key) != null).length;
   const unit = vehicle?.tirePressure?.unit ?? '';
-  const overallLabel = check.state === 'UNAVAILABLE' ? '차량 연결 필요' : check.state === 'WARNING' ? '확인 필요' : '현재 정상';
+  const overallLabel = check.state === 'UNAVAILABLE' ? (vehicle ? '미수신' : '차량 연결 필요') : check.state === 'WARNING' ? '경고 수신' : '수신한 경고 없음';
   return (
     <article className={`tire-pressure-card panel ${compact ? 'compact' : ''}`}>
       <div className="tire-card-heading"><div><span>안전하게 달리기</span><h3>타이어 공기압</h3></div><strong className={`tire-status ${check.state.toLowerCase()}`}>{overallLabel}</strong></div>
-      <div className="tire-grid" aria-label="타이어 위치별 상태">{tirePositions.map(({ id, label, key }) => { const value = tireValue(vehicle, key); const valueLabel = value == null ? (check.state === 'WARNING' ? '확인' : check.state === 'CLEAR' ? '정상' : '—') : `${value}${unit ? ` ${unit}` : ''}`; return <div className={`tire-wheel ${check.state.toLowerCase()}`} key={id} aria-label={`${label} ${valueLabel}`}><i /><span>{label}</span><strong>{valueLabel}</strong></div>; })}</div>
+      <div className="tire-grid" aria-label="타이어 위치별 상태">{tirePositions.map(({ id, label, key }) => { const value = tireValue(vehicle, key); const valueLabel = value == null ? '미제공' : `${value}${unit ? ` ${unit}` : ''}`; return <div className={`tire-wheel ${check.state.toLowerCase()}`} key={id} aria-label={`${label} ${valueLabel}`}><i /><span>{label}</span><strong>{valueLabel}</strong></div>; })}</div>
       <div className="tire-card-note"><CircleGauge size={15} /><span>{exactCount ? `${exactCount}개 바퀴의 수치를 확인했어요.` : vehicle?.source === 'HYUNDAI_DEVELOPERS' ? '현재는 타이어 경고 여부를 먼저 보여드려요.' : '차량을 연결하면 타이어 상태를 확인할 수 있어요.'}</span></div>
       {onDetails && <button className="tire-details-button" onClick={onDetails}>안전 점검 자세히 보기 <ArrowRight size={14} /></button>}
     </article>
@@ -887,11 +724,12 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
     ...item,
     distanceValue: Number(item.distanceKm) || 0,
     distance: `${Number(item.distanceKm ?? 0).toFixed(1)}km`,
-    speed: `${item.speedKw}kW`,
-    price: `${item.pricePerKwh}원/kWh`,
-    eta: `${item.etaMinutes}분`,
+    speed: item.speedKw > 0 ? `${item.speedKw}kW` : '출력 확인 필요',
+    price: '운영사에서 확인',
+    eta: '직선거리 기준',
   })), [chargerFeed.stations]);
   const [selectedStation, setSelectedStation] = useState(null);
+  const [stationLimit, setStationLimit] = useState(6);
   const [search, setSearch] = useState('');
   const favoriteKey = (station) => String(station.providerStationId ?? station.id);
   const visibleStations = useMemo(() => {
@@ -1013,16 +851,17 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 순서</span><small>{chargerLive ? `${Math.min(6, visibleStations.length)}곳 추천` : '확인 중'}</small></div>
-          {visibleStations.slice(0, 6).map((station) => (
+          {visibleStations.slice(0, stationLimit).map((station) => (
             <button key={station.id} className={`station-row ${activeStation?.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className={`station-availability ${station.available > 0 ? 'available' : 'busy'}`}><strong>{station.available}</strong><span>/{station.total}</span><i /></div>
               <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel}</small></div>
               <ChevronRight size={16} />
             </button>
           ))}
+          {visibleStations.length > stationLimit && <button className="station-more" onClick={() => setStationLimit((limit) => limit + 6)}>충전소 6곳 더 보기 <Plus size={15} /></button>}
           {activeStation ? <div className="station-detail">
             <div className="station-detail-heading"><div><span>선택한 충전소</span><strong>{activeStation.name}</strong><p>{activeStation.address}</p></div><button className={`station-favorite ${favoriteIds.includes(favoriteKey(activeStation)) ? 'active' : ''}`} onClick={() => toggleFavorite(activeStation)} aria-label={favoriteIds.includes(favoriteKey(activeStation)) ? '즐겨찾기 삭제' : '즐겨찾기 추가'} aria-pressed={favoriteIds.includes(favoriteKey(activeStation))}><Star size={18} fill={favoriteIds.includes(favoriteKey(activeStation)) ? 'currentColor' : 'none'} /></button></div>
-            <div className="charge-price"><span>예상 요금</span><strong>{activeStation.price}</strong><small>{activeStation.operator} 기준 · 현장과 다를 수 있어요</small></div>
+            <div className="charge-price"><span>충전 요금</span><strong>운영사에서 확인</strong><small>회원·로밍·충전기별로 달라 현장 요금을 확인해 주세요.</small></div>
             <button className="button primary full" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(activeStation.name)},${activeStation.latitude},${activeStation.longitude}`, '_blank', 'noopener,noreferrer')}><Navigation size={16} />길찾기 시작</button>
           </div> : <div className="station-empty"><MapPin size={22} /><strong>{stationList.length ? '검색 결과가 없습니다.' : '충전소를 불러오는 중입니다.'}</strong><span>{stationList.length ? '다른 충전소명이나 지역을 입력해 보세요.' : '데이터 연결에 실패하면 잠시 후 다시 시도해 주세요.'}</span></div>}
         </aside>
@@ -1080,7 +919,9 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   const mapRef = useRef(null);
   const kakaoRef = useRef(null);
   const notifyRef = useRef(notify);
+  const markerElements = useRef([]);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState('');
   const key = window.__LIFEPASS_CONFIG__?.kakaoJavascriptKey || import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
 
   useEffect(() => { notifyRef.current = notify; }, [notify]);
@@ -1099,6 +940,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
       kakaoRef.current = kakao;
       const bounds = new kakao.maps.LatLngBounds();
       const overlays = [];
+      markerElements.current = [];
       stationItems.forEach((station) => {
         const position = new kakao.maps.LatLng(station.latitude, station.longitude);
         bounds.extend(position);
@@ -1111,6 +953,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
         const label = document.createElement('span');
         label.textContent = station.available > 0 ? '가능' : '대기';
         marker.append(count, label);
+        markerElements.current.push({ id: station.id, marker });
         marker.addEventListener('click', () => onSelect(station));
         const overlay = new kakao.maps.CustomOverlay({ position, content: marker, yAnchor: 1.2, zIndex: selectedStation?.id === station.id ? 5 : 3 });
         overlay.setMap(map);
@@ -1129,14 +972,19 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
       if (stationItems.length > 1) map.setBounds(bounds, 48, 48, 48, 48);
       setMapReady(true);
       map.__lifePassOverlays = overlays;
-  }).catch((error) => notifyRef.current(error.message || '지도 화면을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
+  }).catch(() => setMapError('지도 연결을 확인해 주세요. 아래 목록에서 길찾기를 이용할 수 있어요.'));
     return () => {
       cancelled = true;
       mapRef.current?.__lifePassOverlays?.forEach((overlay) => overlay.setMap(null));
       mapRef.current = null;
       kakaoRef.current = null;
     };
-  }, [key, stationItems, selectedStation?.id, onSelect, userLocation?.latitude, userLocation?.longitude]);
+  }, [key, stationItems, onSelect, userLocation?.latitude, userLocation?.longitude]);
+
+  useEffect(() => {
+    markerElements.current.forEach(({ id, marker }) => marker.classList.toggle('active', id === selectedStation?.id));
+    if (mapRef.current && kakaoRef.current && selectedStation) mapRef.current.panTo(new kakaoRef.current.maps.LatLng(selectedStation.latitude, selectedStation.longitude));
+  }, [selectedStation?.id, mapReady]);
 
   const changeZoom = (delta) => {
     const map = mapRef.current;
@@ -1153,12 +1001,8 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
 
   return (
     <div className={`map-experience ${mapReady ? 'ready' : ''}`}>
-      {key ? <div ref={mapElement} className="map-surface kakao-map" aria-label="충전소 지도" /> : <div className="map-surface map-fallback" aria-label="충전소 위치 미리보기">
-        <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
-        <div className="map-river" />
-        {stationItems.slice(0, 6).map((station, index) => <button key={station.id} style={{ left: `${18 + (index % 3) * 29}%`, top: `${24 + Math.floor(index / 3) * 40}%` }} className={`map-pin ${selectedStation?.id === station.id ? 'active' : ''}`} onClick={() => onSelect(station)}><Zap size={16} fill="currentColor" /><span>{station.available}</span></button>)}
-        <div className="my-location"><Navigation size={14} fill="currentColor" /></div>
-      </div>}
+      {key ? <div ref={mapElement} className="map-surface kakao-map" aria-label="충전소 지도" /> : <div className="map-unavailable"><MapPin size={26} /><strong>지도 연결이 필요해요</strong><span>아래 목록에서 충전소를 선택해 길찾기를 이용하세요.</span></div>}
+      {mapError && <div className="map-unavailable" role="status"><MapPin size={26} /><strong>지도를 표시하지 못했어요</strong><span>{mapError}</span></div>}
       <div className="map-live-chip"><i /> 충전기 현황</div>
       {key && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
       <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>
@@ -1167,7 +1011,9 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, no
   );
 }
 
-function DrivePage({ vehicle, navigate, notify, setModal }) {
+function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget }) {
+  const [driveTab, setDriveTab] = useState(sectionTarget || 'plan');
+  useEffect(() => { if (sectionTarget) setDriveTab(sectionTarget); }, [sectionTarget]);
   const [tripDistance, setTripDistance] = useState(120);
   const [reservePercent, setReservePercent] = useState(20);
   const [efficiency, setEfficiency] = useState(5.2);
@@ -1193,7 +1039,7 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
 
   const currentRange = vehicle?.range == null ? null : Math.max(0, Number(vehicle.range));
   const batterySoc = vehicle?.batterySoc == null ? null : Math.max(0, Math.min(100, Number(vehicle.batterySoc)));
-  const requiredRange = Math.ceil(Number(tripDistance) * (1 + Number(reservePercent) / 100));
+  const requiredRange = Math.ceil(Number(tripDistance) / (1 - Number(reservePercent) / 100));
   const requiredEnergy = Number(efficiency) > 0 ? Number(tripDistance) / Number(efficiency) : 0;
   const estimatedCost = Math.round(requiredEnergy * Math.max(0, Number(energyPrice)));
   const arrivalRange = currentRange == null ? null : Math.round(currentRange - Number(tripDistance));
@@ -1238,24 +1084,17 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
   const plannerState = canCompleteTrip == null
     ? { className: 'connect', eyebrow: '차량 연결 필요', title: '내 차 주행 가능 거리를 연결해 주세요.', detail: '이동 에너지와 예상 비용은 지금도 계산할 수 있어요.' }
     : canCompleteTrip
-      ? { className: 'ready', eyebrow: '출발 가능', title: `도착 후 약 ${Math.max(0, arrivalRange)}km가 남아요.`, detail: `${reservePercent}%의 여유를 포함해도 현재 주행 가능 거리 안에 있습니다.` }
+      ? { className: 'ready', eyebrow: '거리 여유 있음', title: `도착 후 약 ${Math.max(0, arrivalRange)}km가 남아요.`, detail: `${reservePercent}%의 여유를 포함해도 현재 주행 가능 거리 안에 있습니다.` }
       : { className: 'charge', eyebrow: '충전 먼저', title: `최소 ${Math.max(0, requiredRange - currentRange)}km의 여유가 더 필요해요.`, detail: '출발 전에 가까운 충전소를 확인하는 것을 권장합니다.' };
 
   return (
     <div className="page container drive-page">
-      <PageIntro eyebrow="SMART DRIVE" title="출발부터 주차까지 한 번에" description="내 차의 실제 주행 가능 거리로 출발을 판단하고, 이동 비용과 주차 위치까지 관리하세요." actions={<button className="button primary" onClick={() => navigate('charge')}><BatteryCharging size={17} /> 주변 충전소</button>} />
+      <PageIntro eyebrow="SMART DRIVE" title="출발부터 주차까지 한 번에" description="예상 주행 여유와 이동 비용을 계산하고, 출발 체크와 주차 위치를 관리하세요." actions={<button className="button primary" onClick={() => navigate('charge')}><BatteryCharging size={17} /> 주변 충전소</button>} />
       <FeaturePurpose icon={Route} title="오늘 이동에 필요한 판단과 기록을 한곳에 모았습니다." description="차량 연결 전에는 예상 에너지와 비용을 계산하고, 연결 후에는 실제 주행 가능 거리로 출발 여부까지 확인합니다." steps={['이동 거리 입력', '잔량·비용 판단', '주차 위치 저장']} />
 
-      <nav className="drive-command-deck" aria-label="드라이브 기능 바로가기">
-        <button onClick={() => document.getElementById('range-planner')?.scrollIntoView({ behavior: 'smooth' })}><Route size={20} /><span><strong>주행 가능 판단</strong><small>거리와 여유 잔량 계산</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => document.getElementById('drive-checklist')?.scrollIntoView({ behavior: 'smooth' })}><CheckCircle2 size={20} /><span><strong>출발 체크</strong><small>오늘의 준비 상태 저장</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => navigate('charge')}><BatteryCharging size={20} /><span><strong>실시간 충전</strong><small>가용 충전기와 길찾기</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => document.getElementById('parking-memory')?.scrollIntoView({ behavior: 'smooth' })}><MapPin size={20} /><span><strong>주차 위치</strong><small>현재 위치 저장·다시 찾기</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => navigate('care')}><Wrench size={20} /><span><strong>차량 점검</strong><small>경고·공기압·블루핸즈</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => navigate('passport')}><ShieldCheck size={20} /><span><strong>차량 기록</strong><small>검증 이력과 공유</small></span><ChevronRight size={16} /></button>
-      </nav>
+      <nav className="workspace-tabs" aria-label="드라이브 도구">{[['plan', '주행·비용 계산'], ['checklist', '출발 체크'], ['parking', '주차 위치']].map(([id, label]) => <button key={id} className={driveTab === id ? 'active' : ''} aria-pressed={driveTab === id} onClick={() => setDriveTab(id)}>{label}</button>)}</nav>
 
-      <section className="drive-planner panel" id="range-planner">
+      {driveTab === 'plan' && <section className="drive-planner panel" id="range-planner">
         <div className="drive-planner-heading">
           <div><span>RANGE GUARD</span><h2>이번 이동, 지금 출발해도 될까요?</h2><p>왕복 또는 전체 이동 거리를 입력하면 여유 배터리까지 포함해 판단합니다.</p></div>
           {vehicle ? <div className="drive-vehicle-chip"><CarFront size={18} /><span><small>{vehicle.name}</small><strong>{formatMetric(vehicle.range, 'km')} 주행 가능</strong></span></div> : <button className="button outline" onClick={() => setModal('connect')}>내 차 연결 <ArrowRight size={15} /></button>}
@@ -1263,7 +1102,7 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
         <div className="drive-planner-grid">
           <div className="drive-inputs">
             <label><span><strong>전체 이동 거리</strong><b>{tripDistance}km</b></span><input type="range" min="10" max="600" step="10" value={tripDistance} onChange={(event) => setTripDistance(Number(event.target.value))} /></label>
-            <label><span><strong>도착 후 남길 여유</strong><b>{reservePercent}%</b></span><input type="range" min="0" max="40" step="5" value={reservePercent} onChange={(event) => setReservePercent(Number(event.target.value))} /></label>
+            <label><span><strong>현재 잔량 중 남길 비율</strong><b>{reservePercent}%</b></span><input type="range" min="0" max="40" step="5" value={reservePercent} onChange={(event) => setReservePercent(Number(event.target.value))} /></label>
             <div className="drive-number-inputs">
               <label><span>내 차 전비</span><div><input type="number" min="1" max="15" step="0.1" value={efficiency} onChange={(event) => setEfficiency(event.target.value)} /><small>km/kWh</small></div></label>
               <label><span>충전 단가</span><div><input type="number" min="0" step="1" value={energyPrice} onChange={(event) => setEnergyPrice(event.target.value)} /><small>원/kWh</small></div></label>
@@ -1283,10 +1122,10 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
           <article><BatteryCharging size={18} /><span>최소 출발 잔량</span><strong>{minimumDepartureSoc == null ? '—' : minimumDepartureSoc}<small>{minimumDepartureSoc == null ? '' : '%'}</small></strong></article>
           <article><Navigation size={18} /><span>도착 예상 거리</span><strong>{arrivalRange == null ? '—' : Math.max(0, arrivalRange)}<small>{arrivalRange == null ? '' : 'km'}</small></strong></article>
         </div>
-      </section>
+      </section>}
 
       <div className="drive-support-grid">
-        <section className="departure-check panel" id="drive-checklist">
+        {driveTab === 'checklist' && <section className="departure-check panel" id="drive-checklist">
           <div className="drive-tool-heading"><div><span>BEFORE DRIVE</span><h2>오늘의 출발 체크</h2></div><strong>{checkedCount}/{driveChecklistItems.length}</strong></div>
           <div className="departure-progress"><i style={{ width: `${(checkedCount / driveChecklistItems.length) * 100}%` }} /></div>
           <div className="departure-list">{driveChecklistItems.map((item) => {
@@ -1294,9 +1133,9 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
             return <button key={item.id} className={checked ? 'checked' : ''} onClick={() => toggleChecklist(item.id)} aria-pressed={checked}><span>{checked ? <Check size={16} /> : null}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div></button>;
           })}</div>
           <button className="drive-reset" onClick={() => setCheckedItems([])} disabled={!checkedCount}><RefreshCcw size={14} /> 오늘 체크 초기화</button>
-        </section>
+        </section>}
 
-        <section className="parking-memory panel" id="parking-memory">
+        {driveTab === 'parking' && <section className="parking-memory panel" id="parking-memory">
           <div className="drive-tool-heading"><div><span>PARKING MEMORY</span><h2>내 차 어디에 세웠지?</h2></div><MapPin size={23} /></div>
           {parkingSpot ? <>
             <div className="parking-map-preview" aria-label="저장된 주차 위치"><i /><div><Navigation size={19} fill="currentColor" /></div><span>{parkingSpot.latitude.toFixed(4)}, {parkingSpot.longitude.toFixed(4)}</span></div>
@@ -1306,7 +1145,7 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
             <div className="parking-empty"><MapPin size={31} /><strong>현재 위치를 주차 위치로 남겨보세요.</strong><p>다시 차로 돌아올 때 카카오맵 길찾기로 바로 이어집니다.</p></div>
             <button className="button primary full" onClick={saveParkingSpot} disabled={parkingBusy}>{parkingBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />}{parkingBusy ? '현재 위치 확인 중' : '이곳을 주차 위치로 저장'}</button>
           </>}
-        </section>
+        </section>}
       </div>
 
       <section className="drive-next-actions">
@@ -1319,7 +1158,9 @@ function DrivePage({ vehicle, navigate, notify, setModal }) {
   );
 }
 
-function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
+function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget }) {
+  const [careTab, setCareTab] = useState(sectionTarget || (vehicle ? 'status' : 'centers'));
+  useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
   const [centerFeed, setCenterFeed] = useState({ centers: [], provider: null });
   const [centerBusy, setCenterBusy] = useState(true);
   const [centerLocation, setCenterLocation] = useState({ current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
@@ -1361,7 +1202,8 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
     <div className="page container">
       <PageIntro eyebrow="MY CAR CARE" title="차의 신호를 놓치지 않게" description="내 차 상태와 가까운 블루핸즈를 한 화면에서 살펴보세요." actions={vehicle && <button className="button outline" onClick={() => sharePage({ title: `${vehicle.name} 차량 상태`, text: `${vehicle.checkedWarnings ?? 0}개 항목 확인 · 경고 ${vehicle.warningCount ?? 0}건`, path: '#care', notify })}><Share2 size={16} /> 상태 공유</button>} />
       <FeaturePurpose icon={Activity} title="차량 경고를 확인하고 가까운 블루핸즈를 찾는 화면입니다." description="차량 연결 후에는 배터리·주행거리·안전 경고를 확인할 수 있고, 차량 연결 전에도 주변 서비스 거점은 바로 찾을 수 있습니다." steps={['차량 상태 확인', '경고 항목 점검', '블루핸즈 찾기']} />
-      {vehicle ? <>
+      <nav className="workspace-tabs" aria-label="차량 관리 도구">{[['status', '내 차 상태'], ['centers', '가까운 정비소']].map(([id, label]) => <button key={id} className={careTab === id ? 'active' : ''} aria-pressed={careTab === id} onClick={() => setCareTab(id)}>{label}</button>)}</nav>
+      {careTab === 'status' && (vehicle ? <>
       <section className="vehicle-live-summary panel reveal" data-reveal>
         <div><span className="live-label"><i /> 내 차 상태</span><h2>{vehicle.name}</h2><p>{vehicle.trim} · 마지막 확인 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '방금 전'}</p></div>
         <div className="live-summary-metrics"><Metric icon={BatteryCharging} label="구동 배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '아직 확인되지 않음' : vehicle.chargingState} /><Metric icon={Navigation} label="주행 가능" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Zap} label="목표 충전" value={formatMetric(vehicle.chargingTargetSoc, '%')} detail={vehicle.chargingPlugType ?? '충전기 정보 미제공'} /><Metric icon={Clock3} label="남은 충전" value={formatMetric(vehicle.chargingRemainingMinutes, '분')} detail="목표 충전까지" /></div>
@@ -1370,7 +1212,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
       <section className="care-next-action panel reveal" data-reveal aria-label="다음 추천 행동">
         <div className="care-next-icon"><Route size={20} /></div>
         <div><span>NEXT BEST ACTION</span><strong>{nextAction.title}</strong><p>{nextAction.detail}</p></div>
-        <button className="button outline" onClick={() => document.getElementById('service-centers')?.scrollIntoView({ behavior: 'smooth' })}>{nextAction.button} <ArrowRight size={15} /></button>
+        <button className="button outline" onClick={() => setCareTab('centers')}>{nextAction.button} <ArrowRight size={15} /></button>
       </section>
       <TirePressureCard vehicle={vehicle} onDetails={() => document.getElementById('vehicle-health')?.scrollIntoView({ behavior: 'smooth' })} />
       <section className="section-sub vehicle-health-section reveal" data-reveal id="vehicle-health">
@@ -1383,8 +1225,8 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
         </div>
         {vehicle.connectedService && <div className="connected-service-card panel"><div><CloudCog size={21} /><span><small>서비스 이용 기간</small><strong>내 차 케어</strong></span></div><dl><div><dt>가입일</dt><dd>{formatHyundaiDate(vehicle.connectedService.subscribeDate)}</dd></div><div><dt>무료 이용 종료일</dt><dd>{formatHyundaiDate(vehicle.connectedService.endDate)}</dd></div></dl></div>}
       </section>
-      </> : <VehicleConnectPanel onConnect={() => setModal('connect')} />}
-      <section className="section-sub service-center-section reveal" data-reveal id="service-centers">
+      </> : <VehicleConnectPanel onConnect={() => setModal('connect')} />)}
+      {careTab === 'centers' && <section className="section-sub service-center-section" id="service-centers">
         <div className="service-center-heading">
           <SectionHeading eyebrow="CARE NEAR YOU" title="가까운 블루핸즈" description="현재 위치에서 가까운 현대자동차 서비스 거점을 찾아보세요." />
           <button className="button outline" onClick={findFromCurrentLocation} disabled={centerBusy}>{centerBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />} 내 위치로 다시 찾기</button>
@@ -1414,7 +1256,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy }) {
           {centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel"><LoaderCircle className="spin" size={22} /><strong>가까운 블루핸즈를 찾는 중이에요.</strong><span>잠시만 기다려 주세요.</span></div>}
           {!centerBusy && !centerFeed.centers?.length && <div className="service-center-empty panel"><MapPin size={22} /><strong>서비스 거점을 찾지 못했습니다.</strong><span>위치 권한을 허용하거나 잠시 후 다시 시도해 주세요.</span></div>}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }
@@ -1462,7 +1304,7 @@ function SettingsPage({ vehicle, platform, actions, busy, navigate, notify }) {
           <div className="settings-icon"><Smartphone size={22} /></div><span>모바일 앱</span><h2>홈 화면에 설치</h2><p>브라우저 메뉴의 ‘홈 화면에 추가’를 선택하면 앱처럼 전체 화면으로 사용할 수 있습니다.</p><InstallButton notify={notify} />
         </section>
       </div>
-      <ApiCoveragePanel />
+
       <section className="panel policy-links"><button onClick={() => navigate('guide')}><Route size={18} /><span><strong>처음 사용하는 방법</strong><small>무슨 서비스이고 무엇을 연결해야 하는지</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('privacy')}><LockKeyhole size={18} /><span><strong>개인정보 처리 안내</strong><small>수집·보관·철회 및 삭제 정책</small></span><ChevronRight size={17} /></button><button onClick={() => navigate('terms')}><FileCheck2 size={18} /><span><strong>서비스 이용안내</strong><small>외부 데이터와 제공 기능 범위</small></span><ChevronRight size={17} /></button><a href="https://github.com/boclair98/hyundai-life-pass/issues" target="_blank" rel="noreferrer"><Wrench size={18} /><span><strong>지원 및 오류 신고</strong><small>GitHub Issues</small></span><ChevronRight size={17} /></a></section>
     </div>
   );
@@ -1534,12 +1376,11 @@ function SectionHeading({ eyebrow, title, description }) {
 }
 
 function PageIntro({ eyebrow, title, description, actions }) {
-  const visual = pageHeroVisuals[eyebrow] ?? { src: '/space-drive-08-v1.webp', index: '00', label: 'LIFE PASS' };
-  return <section className="page-intro"><img className="page-intro-media" src={visual.src} alt="" fetchPriority="high" /><div className="page-intro-shade" /><div className="page-intro-orbit" aria-hidden="true"><i /></div><div className="page-intro-content"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{actions && <div className="page-intro-actions">{actions}</div>}<div className="page-intro-scene" aria-hidden="true"><span>{visual.index}</span><i /><small>{visual.label}</small></div></section>;
+  return <section className="workspace-heading"><div><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{actions && <div className="workspace-heading-actions">{actions}</div>}</section>;
 }
 
 function FeaturePurpose({ icon: Icon, title, description, steps }) {
-  return <section className="feature-purpose reveal" data-reveal aria-label="기능 설명"><div className="feature-purpose-icon"><Icon size={19} /></div><div className="feature-purpose-copy"><span>이 기능은 무엇인가요?</span><strong>{title}</strong><p>{description}</p></div><ol>{steps.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol></section>;
+  return <details className="feature-help"><summary><Icon size={16} /> 이용 방법 <ChevronDown size={14} /></summary><strong>{title}</strong><p>{description}</p><ol>{steps.map((step) => <li key={step}>{step}</li>)}</ol></details>;
 }
 
 function ApiCoveragePanel() {
@@ -1617,20 +1458,33 @@ function LegalPage({ type }) {
 }
 
 function MobileNav({ page, navigate }) {
-  return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{navigation.map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={21} /><span>{label}</span></button>)}</nav>;
+  return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{navigation.filter((item) => item.id !== 'settings').map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={21} /><span>{label}</span></button>)}</nav>;
 }
 
 function Modal({ vehicle, platform, close, notify, actions, busy }) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
   useEffect(() => {
-    const onKeyDown = (event) => event.key === 'Escape' && close();
+    const previousFocus = document.activeElement;
+    const dialog = document.querySelector('[role="dialog"]');
+    const focusable = () => [...(dialog?.querySelectorAll('button:not(:disabled), a[href], input, select, textarea, [tabindex="0"]') ?? [])];
+    focusable()[0]?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') { closeRef.current(); return; }
+      if (event.key !== 'Tab') return;
+      const items = focusable(), first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
     };
-  }, [close]);
+  }, []);
   const hyundai = platform.providers?.find((provider) => provider.id === 'hyundai-connected-car');
   const connected = hyundai?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(hyundai.state);
   const content = { eyebrow: 'MY HYUNDAI CAR', title: connected ? '내 차가 연결되어 있어요.' : '내 차를 연결해 보세요.', description: hyundai?.mode === 'LIVE' ? '현대자동차 공식 로그인 화면에서 내 차를 선택하고 확인할 정보만 직접 허락합니다. 비밀번호는 이곳에 저장하지 않습니다.' : '잠시 후 다시 시도하면 현대자동차 공식 로그인과 차량 확인을 시작할 수 있어요.', button: connected ? '내 차 새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '정보 확인 계속하기' : hyundai?.mode === 'LIVE' && hyundai.state !== 'MISCONFIGURED' ? '현대 계정으로 연결' : '연결 상태 확인' };
