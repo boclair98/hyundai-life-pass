@@ -1,0 +1,98 @@
+/* Cinematic shell; practical maps, records and forms retain the owner platform layout. */
+.platform.page-home .cinematic-home { padding-top:0; }
+.platform.page-home .cinematic-home > .home-greeting { display:none; }
+.platform.page-home .site-header.site-header { position:fixed; left:0; right:0; z-index:60; transition:background .35s, color .35s; }
+.platform.page-home:not(.is-scrolled) .site-header { background:linear-gradient(#020e24aa,transparent); border-color:transparent; backdrop-filter:none; }
+.platform.page-home:not(.is-scrolled) .brand-copy strong,.platform.page-home:not(.is-scrolled) .desktop-nav button,.platform.page-home:not(.is-scrolled) .header-icon,.platform.page-home:not(.is-scrolled) .mobile-menu-button { color:#fff; }
+.platform.page-home:not(.is-scrolled) .brand-copy small { color:#b0c5d6; }
+.platform.page-home:not(.is-scrolled) .desktop-nav button.active { border-bottom-color:#9fdded; }
+.platform.page-home:not(.is-scrolled) .account-button { background:#ffffffeb; }
+.platform.page-home:not(.is-scrolled) .account-button,.platform.page-home:not(.is-scrolled) .account-button strong,.platform.page-home:not(.is-scrolled) .account-button small { color:#002c5f; }
+.cinema-hero { width:100vw; margin-left:calc(50% - 50vw); position:relative; height:clamp(600px,79svh,860px); background:#f6f8fa; }
+.cinema-frame { height:100%; position:relative; isolation:isolate; overflow:hidden; color:#fff; background:#051329; clip-path:inset(0 var(--cinema-inset,0%) round var(--cinema-radius,0px)); transition:clip-path .24s ease-out; }
+.cinema-images,.cinema-shade { position:absolute; inset:0; pointer-events:none; }
+.cinema-images { z-index:-3; transform:scale(var(--cinema-zoom,1.06)) translateY(var(--cinema-drift,0px)); transition:transform .35s ease-out; }
+.cinema-images img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 65%; opacity:0; transition:opacity 1.4s ease; }
+.cinema-images img.is-current { opacity:1; }
+.cinema-shade { z-index:-2; background:linear-gradient(90deg,#031124b8 0%,#03112442 48%,transparent 76%),linear-gradient(0deg,#021125ed 0%,transparent 24%,transparent 78%,#020d2055 100%); }
+.cinema-copy { position:relative; width:min(1180px,calc(100% - 64px)); margin:auto; padding-top:clamp(120px,19svh,210px); }
+.cinema-eyebrow { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; letter-spacing:.04em; color:#c0dfe9; }
+.cinema-eyebrow i { width:6px; height:6px; border-radius:50%; background:#92d9ec; box-shadow:0 0 14px #81d6ef99; }
+.cinema-copy h1 { margin:24px 0 20px; font-size:clamp(50px,5.7vw,82px); line-height:1.15; font-weight:650; letter-spacing:-.06em; }
+.cinema-copy h1 em { color:#bbebf5; font-style:normal; }
+.cinema-copy p { color:#c3d4e3; font-size:14px; line-height:1.9; word-break:keep-all; margin:0 0 28px; }
+.cinema-actions { display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+.platform .cinema-actions .button { background:#fff; color:#002c5f; border:0; border-radius:5px; min-height:48px; padding:14px 20px; }
+.cinema-quick { min-height:44px; display:flex; align-items:center; gap:8px; border:0; border-bottom:1px solid #afd6e477; padding:6px 0; color:#d9edf4; background:none; font-size:13px; cursor:pointer; }
+.cinema-bottom { position:absolute; left:50%; bottom:77px; width:min(1180px,calc(100% - 64px)); transform:translateX(-50%); display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.cinema-scroll { display:flex; align-items:center; gap:10px; color:#bed0de; font-size:11px; background:none; border:0; min-height:44px; cursor:pointer; padding:0; }
+.cinema-scroll svg { animation:cinema-cue 2.8s ease-in-out infinite; }
+.cinema-scenes { display:flex; align-items:center; gap:3px; }
+.cinema-scenes > button { display:grid; place-items:center; min-width:36px; min-height:44px; padding:0; background:none; border:0; color:#e6f3f8; cursor:pointer; }
+.cinema-scenes > button:disabled { opacity:.5; cursor:default; }
+.cinema-scene-label { display:flex; align-items:center; gap:12px; margin-right:12px; color:#c5d7e6; font-size:11px; }
+.cinema-scene-label i { width:24px; height:1px; background:#bfdaea66; }
+.cinema-dots { display:flex; }
+.cinema-dots button { width:30px; height:44px; border:0; background:none; display:grid; place-items:center; padding:0; cursor:pointer; }
+.cinema-dots i { width:5px; height:5px; border-radius:50%; background:#b4c3d46b; transition:width .3s,background .3s; }
+.cinema-dots button[aria-pressed=true] i { width:19px; border-radius:4px; background:#c5eff9; }
+.cinema-disclaimer { position:absolute; bottom:53px; right:max(32px,calc((100vw - 1180px)/2)); color:#a7b8cb; font-size:9px; letter-spacing:.01em; }
+.cinema-sr { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.cinema-orbit { position:absolute; z-index:-1; pointer-events:none; width:43vw; height:43vw; max-width:690px; max-height:690px; border:1px solid #aad6f018; border-radius:50%; right:-16vw; top:-20vw; transform:rotate(-25deg); }
+.cinema-orbit i { position:absolute; inset:22px; border:1px solid #aad6f016; border-radius:50%; }
+.cinema-orbit b { position:absolute; width:5px; height:5px; background:#c8f2ff; border-radius:50%; top:20%; left:10%; box-shadow:0 0 16px #90ceee88; }
+.platform.page-home .owner-shortcuts { position:relative; z-index:2; margin-top:-33px; padding:20px 16px; border:1px solid #fff; border-radius:18px; background:#fffffffa; box-shadow:0 12px 40px #11395c0c; }
+.platform.page-home .owner-shortcuts button { min-height:104px; }
+.platform.page-home .home-car-section { position:relative; padding-top:30px; scroll-margin-top:95px; outline:none; }
+.garage-cinema { width:100%; height:240px; overflow:hidden; position:relative; border-radius:16px; margin-bottom:23px; background:#0a2039; }
+.garage-cinema::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,#07192d77,transparent 60%); }
+.garage-cinema img { width:100%; height:100%; object-fit:cover; object-position:center 65%; transition:transform 1.2s ease; }
+.garage-cinema:hover img { transform:scale(1.04); }
+.garage-cinema span { position:absolute; left:30px; bottom:26px; z-index:1; color:#d0e3f1; font-size:11px; letter-spacing:.16em; }
+.cinematic-home .home-car-section,.cinematic-home .owner-lower-grid > section,.cinematic-home .owner-bottom-links { transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.3,1); }
+.cinematic-home[data-motion-ready=true] .home-car-section:not(.cinema-visible),.cinematic-home[data-motion-ready=true] .owner-lower-grid > section:not(.cinema-visible),.cinematic-home[data-motion-ready=true] .owner-bottom-links:not(.cinema-visible) { opacity:0; transform:translateY(26px); }
+.platform.page-drive .workspace-heading,.platform.page-care .workspace-heading,.platform.page-passport .ownership-page > .workspace-heading { border-radius:15px; padding:25px 30px; min-height:170px; position:relative; background:linear-gradient(90deg,#02172ef0,#03182f9c 58%,#03182f22),url('/orbit/orbit-road-v1-1536.webp') center 64%/cover; overflow:hidden; }
+.platform.page-care .workspace-heading { background-image:linear-gradient(90deg,#02172ef0,#03182f9c 58%,#03182f22),url('/orbit/orbit-care-v1-1536.webp'); }
+.platform.page-passport .ownership-page > .workspace-heading { background-image:linear-gradient(90deg,#02172ef0,#03182f9c 58%,#03182f22),url('/orbit/orbit-hero-v1-1536.webp'); }
+.platform.page-drive .workspace-heading h1,.platform.page-care .workspace-heading h1,.platform.page-passport .ownership-page > .workspace-heading h1 { color:#fff; }
+.platform.page-drive .workspace-heading p,.platform.page-care .workspace-heading p,.platform.page-passport .ownership-page > .workspace-heading p { color:#c0d6e7; }
+.platform.page-drive .workspace-heading > div > span,.platform.page-care .workspace-heading > div > span,.platform.page-passport .ownership-page > .workspace-heading > div > span { color:#96d7e8; }
+.platform.page-passport .ownership-page > .workspace-heading > .button { background:white; color:#002c5f; }
+.platform.page-charge .charge-hero { background:linear-gradient(90deg,#032147f2,#052548a8 65%,#041f3e73),url('/orbit/orbit-charge-v1-1536.webp') center 65%/cover; }
+.platform main > .page { animation:cinema-page-in .45s ease both; }
+@keyframes cinema-page-in { from { opacity:.4; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes cinema-cue { 0%,100% { transform:translateY(0); } 50% { transform:translateY(5px); } }
+@media(max-width:760px) {
+  .cinema-hero { height:clamp(520px,70svh,660px); }
+  .cinema-copy { width:calc(100% - 40px); padding-top:96px; }
+  .cinema-eyebrow { font-size:10px; gap:7px; }
+  .cinema-copy h1 { font-size:clamp(36px,10.2vw,54px); margin:19px 0 15px; line-height:1.17; letter-spacing:-.055em; }
+  .cinema-copy p { font-size:11px; line-height:1.8; margin-bottom:19px; }
+  .cinema-actions { gap:12px; }
+  .platform .cinema-actions .button { min-height:42px; padding:10px 13px; font-size:11px; gap:7px; }
+  .cinema-quick { font-size:10px; min-height:42px; gap:4px; }
+  .cinema-images img { object-position:63% 67%; }
+  .cinema-shade { background:linear-gradient(180deg,#02102644,#02102630 38%,transparent 64%,#021025e8),linear-gradient(90deg,#03132965,transparent 85%); }
+  .cinema-bottom { width:calc(100% - 40px); bottom:64px; align-items:flex-end; gap:8px; }
+  .cinema-scroll { font-size:9px; max-width:100px; gap:5px; }
+  .cinema-scroll svg { width:13px; flex-shrink:0; }
+  .cinema-scene-label { display:none; }
+  .cinema-scenes { gap:0; }
+  .cinema-scenes > button { min-width:29px; min-height:44px; }
+  .cinema-dots button { width:22px; }
+  .cinema-disclaimer { bottom:42px; right:20px; font-size:8px; }
+  .cinema-orbit { width:65vw; height:65vw; right:-24vw; top:-23vw; }
+  .platform.page-home .owner-shortcuts { margin-top:-24px; padding:18px 9px 16px; border-radius:17px; gap:15px 3px; }
+  .platform.page-home .owner-shortcuts button { min-height:77px; }
+  .platform.page-home .home-car-section { padding-top:24px; scroll-margin-top:82px; }
+  .garage-cinema { height:162px; border-radius:13px; margin-bottom:21px; }
+  .garage-cinema span { left:18px; bottom:18px; font-size:8px; }
+  .platform.page-drive .workspace-heading,.platform.page-care .workspace-heading,.platform.page-passport .ownership-page > .workspace-heading { padding:21px 18px; min-height:152px; background-size:cover; background-position:60% 65%; }
+  .platform.page-drive .workspace-heading h1,.platform.page-care .workspace-heading h1,.platform.page-passport .ownership-page > .workspace-heading h1 { font-size:25px; }
+  .platform.page-drive .workspace-heading p,.platform.page-care .workspace-heading p,.platform.page-passport .ownership-page > .workspace-heading p { font-size:11px; }
+  .platform.page-drive .workspace-heading { background-image:linear-gradient(90deg,#02172ef0,#03182f9c),url('/orbit/orbit-road-v1-800.webp'); }
+  .platform.page-care .workspace-heading { background-image:linear-gradient(90deg,#02172ef0,#03182f9c),url('/orbit/orbit-care-v1-800.webp'); }
+  .platform.page-passport .ownership-page > .workspace-heading { background-image:linear-gradient(90deg,#02172ef0,#03182f9c),url('/orbit/orbit-hero-v1-800.webp'); }
+  .platform.page-charge .charge-hero { background-image:linear-gradient(90deg,#032147f2,#052548a8),url('/orbit/orbit-charge-v1-800.webp'); }
+}
+@media(prefers-reduced-motion:reduce) { .cinema-frame { clip-path:none!important; }.cinema-images { transform:none!important; }.cinematic-home[data-motion-ready=true] .home-car-section,.cinematic-home[data-motion-ready=true] .owner-lower-grid > section,.cinematic-home[data-motion-ready=true] .owner-bottom-links { opacity:1!important; transform:none!important; }.garage-cinema:hover img { transform:none; } }
