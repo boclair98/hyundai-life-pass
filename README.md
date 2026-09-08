@@ -134,3 +134,59 @@ npm run dev
 내일 출시 범위, 사용자 여정, 기능 우선순위와 출시 게이트는 [`docs/PRODUCT_RELEASE_PLAN.md`](docs/PRODUCT_RELEASE_PLAN.md)에 정리했습니다.
 
 휴대폰에서 쓰는 순서와 실제/제휴 기능 구분은 [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)에 정리했습니다.
+
+
+## 품질 검증과 운영 기준
+
+StockPilot README의 운영 문서 구성을 참고해, 공개 파일럿의 기능 범위와 검증 명령을 한곳에 모았습니다. README의 설명과 실제 구현이 다르면 코드를 기준으로 문서를 먼저 바로잡습니다.
+
+### 로컬 검증
+
+프런트엔드와 백엔드는 각각 다음 명령으로 검증합니다.
+
+```bash
+npm ci
+npm run check
+node --test tests/*.test.mjs
+
+cd backend
+./gradlew test bootJar --no-daemon
+```
+
+동일한 검사는 [GitHub Actions CI](https://github.com/boclair98/hyundai-life-pass/actions/workflows/ci.yml)에서 실행됩니다. 이미지 예산·파일 무결성 테스트가 실패하면 배포하지 않고 원인을 먼저 수정합니다.
+
+### 주요 환경변수
+
+실제 값은 저장소나 채팅에 기록하지 않고 Coders.kr의 암호화 환경변수에 등록합니다. 전체 발급처와 운영 전환 조건은 [`docs/API_KEYS.md`](docs/API_KEYS.md)를 따릅니다.
+
+| 이름 | 용도 | 기본/필수 범위 |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | 프런트엔드 API 주소 | 로컬 선택 |
+| `VITE_KAKAO_JAVASCRIPT_KEY` | 로컬 지도 표시 | 지도 사용 시 |
+| `KAKAO_REST_API_KEY` | 장소·서비스 거점 검색 | 운영 지도/검색 |
+| `DATA_GO_KR_SERVICE_KEY` | 공공 충전소 API | 실데이터 운영 |
+| `LIFEPASS_EV_CHARGER_MODE` | 충전소 adapter 모드 | 운영은 `live` |
+| `LIFEPASS_HYUNDAI_MODE` | 현대 OAuth/차량 adapter 모드 | 운영은 `live` |
+| `HYUNDAI_CLIENT_ID` / `HYUNDAI_CLIENT_SECRET` | 현대 Developers OAuth | 상용 연동 필수 |
+| `HYUNDAI_TOKEN_ENCRYPTION_KEY` | 서버 토큰 암호화 | 운영 필수 |
+| `HYUNDAI_CALLBACK_SECRET` | 데이터 삭제 callback 검증 | 운영 필수 |
+
+### 배포·저장소 경계
+
+- 원본 저장소: [`boclair98/hyundai-life-pass`](https://github.com/boclair98/hyundai-life-pass)
+- 조직 포크: [`coders-kr/hyundai-life-pass`](https://github.com/coders-kr/hyundai-life-pass)
+- 소스 오브 트루스와 배포 원본은 `boclair98`입니다. 포크에서 기능을 직접 개발하지 않습니다.
+- 변경은 원본에서 검증·Merge한 뒤 포크 동기화와 기존 Coders.kr 배포 흐름을 거칩니다.
+- 배포 후 `GET /actuator/health`, 비로그인 탐색, 로그인 전환, 충전소·서비스 거점 조회를 확인합니다.
+- 예약·결제·디지털 키·실제 OTA 제어는 제휴와 공식 승인이 없으므로 구현 완료로 표시하지 않습니다.
+
+### 반응형 확인 체크리스트
+
+공개 URL을 업데이트할 때 다음 화면 폭에서 가로 넘침·잘린 버튼·겹치는 고정 요소·읽기 어려운 한국어 줄바꿈이 없는지 확인합니다.
+
+- 모바일: 약 `360×800`, `390×844`
+- 데스크톱: 약 `1440×900`
+- 핵심 여정: 게스트 탐색 → 충전/서비스 거점 상세 → 길찾기 → 현대 계정 연결 안내
+- 오류·빈 상태·공급자 미연동 상태가 실제 기능처럼 오해되지 않는지 확인
+
+자세한 장애 대응과 공급자별 상태 표시는 [`docs/OPERATIONS.md`](docs/OPERATIONS.md), 사용자 여정과 출시 게이트는 [`docs/PRODUCT_RELEASE_PLAN.md`](docs/PRODUCT_RELEASE_PLAN.md)에서 관리합니다.
