@@ -32,7 +32,7 @@
 .platform.mobility-shell .owner-vital { min-height:145px; justify-content:flex-end; border:1px solid #ffffff30; background:linear-gradient(0deg,#021429f5,#02142942),url('/journey/battery-v2-800.webp') center / cover; }
 .platform.mobility-shell .owner-vital:nth-child(2) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/road-v2-800.webp'); }
 .platform.mobility-shell .owner-vital:nth-child(3) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/journal-v2-800.webp'); }
-.platform.mobility-shell .owner-vital:nth-child(4) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/tires-v1-800.webp'); }
+.platform.mobility-shell .owner-vital:nth-child(4) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/care-v2-800.webp'); }
 .platform.mobility-shell .owner-vital > span { color:#d4eaf6; }
 .platform.mobility-shell .owner-vital > strong,.platform.mobility-shell .owner-vital > svg { color:#fff; }
 .platform.mobility-shell .owner-agenda,.platform.mobility-shell .owner-cost { position:relative; overflow:hidden; padding-top:146px; }
@@ -73,6 +73,16 @@
 .platform.mobility-shell .modal-close { z-index:2; background:#fff; }
 @keyframes journey-drift { from { transform:scale(1.1) translateX(-1%); } to { transform:scale(1) translateX(0); } }
 @keyframes journey-enter { from { opacity:0; transform:translateX(16px) scale(.99); } to { opacity:1; transform:none; } }
+@media(min-width:761px) and (max-width:1050px) {
+  .platform.mobility-shell .cinematic-home { grid-template-columns:1fr; gap:20px; }
+  .platform.mobility-shell .mobility-welcome,
+  .platform.mobility-shell .owner-shortcuts,
+  .platform.mobility-shell .home-car-section { grid-column:1; grid-row:auto; }
+  .platform.mobility-shell .owner-shortcuts { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .platform.mobility-shell .journey-card-copy { min-width:0; padding-right:20px; }
+  .platform.mobility-shell .journey-card-copy strong,
+  .platform.mobility-shell .owner-vital > strong { word-break:keep-all; overflow-wrap:normal; }
+}
 @media(max-width:760px) {
   .platform.mobility-shell main > .page { padding:0; }
   .platform.mobility-shell .cinematic-home { gap:18px; }
