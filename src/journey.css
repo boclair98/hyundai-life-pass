@@ -29,20 +29,20 @@
 .platform.mobility-shell .home-car-section { align-self:start; background:#08253dde; border-color:#ffffff30; }
 .platform.mobility-shell .home-car-section .workspace-section-title h2,.platform.mobility-shell .home-car-section .workspace-section-title button { color:#f1f9ff; }
 .platform.mobility-shell .home-car-section .workspace-section-title > div > span,.platform.mobility-shell .home-car-section .owner-data-note { color:#b7d5e5; }
-.platform.mobility-shell .owner-vital { min-height:145px; justify-content:flex-end; border:1px solid #ffffff30; background:linear-gradient(0deg,#021429f5,#02142942),url('/journey/battery-v1-800.webp') center / cover; }
-.platform.mobility-shell .owner-vital:nth-child(2) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/road-v1-800.webp'); }
-.platform.mobility-shell .owner-vital:nth-child(3) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/journal-v1-800.webp'); }
+.platform.mobility-shell .owner-vital { min-height:145px; justify-content:flex-end; border:1px solid #ffffff30; background:linear-gradient(0deg,#021429f5,#02142942),url('/journey/battery-v2-800.webp') center / cover; }
+.platform.mobility-shell .owner-vital:nth-child(2) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/road-v2-800.webp'); }
+.platform.mobility-shell .owner-vital:nth-child(3) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/journal-v2-800.webp'); }
 .platform.mobility-shell .owner-vital:nth-child(4) { background-image:linear-gradient(0deg,#021429f5,#02142942),url('/journey/tires-v1-800.webp'); }
 .platform.mobility-shell .owner-vital > span { color:#d4eaf6; }
 .platform.mobility-shell .owner-vital > strong,.platform.mobility-shell .owner-vital > svg { color:#fff; }
 .platform.mobility-shell .owner-agenda,.platform.mobility-shell .owner-cost { position:relative; overflow:hidden; padding-top:146px; }
-.platform.mobility-shell .owner-agenda::before,.platform.mobility-shell .owner-cost::before { content:''; position:absolute; top:0; left:0; right:0; height:120px; background:center 52% / cover no-repeat url('/journey/care-v1-800.webp'); }
-.platform.mobility-shell .owner-cost::before { background-image:url('/journey/journal-v1-800.webp'); }
+.platform.mobility-shell .owner-agenda::before,.platform.mobility-shell .owner-cost::before { content:''; position:absolute; top:0; left:0; right:0; height:120px; background:center 52% / cover no-repeat url('/journey/care-v2-800.webp'); }
+.platform.mobility-shell .owner-cost::before { background-image:url('/journey/journal-v2-800.webp'); }
 .platform.mobility-shell main > .page { background:transparent; border:0; box-shadow:none; padding:0; animation:journey-enter .38s ease-out both; }
 .platform.mobility-shell .page .workspace-heading { padding:30px; min-height:240px; border:1px solid #ffffff38; border-radius:23px; align-items:flex-end; background:linear-gradient(90deg,#03162ce8,#03162c15),var(--journey-heading) center 60% / cover no-repeat; }
-.platform.mobility-shell .drive-page { --journey-heading:url('/journey/road-v1-1536.webp'); }
-.platform.mobility-shell.page-care { --journey-heading:url('/journey/care-v1-1536.webp'); }
-.platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v1-1536.webp'); }
+.platform.mobility-shell .drive-page { --journey-heading:url('/journey/road-v2-1536.webp'); }
+.platform.mobility-shell.page-care { --journey-heading:url('/journey/care-v2-1536.webp'); }
+.platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v2-1536.webp'); }
 .platform.mobility-shell .settings-page { --journey-heading:url('/journey/connect-v1-1536.webp'); }
 .platform.mobility-shell .guide-page,.platform.mobility-shell .legal-page { --journey-heading:url('/orbit/orbit-hero-v1-1536.webp'); }
 .platform.mobility-shell .page .workspace-heading h1 { color:#fff; }
@@ -53,7 +53,7 @@
 .platform.mobility-shell .workspace-tabs { background:#08253de8; border:1px solid #ffffff2a; padding:5px; }
 .platform.mobility-shell .workspace-tabs button { color:#c7dfef; }
 .platform.mobility-shell .workspace-tabs button.active { background:#fff; color:#002c5f; }
-.platform.mobility-shell .charge-hero { background:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v1-1536.webp') center 56% / cover; border:1px solid #ffffff30; }
+.platform.mobility-shell .charge-hero { background:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v2-1536.webp') center 56% / cover; border:1px solid #ffffff30; }
 .platform.mobility-shell .charge-quick-filters { color:#e0eff9; }
 .platform.mobility-shell .charge-quick-filters > div:first-child strong { color:#e0eff9; }
 .platform.mobility-shell .charge-quick-filters button { background:#f3f8fc; }
@@ -97,11 +97,11 @@
   .platform.mobility-shell .modal { padding-top:142px; max-height:90dvh; }
   .platform.mobility-shell .modal::before { height:125px; }
   .mobility-backdrop-shade { background:linear-gradient(90deg,#04172bb8,#061b3640),linear-gradient(0deg,#03152ba8,transparent); }
-  .platform.mobility-shell .drive-page { --journey-heading:url('/journey/road-v1-800.webp'); }
-  .platform.mobility-shell.page-care { --journey-heading:url('/journey/care-v1-800.webp'); }
-  .platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v1-800.webp'); }
+  .platform.mobility-shell .drive-page { --journey-heading:url('/journey/road-v2-800.webp'); }
+  .platform.mobility-shell.page-care { --journey-heading:url('/journey/care-v2-800.webp'); }
+  .platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v2-800.webp'); }
   .platform.mobility-shell .settings-page { --journey-heading:url('/journey/connect-v1-800.webp'); }
-  .platform.mobility-shell .charge-hero { background-image:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v1-800.webp'); }
+  .platform.mobility-shell .charge-hero { background-image:linear-gradient(90deg,#03162eea,#03162c38),url('/journey/charge-v2-800.webp'); }
 }
 @media(prefers-reduced-motion:reduce) { .platform.mobility-shell *, .platform.mobility-shell *::before { animation:none!important; transition:none!important; } }
 
