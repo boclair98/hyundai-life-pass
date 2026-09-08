@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-pass-shell-v4';
+const CACHE_NAME = 'life-pass-shell-v5';
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg', '/maskable-icon.svg'];
 
 self.addEventListener('install', (event) => {

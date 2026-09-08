@@ -11,6 +11,7 @@ services:
     expose: public
     env:
       BACKEND_URL: ${api.internal_url}
+      LIFEPASS_PRODUCTION_GUARD: "true"
 
   api:
     dockerfile: backend/Dockerfile
@@ -28,6 +29,9 @@ services:
       LIFEPASS_KAKAO_LOCAL_MODE: live
       LIFEPASS_RATE_LIMIT_PER_MINUTE: "240"
       LIFEPASS_SESSION_COOKIE_SECURE: "true"
+      LIFEPASS_PRODUCTION_GUARD: "true"
+      LIFEPASS_H2_CONSOLE_ENABLED: "false"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
 
   db:
     type: postgres

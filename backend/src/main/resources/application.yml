@@ -23,7 +23,7 @@ spring:
       initialize-schema: never
   h2:
     console:
-      enabled: true
+      enabled: ${LIFEPASS_H2_CONSOLE_ENABLED:false}
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
@@ -46,6 +46,7 @@ management:
         enabled: true
 
 lifepass:
+  production-guard: ${LIFEPASS_PRODUCTION_GUARD:false}
   sample-data-enabled: ${LIFEPASS_SAMPLE_DATA_ENABLED:true}
   rate-limit-per-minute: ${LIFEPASS_RATE_LIMIT_PER_MINUTE:240}
   cors-origins: "https://hyundai-life-pass.coders.kr,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:4173"

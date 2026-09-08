@@ -1,6 +1,6 @@
 /* Viewport shell: header, scrollable workspace and navigation never overlap. */
 .platform.mobility-shell { height:100dvh; min-height:0; overflow:hidden; display:flex; flex-direction:column; isolation:isolate; background:#071b30; padding:0; }
-.mobility-backdrop { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; background:#071b30; }
+.mobility-backdrop { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; background:#071b30; }
 .mobility-backdrop img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; object-position:62% center; opacity:0; transform:scale(1.055); transition:opacity .9s ease,transform 1.4s cubic-bezier(.2,.7,.2,1); }
 .mobility-backdrop img.active { opacity:1; transform:scale(1); }
 .mobility-backdrop-shade { position:absolute; inset:0; background:linear-gradient(90deg,#04172be6,#061b3650 70%),linear-gradient(0deg,#03152bb8,transparent 70%); }
@@ -11,7 +11,7 @@
 .platform.mobility-shell .desktop-nav button.active { color:#9ee8fb; border-color:#9ee8fb; }
 .platform.mobility-shell .account-button { display:flex; background:#fff; color:#002c5f; border:1px solid #fff; min-height:44px; flex-shrink:0; }
 .platform.mobility-shell .account-button strong,.platform.mobility-shell .account-button small { color:#002c5f; }
-.platform.mobility-shell main { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; scrollbar-width:thin; scrollbar-color:#b5d6e577 transparent; padding:28px 32px 24px; scroll-padding-top:24px; }
+.platform.mobility-shell main { position:relative; z-index:1; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; scrollbar-width:thin; scrollbar-color:#b5d6e577 transparent; padding:28px 32px 24px; scroll-padding-top:24px; }
 .platform.mobility-shell .page-progress { display:none; }
 .platform.mobility-shell main > .container { width:100%; max-width:1280px; margin:0 auto; }
 .platform.mobility-shell main > .page { background:#f4f8fbf5; border:1px solid #ffffff8f; border-radius:24px; padding:24px; box-shadow:0 24px 80px #0003; animation:mobility-arrive .55s cubic-bezier(.2,.7,.2,1) both; }

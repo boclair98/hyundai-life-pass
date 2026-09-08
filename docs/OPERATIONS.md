@@ -10,6 +10,8 @@
 
 ## 운영 확인
 
+운영 배포는 `LIFEPASS_PRODUCTION_GUARD=true`로 시작한다. PostgreSQL, 샘플·데모 비활성화, Secure 세션, Hyundai/KECO/Kakao 실연동 자격증명, 토큰 암호화 키 중 하나라도 빠지면 API가 시작되지 않는다. 웹도 Kakao JavaScript 키가 없으면 시작을 차단한다. 이 검사는 장애가 아니라 불완전한 설정으로 고객 요청을 받지 않기 위한 배포 보호 장치다.
+
 1. `GET /actuator/health`가 `UP`인지 확인한다.
 2. 비로그인 `GET /api/v1/vehicles`가 빈 배열을 반환하고 샘플 차량을 노출하지 않는지 확인한다.
 3. `GET /api/v1/platform/snapshot`의 공급자별 `mode`, `state`, `source`, `refreshedAt`를 확인한다.
@@ -44,3 +46,5 @@ Provider 장애 시 마지막 정상 데이터를 `STALE` 읽기 전용으로 �
 - 운영자 쓰기 API는 `X-LifePass-Operator-Token`이 서버 설정과 일치할 때만 허용한다. 공개 프런트에는 이 토큰을 제공하지 않는다.
 - 모든 API 응답은 `X-Request-Id`, `nosniff`, frame deny, referrer/permissions 정책을 포함한다.
 - 기본 API 제한은 세션 또는 원격 주소당 분당 240회다. 실제 대규모 운영 시에는 애플리케이션 제한과 별도로 엣지 WAF/분산 rate limit을 사용한다.
+- 현대 계정 연결 완료 시 세션 ID를 교체해 로그인 전 세션을 재사용하는 공격을 막는다.
+- 모바일 PWA 셸 캐시는 버전 교체 시 즉시 폐기한다. 이미지가 갱신되지 않으면 새 서비스 워커 활성화 여부와 `/journey/*.webp`의 200 응답을 먼저 확인한다.

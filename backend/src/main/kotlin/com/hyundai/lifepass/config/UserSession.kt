@@ -23,7 +23,9 @@ class UserSession(
 
     fun bind(request: HttpServletRequest, actor: String) {
         require(actor.isNotBlank()) { "연결할 사용자 식별자가 필요합니다." }
-        request.getSession(true).setAttribute(ACTOR_ATTRIBUTE, actor)
+        val session = request.getSession(true)
+        request.changeSessionId()
+        session.setAttribute(ACTOR_ATTRIBUTE, actor)
     }
 
     private companion object {

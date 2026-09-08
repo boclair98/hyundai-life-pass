@@ -4,6 +4,8 @@
 
 > 포트폴리오용 비공식 콘셉트이며 현대자동차의 실제 서비스가 아닙니다.
 
+현재 배포는 실제 사용자 검증을 위한 `PUBLIC BETA`입니다. 기술적 출시 보호 장치와 자동 검증 범위, 현대자동차 상용 승인 전 남은 조건은 [`docs/LAUNCH_READINESS.md`](docs/LAUNCH_READINESS.md)에서 구분해 관리합니다.
+
 ## 공개 파일럿
 
 실행 주소: <https://hyundai-life-pass.coders.kr>
