@@ -11,6 +11,77 @@ const dateKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' 
 const metric = (value, unit) => value == null ? '연결 후 확인' : `${Number(value).toLocaleString('ko-KR')}${unit}`;
 const dateLabel = (date) => new Date(`${date}T12:00:00`).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
+function vehicleBrief(vehicle) {
+  if (!vehicle) return {
+    tone: 'idle',
+    icon: CarFront,
+    kicker: 'MY CAR BRIEF',
+    title: '내 차를 연결하면, 오늘의 신호가 보여요',
+    detail: '현대 공식 계정 연결 후 배터리·주행거리·안전 신호를 받은 만큼만 안내합니다.',
+    action: '내 차 연결하기',
+  };
+  const warnings = Number(vehicle.warningCount ?? 0);
+  if (warnings > 0) return {
+    tone: 'warning',
+    icon: ShieldCheck,
+    kicker: 'CHECK FIRST',
+    title: `확인이 필요한 차량 신호 ${warnings}건`,
+    detail: '받은 경고 내용을 먼저 확인하고, 필요하면 가까운 서비스 거점으로 이어가세요.',
+    action: '안전 점검 보기',
+    target: 'care',
+  };
+  const battery = vehicle.batterySoc == null || vehicle.batterySoc === '' ? null : Number(vehicle.batterySoc);
+  if (Number.isFinite(battery) && battery <= 20) return {
+    tone: 'charge',
+    icon: BatteryCharging,
+    kicker: 'ENERGY CHECK',
+    title: `배터리 ${battery}% · 충전을 준비해요`,
+    detail: '현재 수신한 배터리 잔량을 기준으로 내 위치 주변 충전소를 찾아볼 수 있어요.',
+    action: '충전소 찾기',
+    target: 'charge',
+  };
+  const nextService = vehicle.nextServiceKm == null || vehicle.nextServiceKm === '' ? null : Number(vehicle.nextServiceKm);
+  if (Number.isFinite(nextService) && nextService <= 1000) return {
+    tone: 'care',
+    icon: Wrench,
+    kicker: 'CARE CHECK',
+    title: `${nextService.toLocaleString('ko-KR')}km 후 점검을 준비해요`,
+    detail: '차량에서 받은 다음 점검 기준을 바탕으로 가까운 서비스 거점을 확인할 수 있어요.',
+    action: '서비스 거점 보기',
+    target: 'care',
+  };
+  const signalCount = [vehicle.batterySoc, vehicle.range, vehicle.odometer, vehicle.chargingState].filter((value) => value != null && value !== '').length;
+  if (!signalCount) return {
+    tone: 'waiting',
+    icon: RefreshCcw,
+    kicker: 'SYNC CHECK',
+    title: '차량 신호를 확인하고 있어요',
+    detail: '연결은 되었지만 아직 받은 값이 없습니다. 잠시 후 새로고침해 주세요.',
+    action: '차량 상태 보기',
+    target: 'care',
+  };
+  return {
+    tone: 'ready',
+    icon: Check,
+    kicker: 'READY FOR TODAY',
+    title: '오늘의 출발 준비가 좋아요',
+    detail: `차량에서 받은 신호 ${signalCount}개를 기준으로 다음 행동을 준비해 두었어요.`,
+    action: '차량 상태 보기',
+    target: 'care',
+  };
+}
+
+function TodayBrief({ vehicle, navigate, setModal }) {
+  const brief = vehicleBrief(vehicle);
+  const Icon = brief.icon;
+  const onAction = () => brief.target ? navigate(brief.target, brief.target === 'care' ? 'status' : '') : setModal('connect');
+  return <section className={`today-brief ${brief.tone}`} aria-labelledby="today-brief-title" data-reveal>
+    <div className="today-brief-icon"><Icon size={21} /></div>
+    <div className="today-brief-copy"><span>{brief.kicker}</span><h2 id="today-brief-title">{brief.title}</h2><p>{brief.detail}</p></div>
+    <button className="today-brief-action" onClick={onAction}>{brief.action}<ArrowRight size={15} /></button>
+  </section>;
+}
+
 export function useVehicleJournal(vehicleId) {
   const [state, setState] = useState({ vehicleId: null, entries: [], loading: false, error: '' });
   const requestId = useRef(0);
@@ -56,6 +127,7 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
+    <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
     <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
       <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>

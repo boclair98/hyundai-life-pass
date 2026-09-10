@@ -101,7 +101,7 @@ const pageHeroVisuals = {
   'SERVICE GUIDE': { src: '/space-drive-01-v1.webp', index: '07', label: 'SERVICE BOUNDARY' },
 };
 
-const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide']);
+const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide', 'proposal']);
 
 const hyundaiStatusLabel = (provider) => {
   if (!provider) return '상태 확인 중';
@@ -408,7 +408,7 @@ export default function App() {
 
   const tour = useMobilityTour(page, sectionTarget, Boolean(modal));
   const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget, tour };
-  useEffect(() => { document.title = `${navigation.find((item) => item.id === page)?.label ?? '이용 안내'} · LIFE PASS`; }, [page]);
+  useEffect(() => { document.title = `${page === 'proposal' ? '현대차 제안' : navigation.find((item) => item.id === page)?.label ?? '이용 안내'} · LIFE PASS`; }, [page]);
   useEffect(() => {
     const panel = document.getElementById('main-content');
     panel?.scrollTo({ top: 0, behavior: 'instant' });
@@ -449,6 +449,7 @@ export default function App() {
         {page === 'privacy' && <LegalPage type="privacy" />}
         {page === 'terms' && <LegalPage type="terms" />}
         {page === 'guide' && <GuidePage navigate={navigate} />}
+        {page === 'proposal' && <ProposalPage navigate={navigate} />}
       <SiteFooter navigate={navigate} />
       </main>
       <MobileNav page={page} navigate={navigate} />
@@ -1469,7 +1470,7 @@ function SiteFooter({ navigate }) {
     <footer className="site-footer">
       <div className="container">
         <div><strong>HYUNDAI LIFE PASS</strong><span>내 차를 더 잘 알고, 더 편하게 돌보는 하루</span></div>
-        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>처음 이용하기</button><button onClick={() => navigate('settings')}>내 정보</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>이용 안내</button></nav>
+        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>처음 이용하기</button><button onClick={() => navigate('settings')}>내 정보</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>이용 안내</button><button onClick={() => navigate('proposal')}>현대차 제안</button></nav>
         <small>차량 정보는 사용자가 허락한 범위에서만 확인합니다. 현대자동차 공식 서비스와는 별개의 서비스입니다.</small>
       </div>
     </footer>
@@ -1493,6 +1494,36 @@ function GuidePage({ navigate }) {
       <section className="guide-trust-panel panel reveal" data-reveal><div><ShieldCheck size={22} /><span><strong>내 차 정보는 내 허락부터</strong><small>연결할 정보와 연결을 끊는 방법을 언제든 직접 선택할 수 있어요.</small></span></div><div><MapPin size={22} /><span><strong>주변 생활은 빠르게</strong><small>충전소와 블루핸즈는 로그인 없이도 내 위치 기준으로 찾아볼 수 있어요.</small></span></div><div><HeartHandshake size={22} /><span><strong>모르는 값은 만들지 않아요</strong><small>확인되지 않은 숫자는 비워두고, 실제로 확인된 내용만 보여드려요.</small></span></div></section>
     </div>
   );
+}
+
+function ProposalPage({ navigate }) {
+  const pillars = [
+    { number: '01', icon: Activity, title: '차량 신호를 오늘의 행동으로', description: '배터리·주행거리·안전 신호를 한 번에 읽고, 충전·점검·출발 확인으로 바로 이어집니다.' },
+    { number: '02', icon: MapPin, title: '차량 밖의 생활까지 연결', description: '내 위치 주변 충전소와 서비스 거점을 같은 흐름 안에서 발견하고 길 안내까지 이어갑니다.' },
+    { number: '03', icon: FileCheck2, title: '차량의 시간을 오래 보존', description: '직접 남긴 정비·충전·지출 기록과 차량에서 받은 정보를 구분해 내 차의 맥락을 쌓습니다.' },
+  ];
+  const flow = [
+    { icon: CarFront, title: '연결', detail: '사용자가 허락한 현대 계정과 차량만 불러옵니다.' },
+    { icon: ShieldCheck, title: '해석', detail: '받은 값과 마지막 확인 시점을 분명하게 보여줍니다.' },
+    { icon: Route, title: '행동', detail: '충전·케어·주행·기록 중 다음 한 가지를 제안합니다.' },
+  ];
+  return <div className="page container proposal-page">
+    <PageIntro eyebrow="HYUNDAI MOBILITY PROPOSAL" title="차량을 연결하는 순간, 생활이 먼저 움직입니다." description="HYUNDAI LIFE PASS는 차량 상태를 보여주는 화면에서 멈추지 않고, 오늘 필요한 다음 행동까지 이어주는 오너 경험을 제안합니다." actions={<button className="button light" onClick={() => navigate('home')}>서비스 직접 체험 <ArrowRight size={15} /></button>} />
+    <section className="proposal-intent panel reveal" data-reveal>
+      <div><span>WHY LIFE PASS</span><h2>차를 아는 일과<br />잘 쓰는 일을 하나로.</h2></div>
+      <p>오너는 여러 화면을 오가며 배터리, 정비, 충전, 기록을 따로 확인하지 않아도 됩니다. LIFE PASS는 현대차에서 받은 신호를 생활의 언어로 바꾸고, 필요한 순간에 한 번의 행동으로 연결합니다.</p>
+    </section>
+    <section className="proposal-pillars" aria-label="서비스 핵심 가치">{pillars.map(({ number, icon: Icon, title, description }) => <article className="proposal-pillar panel reveal" data-reveal key={number}><span>{number}</span><div className="proposal-pillar-icon"><Icon size={20} /></div><h3>{title}</h3><p>{description}</p></article>)}</section>
+    <section className="proposal-flow panel reveal" data-reveal>
+      <div className="proposal-section-heading"><span>ONE OWNER FLOW</span><h2>연결부터 다음 행동까지, 세 장면으로.</h2><p>복잡한 기능 목록 대신 오너가 실제로 겪는 흐름으로 경험을 설계했습니다.</p></div>
+      <div className="proposal-flow-grid">{flow.map(({ icon: Icon, title, detail }, index) => <div key={title} className="proposal-flow-step"><b>0{index + 1}</b><div className="proposal-flow-icon"><Icon size={19} /></div><h3>{title}</h3><p>{detail}</p>{index < flow.length - 1 && <ArrowRight className="proposal-flow-arrow" size={17} />}</div>)}</div>
+    </section>
+    <section className="proposal-trust-grid" aria-label="출시 원칙">
+      <article className="proposal-trust panel"><ShieldCheck size={22} /><div><span>TRUST BY DESIGN</span><h3>허락한 정보만, 확인된 값만</h3><p>연결 범위·최근 수신 시점·제공되지 않은 항목을 숨기지 않고 안내합니다.</p></div></article>
+      <article className="proposal-trust panel"><CheckCircle2 size={22} /><div><span>READY TO PILOT</span><h3>작게 검증하고 크게 확장</h3><p>오너의 충전·케어·기록 여정을 먼저 검증한 뒤 차량 라인업과 파트너 서비스로 넓힐 수 있습니다.</p></div></article>
+    </section>
+    <section className="proposal-next panel"><div><span>NEXT WITH HYUNDAI</span><h2>현대차 오너 경험의 다음 장면을 함께 만듭니다.</h2><p>현재 공개 베타에서 흐름을 확인할 수 있습니다. 상용 출시에는 현대자동차의 공식 승인과 파트너·법무 검토가 필요합니다.</p></div><div className="proposal-next-actions"><button className="button primary" onClick={() => navigate('home')}>공개 베타 둘러보기 <ArrowRight size={15} /></button><button className="button outline" onClick={() => navigate('settings')}>차량 연결 흐름 보기 <CarFront size={15} /></button></div></section>
+  </div>;
 }
 
 function LegalPage({ type }) {

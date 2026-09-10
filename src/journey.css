@@ -12,6 +12,25 @@
 .journey-controls button:disabled { opacity:.5; }
 .journey-image { display:block; width:100%; height:100%; object-fit:cover; object-position:center; }
 .platform.mobility-shell .owner-shortcuts { padding:0; gap:12px; background:none; border:0; backdrop-filter:none; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.platform.mobility-shell .today-brief { grid-column:1; grid-row:2; min-width:0; padding:16px 17px; border:1px solid #ffffff42; border-radius:18px; display:grid; grid-template-columns:40px minmax(0,1fr) auto; align-items:center; gap:12px; background:linear-gradient(120deg,#082f4ae8,#0c4260c9); box-shadow:0 16px 36px #00142645; backdrop-filter:blur(16px); }
+.platform.mobility-shell .today-brief-icon { width:40px; height:40px; border-radius:13px; display:grid; place-items:center; color:#072642; background:#a7ebf6; }
+.platform.mobility-shell .today-brief-copy { min-width:0; display:grid; gap:4px; }
+.platform.mobility-shell .today-brief-copy > span { color:#9ce8f4; font:700 8px 'DM Mono',monospace; letter-spacing:.14em; }
+.platform.mobility-shell .today-brief-copy h2 { margin:0; color:#fff; font-size:15px; line-height:1.35; letter-spacing:-.03em; }
+.platform.mobility-shell .today-brief-copy p { margin:0; color:#c8deea; font-size:9px; line-height:1.55; }
+.platform.mobility-shell .today-brief-action { min-height:38px; padding:0 11px; border:1px solid #ffffff3d; border-radius:10px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; background:#ffffff14; color:#fff; font-size:9px; font-weight:700; cursor:pointer; }
+.platform.mobility-shell .today-brief-action:hover { background:#ffffff24; }
+.platform.mobility-shell .today-brief.warning { background:linear-gradient(120deg,#4d2d38e8,#183750d1); }
+.platform.mobility-shell .today-brief.warning .today-brief-icon { background:#ffd4b8; color:#6a2b32; }
+.platform.mobility-shell .today-brief.warning .today-brief-copy > span { color:#ffd0b4; }
+.platform.mobility-shell .today-brief.charge { background:linear-gradient(120deg,#0a3c53e8,#104e57cf); }
+.platform.mobility-shell .today-brief.charge .today-brief-icon { background:#b5f2df; }
+.platform.mobility-shell .today-brief.care { background:linear-gradient(120deg,#183c5ce8,#145161cf); }
+.platform.mobility-shell .today-brief.care .today-brief-icon { background:#d7e8ff; color:#164b78; }
+.platform.mobility-shell .today-brief.waiting { background:linear-gradient(120deg,#243951e8,#1f4057cf); }
+.platform.mobility-shell .today-brief.waiting .today-brief-icon { background:#dce8f1; color:#254866; }
+.platform.mobility-shell .today-brief.ready .today-brief-icon { background:#b4f1db; color:#075d58; }
+.platform.mobility-shell .owner-shortcuts { grid-row:3; }
 .platform.mobility-shell .owner-shortcuts button { position:relative; isolation:isolate; min-height:150px; overflow:hidden; border:1px solid #ffffff38; padding:14px; border-radius:18px; background:#071e38; text-align:left; align-items:flex-start; justify-content:flex-end; }
 .platform.mobility-shell .owner-shortcuts button::after { content:''; position:absolute; inset:0; background:linear-gradient(0deg,#021429f5,transparent 85%); z-index:-1; pointer-events:none; }
 .platform.mobility-shell .owner-shortcuts .journey-image { position:absolute; inset:0; z-index:-2; transition:transform .5s ease; }
@@ -45,6 +64,7 @@
 .platform.mobility-shell .ownership-page { --journey-heading:url('/journey/journal-v2-1536.webp'); }
 .platform.mobility-shell .settings-page { --journey-heading:url('/journey/connect-v1-1536.webp'); }
 .platform.mobility-shell .guide-page,.platform.mobility-shell .legal-page { --journey-heading:url('/orbit/orbit-hero-v1-1536.webp'); }
+.platform.mobility-shell .proposal-page { --journey-heading:url('/journey/connect-v1-1536.webp'); }
 .platform.mobility-shell .page .workspace-heading h1 { color:#fff; }
 .platform.mobility-shell .page .workspace-heading p { color:#d1e5f2; max-width:530px; }
 .platform.mobility-shell .page .workspace-heading > div > span { color:#a9e2f2; }
@@ -60,6 +80,39 @@
 .platform.mobility-shell .charge-section-heading h2,.platform.mobility-shell .charge-section-heading > span { color:#f0f8ff; }
 .platform.mobility-shell .service-center-heading h2,.platform.mobility-shell .service-center-heading p { color:#e6f4ff; }
 .platform.mobility-shell .journal-footnote { color:#d4e7f3; }
+
+/* Submission narrative: a reviewer can understand the product without leaving the experience. */
+.platform.mobility-shell .proposal-intent { margin-top:16px; padding:31px 34px; display:grid; grid-template-columns:minmax(250px,.8fr) minmax(0,1.2fr); gap:34px; align-items:center; border:1px solid #ffffff35; background:linear-gradient(120deg,#082a45e8,#0a3a55d4); color:#fff; }
+.platform.mobility-shell .proposal-intent > div > span,.platform.mobility-shell .proposal-section-heading > span,.platform.mobility-shell .proposal-trust span,.platform.mobility-shell .proposal-next > div > span { color:#83e3f2; font:700 8px 'DM Mono',monospace; letter-spacing:.15em; }
+.platform.mobility-shell .proposal-intent h2 { margin:12px 0 0; color:#fff; font-size:clamp(25px,3vw,38px); line-height:1.18; letter-spacing:-.055em; }
+.platform.mobility-shell .proposal-intent p { margin:0; color:#c9dfea; font-size:12px; line-height:1.85; }
+.platform.mobility-shell .proposal-pillars { margin-top:16px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.platform.mobility-shell .proposal-pillar { min-height:245px; padding:23px; display:flex; flex-direction:column; align-items:flex-start; border:1px solid #ffffff2f; background:#f4f9fced; }
+.platform.mobility-shell .proposal-pillar > span { color:#008db5; font:700 9px 'DM Mono',monospace; letter-spacing:.12em; }
+.platform.mobility-shell .proposal-pillar-icon { width:40px; height:40px; margin-top:29px; border-radius:13px; display:grid; place-items:center; color:#002c5f; background:#cdeff5; }
+.platform.mobility-shell .proposal-pillar h3 { margin:17px 0 8px; color:#002c5f; font-size:17px; line-height:1.35; letter-spacing:-.035em; }
+.platform.mobility-shell .proposal-pillar p { margin:0; color:#607789; font-size:10px; line-height:1.7; }
+.platform.mobility-shell .proposal-flow { margin-top:16px; padding:31px 34px; border:1px solid #ffffff42; background:#06233be8; color:#fff; }
+.platform.mobility-shell .proposal-section-heading h2 { margin:11px 0 7px; color:#fff; font-size:clamp(24px,3vw,35px); letter-spacing:-.05em; }
+.platform.mobility-shell .proposal-section-heading p { margin:0; color:#b8cfdd; font-size:11px; }
+.platform.mobility-shell .proposal-flow-grid { margin-top:28px; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+.platform.mobility-shell .proposal-flow-step { min-width:0; position:relative; padding:18px 19px 19px; border:1px solid #ffffff20; border-radius:15px; background:#ffffff0a; }
+.platform.mobility-shell .proposal-flow-step > b { color:#78ddec; font:700 8px 'DM Mono',monospace; letter-spacing:.12em; }
+.platform.mobility-shell .proposal-flow-icon { width:36px; height:36px; margin-top:22px; border-radius:11px; display:grid; place-items:center; color:#002c5f; background:#a9ecf5; }
+.platform.mobility-shell .proposal-flow-step h3 { margin:13px 0 6px; color:#fff; font-size:16px; }
+.platform.mobility-shell .proposal-flow-step p { margin:0; color:#b9d0dd; font-size:9px; line-height:1.65; }
+.platform.mobility-shell .proposal-flow-arrow { position:absolute; top:50%; right:-29px; color:#76dcec; }
+.platform.mobility-shell .proposal-trust-grid { margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.platform.mobility-shell .proposal-trust { min-height:150px; padding:24px; display:flex; align-items:flex-start; gap:13px; border:1px solid #ffffff3a; background:#f4f9fced; }
+.platform.mobility-shell .proposal-trust > svg { flex:0 0 auto; color:#008db5; }
+.platform.mobility-shell .proposal-trust > div { min-width:0; }
+.platform.mobility-shell .proposal-trust h3 { margin:10px 0 7px; color:#002c5f; font-size:16px; letter-spacing:-.035em; }
+.platform.mobility-shell .proposal-trust p { margin:0; color:#607789; font-size:10px; line-height:1.7; }
+.platform.mobility-shell .proposal-next { margin-top:16px; padding:30px 34px; display:flex; align-items:center; justify-content:space-between; gap:28px; border:1px solid #ffffff3a; background:linear-gradient(120deg,#0a3150e8,#0b4e63d9); }
+.platform.mobility-shell .proposal-next h2 { margin:11px 0 8px; color:#fff; font-size:clamp(23px,3vw,34px); line-height:1.2; letter-spacing:-.05em; }
+.platform.mobility-shell .proposal-next p { max-width:650px; margin:0; color:#c1d7e2; font-size:10px; line-height:1.7; }
+.platform.mobility-shell .proposal-next-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.platform.mobility-shell .proposal-next-actions .button { white-space:nowrap; }
 .feature-art { height:170px; border-radius:16px; overflow:hidden; margin:0 0 22px; background:#071b30; }
 .platform.mobility-shell .energy-art { grid-column:1/-1; width:100%; height:225px; margin-bottom:0; }
 .platform.mobility-shell .tire-art { height:150px; }
@@ -79,6 +132,7 @@
   .platform.mobility-shell .owner-shortcuts,
   .platform.mobility-shell .home-car-section { grid-column:1; grid-row:auto; }
   .platform.mobility-shell .owner-shortcuts { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .platform.mobility-shell .today-brief { grid-column:1; grid-row:auto; }
   .platform.mobility-shell .journey-card-copy { min-width:0; padding-right:20px; }
   .platform.mobility-shell .journey-card-copy strong,
   .platform.mobility-shell .owner-vital > strong { word-break:keep-all; overflow-wrap:normal; }
@@ -93,7 +147,31 @@
   .journey-controls strong { font-size:11px; }
   .journey-controls button { width:37px; }
   .platform.mobility-shell .owner-shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .platform.mobility-shell .today-brief { grid-column:1; grid-row:auto; }
   .platform.mobility-shell .owner-shortcuts button { min-height:139px; padding:14px 12px; border-radius:16px; }
+  .platform.mobility-shell .today-brief { grid-template-columns:37px minmax(0,1fr); padding:14px; gap:10px; border-radius:16px; }
+  .platform.mobility-shell .today-brief-icon { width:37px; height:37px; border-radius:11px; }
+  .platform.mobility-shell .today-brief-copy h2 { font-size:14px; }
+  .platform.mobility-shell .today-brief-copy p { font-size:9px; }
+  .platform.mobility-shell .today-brief-action { grid-column:1/-1; width:100%; justify-content:center; min-height:40px; }
+  .platform.mobility-shell .proposal-intent { display:block; padding:24px 20px; }
+  .platform.mobility-shell .proposal-intent p { margin-top:18px; font-size:10px; }
+  .platform.mobility-shell .proposal-pillars,.platform.mobility-shell .proposal-trust-grid { grid-template-columns:1fr; gap:10px; }
+  .platform.mobility-shell .proposal-pillar { min-height:0; padding:20px; }
+  .platform.mobility-shell .proposal-pillar-icon { margin-top:19px; }
+  .platform.mobility-shell .proposal-flow { padding:24px 20px; }
+  .platform.mobility-shell .proposal-section-heading h2 { font-size:24px; }
+  .platform.mobility-shell .proposal-flow-grid { margin-top:20px; grid-template-columns:1fr; gap:9px; }
+  .platform.mobility-shell .proposal-flow-step { min-height:115px; padding:15px; }
+  .platform.mobility-shell .proposal-flow-icon { margin-top:12px; }
+  .platform.mobility-shell .proposal-flow-step h3 { position:absolute; top:39px; left:64px; margin:0; }
+  .platform.mobility-shell .proposal-flow-step p { margin-left:49px; }
+  .platform.mobility-shell .proposal-flow-arrow { top:auto; right:50%; bottom:-14px; transform:rotate(90deg); }
+  .platform.mobility-shell .proposal-flow-step:last-child .proposal-flow-arrow { display:none; }
+  .platform.mobility-shell .proposal-trust { min-height:0; padding:20px; }
+  .platform.mobility-shell .proposal-next { display:block; padding:24px 20px; }
+  .platform.mobility-shell .proposal-next-actions { margin-top:20px; display:grid; grid-template-columns:1fr; }
+  .platform.mobility-shell .proposal-next-actions .button { width:100%; justify-content:center; }
   .platform.mobility-shell .journey-card-copy strong { font-size:13px; }
   .platform.mobility-shell .journey-card-copy small { font-size:9px; }
   .journey-garage { height:165px; margin-bottom:18px; }
