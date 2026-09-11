@@ -114,8 +114,6 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
     { label: '충전소 찾기', detail: '사용 가능한 곳', icon: BatteryCharging, page: 'charge', tone: 'cyan' },
     { label: '차량 상태', detail: '배터리·안전 신호', icon: Activity, page: 'care', target: 'status', tone: 'blue' },
     { label: '정비소 찾기', detail: '가까운 블루핸즈', icon: Wrench, page: 'care', target: 'centers', tone: 'blue' },
-    { label: '주행 계산', detail: '거리와 충전 비용', icon: Navigation, page: 'drive', target: 'plan', tone: 'mint' },
-    { label: '주차 위치', detail: '내 차 다시 찾기', icon: MapPin, page: 'drive', target: 'parking', tone: 'mint' },
     { label: '관리 기록', detail: '정비·지출·일정', icon: FileText, page: 'passport', tone: 'blue' },
   ];
   return <div className="owner-home cinematic-home container" ref={homeRoot}>
@@ -141,7 +139,7 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <section className="owner-agenda"><div className="workspace-section-title"><div><span>MY SCHEDULE</span><h2>잊지 말아야 할 일</h2></div><button onClick={() => navigate('passport')}>일정 관리 <ChevronRight size={15} /></button></div><div className="agenda-list">{journal.loading ? <p>일정을 불러오고 있어요.</p> : journal.error ? <button onClick={journal.refresh}>일정을 불러오지 못했어요 · 다시 시도</button> : tasks.length ? tasks.map((item) => <button key={item.id} onClick={() => navigate('passport')}><span className="agenda-date">{dateLabel(item.entryDate)}</span><strong>{item.title}</strong><ChevronRight size={15} /></button>) : <div className="agenda-empty"><CalendarDays size={29} /><strong>다음 정비일을 기억해 둘까요?</strong><p>검사, 보험 갱신, 소모품 교체 일정을 남겨보세요.</p><button onClick={() => vehicle ? navigate('passport') : setModal('connect')}>일정 추가하기 <Plus size={15} /></button></div>}</div></section>
       <section className="owner-cost"><div className="workspace-section-title"><div><span>CAR LIFE COST</span><h2>이번 달 차량 지출</h2></div><Wallet size={22} /></div><strong>{journal.loading ? '불러오는 중…' : journal.error ? '기록 확인이 필요해요' : vehicle ? money(spent) : '기록부터 시작해요'}</strong><p>직접 남긴 충전·정비·주유 비용을 모아보세요.</p><button onClick={() => navigate('passport')}>지출 기록하기 <ArrowUpRight size={18} /></button></section>
     </div>
-    <div className="owner-bottom-links"><button onClick={() => navigate('drive', 'checklist')}><ShieldCheck size={22} /><span><strong>출발 전, 한 번 더 확인</strong><small>타이어부터 차량 주변까지 오늘의 체크리스트</small></span><ArrowRight size={17} /></button><button onClick={() => navigate('guide')}><CarFront size={22} /><span><strong>처음 오셨나요?</strong><small>내 차 연결부터 서비스 이용까지</small></span><ArrowRight size={17} /></button></div>
+    <div className="owner-bottom-links"><button onClick={() => navigate('drive', 'checklist')}><ShieldCheck size={22} /><span><strong>출발 전, 한 번 더 확인</strong><small>타이어부터 차량 주변까지 오늘의 체크리스트</small></span><ArrowRight size={17} /></button><button onClick={() => navigate('drive')}><Navigation size={22} /><span><strong>주행 도구 열기</strong><small>거리 계산·주차 위치처럼 필요할 때만 쓰는 기능</small></span><ArrowRight size={17} /></button></div>
   </div>;
 }
 

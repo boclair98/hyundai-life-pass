@@ -3,11 +3,9 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
   BatteryCharging,
   Bookmark,
   Bell,
-  CalendarClock,
   CarFront,
   Check,
   CheckCircle2,
@@ -20,7 +18,6 @@ import {
   FileCheck2,
   Gauge,
   HeartHandshake,
-  KeyRound,
   LocateFixed,
   LoaderCircle,
   LockKeyhole,
@@ -38,7 +35,6 @@ import {
   SlidersHorizontal,
   Smartphone,
   Star,
-  ThermometerSun,
   Trash2,
   UserRound,
   Wrench,
@@ -64,44 +60,21 @@ import { MobilityBackdrop, useMobilityTour, FeatureImage } from './MobilityBackd
 import './mobility.css';
 import './journey.css';
 
-const navigation = [
+// 오너가 매일 쓰는 핵심 흐름만 1차 메뉴에 둡니다.
+// 주행 계산·주차 저장은 드라이브 도구, 계정 연결은 설정에서 보조적으로 제공합니다.
+const primaryNavigation = [
   { id: 'home', label: '내 차', icon: CarFront },
-  { id: 'drive', label: '드라이브', icon: Route },
   { id: 'charge', label: '충전', icon: BatteryCharging },
   { id: 'care', label: '정비·점검', icon: Activity },
   { id: 'passport', label: '관리 기록', icon: FileCheck2 },
+];
+
+const secondaryNavigation = [
+  { id: 'drive', label: '주행 도구', icon: Route },
   { id: 'settings', label: '설정', icon: Settings2 },
 ];
 
-const homeScenes = [
-  { id: '01', label: '무엇인가' },
-  { id: '02', label: '문제 해결' },
-  { id: '03', label: '바로 쓰기' },
-  { id: '04', label: '내 차' },
-  { id: '05', label: '시작하기' },
-];
-
-const spaceGallery = [
-  { src: '/space-drive-01-v1.webp', eyebrow: 'LUNAR STATUS', title: '달 위에서도 선명한 내 차 상태' },
-  { src: '/space-drive-02-v1.webp', eyebrow: 'ORBIT ROUTE', title: '필요한 곳까지 이어지는 경로' },
-  { src: '/space-drive-03-v1.webp', eyebrow: 'MARS CHARGE', title: '충전이 필요할 때 바로 찾기' },
-  { src: '/space-drive-04-v1.webp', eyebrow: 'DEEP SPACE CARE', title: '차량 신호를 놓치지 않는 점검' },
-  { src: '/space-drive-05-v1.webp', eyebrow: 'ASTEROID DRIVE', title: '이동 중에도 이어지는 관리' },
-  { src: '/space-drive-06-v1.webp', eyebrow: 'SATURN RANGE', title: '주행 가능 거리까지 한눈에' },
-  { src: '/space-drive-07-v1.webp', eyebrow: 'AURORA SAFETY', title: '출발 전 확인하는 안전 신호' },
-  { src: '/space-drive-08-v1.webp', eyebrow: 'LIFE PASS ARRIVAL', title: '모든 차량 생활을 한곳으로' },
-];
-
-const pageHeroVisuals = {
-  'SMART DRIVE': { src: '/space-drive-02-v1.webp', index: '01', label: 'ROUTE & RANGE' },
-  'CHARGE NEAR YOU': { src: '/space-drive-03-v1.webp', index: '01', label: 'ENERGY & ROUTE' },
-  'MY CAR CARE': { src: '/space-drive-04-v1.webp', index: '02', label: 'STATUS & CARE' },
-  'MY CAR STORY': { src: '/space-drive-05-v1.webp', index: '03', label: 'TRUSTED HISTORY' },
-  'MY ACCOUNT': { src: '/space-drive-06-v1.webp', index: '04', label: 'CONNECTION & CONTROL' },
-  'START HERE': { src: '/space-drive-02-v1.webp', index: '05', label: 'FIRST ORBIT' },
-  'YOUR PRIVACY': { src: '/space-drive-07-v1.webp', index: '06', label: 'CONSENT & PRIVACY' },
-  'SERVICE GUIDE': { src: '/space-drive-01-v1.webp', index: '07', label: 'SERVICE BOUNDARY' },
-};
+const navigation = [...primaryNavigation, ...secondaryNavigation];
 
 const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide', 'proposal', 'canary']);
 
@@ -169,13 +142,6 @@ function tireValue(vehicle, key) {
   return values[key] ?? values[key.replace(/[A-Z]/g, (match) => `_${match.toLowerCase()}`)] ?? null;
 }
 
-function vehicleReadiness(vehicle) {
-  const checked = Number(vehicle?.checkedWarnings ?? 0);
-  const warnings = Number(vehicle?.warningCount ?? 0);
-  if (!checked) return null;
-  return Math.max(0, Math.round(((checked - warnings) / checked) * 100));
-}
-
 function getCurrentPosition() {
   if (!navigator.geolocation) return Promise.reject({ code: 'UNSUPPORTED' });
   if (!window.isSecureContext && window.location.hostname !== 'localhost') return Promise.reject({ code: 'INSECURE_CONTEXT' });
@@ -209,31 +175,31 @@ export default function App() {
   const appRef = useRef(null);
   const initialPage = window.location.hash.replace('#', '');
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
-  const [activeScene, setActiveScene] = useState('01');
   const [sectionTarget, setSectionTarget] = useState('');
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
-  const [dataSource, setDataSource] = useState('loading');
+  const [vehicleError, setVehicleError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState(false);
   const [platform, setPlatform] = useState({ stations: [], chargingReservations: [], serviceBookings: [], handovers: [], notifications: [], unreadNotifications: 0, environment: 'LOADING', providers: [] });
   const [passport, setPassport] = useState(null);
+  const [passportError, setPassportError] = useState('');
   const [refreshError, setRefreshError] = useState('');
 
   const vehicle = vehicles.find((item) => item.id === selectedVehicleId) ?? vehicles[0] ?? null;
   const journal = useVehicleJournal(vehicle?.databaseId);
 
-  useEffect(() => {
-    loadVehicles().then((result) => {
-      setVehicles(result.vehicles);
-      setDataSource(result.source);
-      if (!result.vehicles.some((item) => item.id === selectedVehicleId)) {
-        setSelectedVehicleId(result.vehicles[0]?.id ?? '');
-      }
-    });
+  const refreshVehicles = useCallback(async () => {
+    const result = await loadVehicles();
+    setVehicles(result.vehicles);
+    setVehicleError(result.error ?? '');
+    setSelectedVehicleId((current) => result.vehicles.some((item) => item.id === current) ? current : result.vehicles[0]?.id ?? '');
+    return result;
   }, []);
+
+  useEffect(() => { refreshVehicles().catch(() => undefined); }, [refreshVehicles]);
 
   const refreshPlatform = useCallback(async () => {
     try {
@@ -253,7 +219,8 @@ export default function App() {
   useEffect(() => {
     let active = true;
     setPassport(null);
-    if (vehicle?.databaseId) loadPassport(vehicle.databaseId).then((result) => { if (active) setPassport(result); }).catch(() => undefined);
+    setPassportError('');
+    if (vehicle?.databaseId) loadPassport(vehicle.databaseId).then((result) => { if (active) setPassport(result); }).catch((error) => { if (active) setPassportError(error.message || '차량 기록을 불러오지 못했습니다.'); });
     return () => { active = false; };
   }, [vehicle?.databaseId]);
 
@@ -338,18 +305,6 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
-    if (page !== 'home') return undefined;
-    const scenes = [...document.querySelectorAll('[data-scene]')];
-    if (!scenes.length || !('IntersectionObserver' in window)) return undefined;
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (visible) setActiveScene(visible.target.dataset.scene);
-    }, { threshold: [0.18, 0.35, 0.55], rootMargin: '-12% 0px -42% 0px' });
-    scenes.forEach((scene) => observer.observe(scene));
-    return () => observer.disconnect();
-  }, [page]);
-
-  useEffect(() => {
     if (!toast) return undefined;
     const timer = window.setTimeout(() => setToast(null), 3200);
     return () => window.clearTimeout(timer);
@@ -383,11 +338,9 @@ export default function App() {
     try {
       await work();
       await refreshPlatform();
-      const refreshedVehicles = await loadVehicles();
-      setVehicles(refreshedVehicles.vehicles);
-      setDataSource(refreshedVehicles.source);
-      if (vehicle?.databaseId) setPassport(await loadPassport(vehicle.databaseId));
-      notify(message);
+      const vehicleResult = await refreshVehicles();
+      if (vehicle?.databaseId) await loadPassport(vehicle.databaseId).then(setPassport).catch((error) => setPassportError(error.message || '차량 기록을 불러오지 못했습니다.'));
+      notify(vehicleResult.error ? `${message} 다만 차량 정보를 다시 확인하지 못했어요.` : message);
       setModal(null);
       return true;
     } catch (error) {
@@ -409,7 +362,7 @@ export default function App() {
   };
 
   const tour = useMobilityTour(page, sectionTarget, Boolean(modal));
-  const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget, tour };
+  const shared = { vehicle, navigate, notify, setModal, platform, passport, passportError, actions, busy, journal, sectionTarget, tour };
   useEffect(() => {
     const pageTitle = page === 'proposal' ? '현대차 제안' : page === 'canary' ? 'SDV 운영 데모' : navigation.find((item) => item.id === page)?.label ?? '이용 안내';
     document.title = `${pageTitle} · LIFE PASS`;
@@ -433,7 +386,6 @@ export default function App() {
         vehicles={vehicles}
         selectedVehicleId={selectedVehicleId}
         setSelectedVehicleId={setSelectedVehicleId}
-        dataSource={dataSource}
         notify={notify}
         platform={platform}
         actions={actions}
@@ -443,7 +395,7 @@ export default function App() {
       <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
 
 
-      {refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
+      {(refreshError || vehicleError) && <div className="connectivity-banner" role="alert"><span>{vehicleError ? '차량 정보를 아직 불러오지 못했어요.' : '일부 정보를 아직 불러오지 못했어요.'}</span><button onClick={() => Promise.allSettled([refreshPlatform(), refreshVehicles()])}>다시 시도</button></div>}
 
       <main id="main-content" tabIndex={-1}>
         {page === 'home' && <OwnerHome {...shared} />}
@@ -466,19 +418,6 @@ export default function App() {
   );
 }
 
-function SceneRail({ activeScene }) {
-  const jumpTo = (id) => document.querySelector(`[data-scene="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  return (
-    <nav className="scene-rail" aria-label="홈 화면 장면 이동">
-      {homeScenes.map((scene) => (
-        <button key={scene.id} className={activeScene === scene.id ? 'active' : ''} onClick={() => jumpTo(scene.id)} aria-label={`${scene.id} ${scene.label} 장면으로 이동`} aria-current={activeScene === scene.id ? 'step' : undefined}>
-          <span>{scene.id}</span><i /><small>{scene.label}</small>
-        </button>
-      ))}
-    </nav>
-  );
-}
-
 function DataProvenanceBar({ platform, actions, busy }) {
   const [expanded, setExpanded] = useState(false);
   const providers = platform.providers ?? [];
@@ -493,7 +432,7 @@ function DataProvenanceBar({ platform, actions, busy }) {
       <div className="container">
         <div className="provenance-summary">
           <strong><i />{environmentLabel}</strong>
-          <span className="provenance-mobile-summary">{carReady ? '내 차 상태가 준비됐어요' : '충전·정비는 바로 이용할 수 있어요'}</span>
+          <span className="provenance-mobile-summary">{carReady ? '내 차 상태가 준비됐어요' : '충전소·블루핸즈는 위치를 허용하면 확인해요'}</span>
           <button className="provenance-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>상태 보기 <ChevronDown size={14} /></button>
         </div>
         <div className="provenance-details">
@@ -501,7 +440,7 @@ function DataProvenanceBar({ platform, actions, busy }) {
             <span className={carReady ? 'live' : 'sample'}><i />내 차 상태: {carReady ? '최신 상태 확인' : '차량 연결 후 확인'}</span>
             <span className={chargerReady ? 'live' : 'sample'}><i />주변 충전소: {chargerReady ? '지금 이용 가능' : '잠시 확인 중'}</span>
           </div>
-          <small>{carReady ? '차량 상태와 주변 생활 정보를 한곳에서 확인할 수 있어요.' : '차량을 연결하지 않아도 주변 충전소와 블루핸즈를 먼저 찾아볼 수 있어요.'}</small>
+          <small>{carReady ? '차량 상태와 주변 생활 정보를 한곳에서 확인할 수 있어요.' : '차량을 연결하지 않아도 위치를 허용하면 주변 충전소와 블루핸즈를 찾을 수 있어요.'}</small>
           {hyundai?.mode === 'LIVE' && ['OAUTH_REQUIRED', 'REVOKED'].includes(hyundai.state) && <button className="provenance-action" disabled={busy} onClick={actions.connectHyundai}>{hyundai.state === 'REVOKED' ? '다시 연결' : '현대 계정 연결'}</button>}
           {hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED' && <button className="provenance-action" disabled={busy} onClick={actions.resumeHyundaiAgreement}>동의 계속하기</button>}
         </div>
@@ -510,7 +449,7 @@ function DataProvenanceBar({ platform, actions, busy }) {
   );
 }
 
-function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, dataSource, notify, platform, actions, busy }) {
+function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, notify, platform, actions, busy }) {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const hyundai = platform.providers?.find((provider) => provider.id === 'hyundai-connected-car');
   const connected = hyundai?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(hyundai.state);
@@ -529,7 +468,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
         </button>
 
         <nav className="desktop-nav" aria-label="주요 메뉴">
-          {navigation.map((item) => (
+          {primaryNavigation.map((item) => (
             <button key={item.id} className={page === item.id ? 'active' : ''} onClick={() => navigate(item.id)}>{item.label}</button>
           ))}
         </nav>
@@ -555,7 +494,9 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
         <div className="mobile-drawer">
           <div className="mobile-vehicle"><span>{vehicle?.name ?? '아직 등록한 차량이 없어요'}</span><strong>{vehicle?.plate ?? '차량을 연결해 보세요'}</strong><small>{vehicle ? '내 차 소식이 준비됐어요' : '주변 충전·정비는 바로 이용할 수 있어요'}</small></div>
           <div className={`mobile-account ${connected ? 'connected' : ''}`}><div><UserRound size={19} /><span><small>현대 통합계정</small><strong>{connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</strong></span></div><button disabled={busy} onClick={accountAction}>{connected ? '새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '연결하기'}</button></div>
-          {navigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
+          {primaryNavigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
+          <div className="mobile-drawer-label">필요할 때만 쓰는 도구</div>
+          {secondaryNavigation.map((item) => <button className="mobile-drawer-secondary" key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
         </div>
       )}
     </header>
@@ -563,98 +504,6 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
 }
 
 
-
-function OpenBetaPanel({ navigate, notify }) {
-  return (
-    <section className="open-beta-panel container reveal" data-reveal aria-labelledby="open-beta-title">
-      <div className="open-beta-copy">
-        <span className="open-beta-eyebrow"><Bookmark size={14} /> MY HYUNDAI · CAR LIFE</span>
-        <h2 id="open-beta-title">오늘부터 내 차를 더 잘 아는 방법.</h2>
-        <p>차량을 연결하면 매일 필요한 상태를 한눈에 보고, 연결하지 않아도 주변 충전소와 블루핸즈를 바로 찾아볼 수 있어요.</p>
-      </div>
-      <div className="open-beta-actions">
-        <button className="button light" onClick={() => sharePage({ title: 'HYUNDAI LIFE PASS', text: '충전·정비·차량 상태를 한곳에서 확인하는 차량 생활 서비스', notify })}><Share2 size={16} /> 가족·친구에게 공유</button>
-        <button className="button light-outline" onClick={() => navigate('settings')}><CarFront size={16} /> 내 차 등록하기</button>
-        <InstallButton notify={notify} compact />
-      </div>
-      <small className="open-beta-note">내 차 정보는 내가 허락한 범위에서만 확인합니다.</small>
-    </section>
-  );
-}
-
-function VehicleCommandCenter({ vehicle, navigate, setModal, notify, platform }) {
-  const readiness = vehicleReadiness(vehicle);
-  const warningCount = Number(vehicle.warningCount ?? 0);
-  const checkedWarnings = Number(vehicle.checkedWarnings ?? 0);
-  const readinessLabel = readiness == null ? '데이터 대기' : readiness >= 90 ? '오늘 운행 준비 완료' : warningCount ? '점검 후 운행 권장' : '확인 후 운행';
-  const sourceLabel = vehicle.source === 'HYUNDAI_DEVELOPERS' ? '내 차 상태 최신' : '차량 연결 대기';
-  const coverage = [
-    ['배터리 잔량', vehicle.batterySoc != null],
-    ['주행 가능 거리', vehicle.range != null],
-    ['누적 주행', vehicle.odometer != null],
-    ['공기압 경고', tireCheck(vehicle).state !== 'UNAVAILABLE'],
-    ['바퀴별 수치', vehicle.tirePressure?.exactValuesAvailable === true && Boolean(vehicle.tirePressure?.values ?? vehicle.tirePressures)],
-  ];
-  const upcomingItems = [
-    ...(platform?.chargingReservations ?? []).map((item) => ({ type: '충전', title: item.stationName, date: item.scheduledAt, status: item.status })),
-    ...(platform?.serviceBookings ?? []).map((item) => ({ type: '정비', title: item.centerName, date: item.scheduledAt, status: item.status })),
-  ].filter((item) => item.status !== 'CANCELLED').sort((left, right) => new Date(left.date) - new Date(right.date)).slice(0, 3);
-  return (
-    <section className="vehicle-command-center" aria-labelledby="vehicle-command-title">
-      <div className="command-heading">
-        <div>
-          <span className="command-eyebrow"><CarFront size={14} /> MY HYUNDAI GARAGE</span>
-          <h2 id="vehicle-command-title">오늘의 {vehicle.name}</h2>
-          <p>{vehicle.trim} · {vehicle.plate} · 마지막 동기화 {vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : '확인 중'}</p>
-        </div>
-        <div className="command-heading-actions">
-          <span className="command-source"><i /> {sourceLabel}</span>
-          <button className="command-icon-button" onClick={() => setModal('connect')} aria-label="차량 데이터 새로고침"><RefreshCcw size={17} /></button>
-          <button className="command-icon-button" onClick={() => sharePage({ title: `${vehicle.name} 차량 현황`, text: '현대차 오너용 Life Pass 차량 대시보드', path: '#home', notify })} aria-label="차량 현황 공유"><Share2 size={17} /></button>
-        </div>
-      </div>
-
-      <div className="command-primary-grid">
-        <article className="readiness-card panel">
-          <div className="readiness-top"><div><span>오늘의 운행 준비</span><h3>{readinessLabel}</h3><p>{warningCount ? `확인이 필요한 경고 ${warningCount}건이 있습니다.` : checkedWarnings ? `${checkedWarnings}/7개 안전 항목을 확인했습니다.` : '차량을 연결하면 안전 항목을 확인할 수 있어요.'}</p></div><div className={`readiness-score ${warningCount ? 'warning' : ''}`}><strong>{readiness == null ? '—' : readiness}</strong><small>{readiness == null ? '점' : '점'}</small></div></div>
-          <div className="readiness-meter" aria-label={readiness == null ? '운행 준비도 확인 중' : `운행 준비도 ${readiness}점`}><span style={{ width: `${readiness == null ? 10 : Math.max(readiness, 4)}%` }} /></div>
-          <div className="readiness-foot"><span><i className={warningCount ? 'warn' : readiness == null ? 'unknown' : ''} />{warningCount ? '점검 필요' : readiness == null ? '확인 중' : '현재 경고 없음'}</span><button onClick={() => navigate('care')}>안전 점검 보기 <ArrowRight size={14} /></button></div>
-        </article>
-        <TirePressureCard vehicle={vehicle} compact onDetails={() => navigate('care')} />
-      </div>
-
-      <div className="vehicle-vitals-grid">
-        <VehicleStat icon={BatteryCharging} label="배터리 잔량" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '아직 확인되지 않음' : vehicle.chargingState || '현재 상태'} tone="blue" />
-        <VehicleStat icon={Navigation} label="주행 가능 거리" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '아직 확인되지 않음' : '최근 확인한 값'} tone="sky" />
-        <VehicleStat icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '아직 확인되지 않음' : '최근 확인한 값'} tone="navy" />
-        <VehicleStat icon={ThermometerSun} label="충전 상태" value={vehicle.chargingState || '확인 중'} detail={vehicle.chargingState ? '현재 차량 상태' : '잠시만 기다려 주세요'} tone="green" />
-      </div>
-
-      <div className="garage-action-grid" aria-label="차량 바로가기">
-        <button onClick={() => navigate('charge')}><span className="garage-action-icon blue"><BatteryCharging size={18} /></span><span><strong>충전소 찾기</strong><small>내 위치 주변을 바로 찾아요</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => navigate('care')}><span className="garage-action-icon orange"><Wrench size={18} /></span><span><strong>차량 케어</strong><small>안전 점검과 블루핸즈</small></span><ChevronRight size={16} /></button>
-        <button onClick={() => navigate('passport')}><span className="garage-action-icon green"><ShieldCheck size={18} /></span><span><strong>차량 기록</strong><small>차와 함께한 소중한 기록</small></span><ChevronRight size={16} /></button>
-      </div>
-
-      <div className="owner-activity panel" aria-label="내 차 일정">
-        <div className="owner-activity-heading"><div><span>MY CAR PLAN</span><strong>내 차 일정</strong></div><span>{upcomingItems.length ? `${upcomingItems.length}건 예정` : '아직 비어 있어요'}</span></div>
-        {upcomingItems.length ? <div className="owner-activity-list">{upcomingItems.map((item, index) => <div key={`${item.type}-${item.title}-${index}`}><span className={`activity-dot ${item.type === '충전' ? 'charge' : 'care'}`} /><div><strong>{item.type} · {item.title}</strong><small>{formatDateTime(item.date)}</small></div><ChevronRight size={15} /></div>)}</div> : <p className="owner-activity-empty">충전이나 점검 일정을 만들면 이곳에서 한눈에 확인할 수 있어요.</p>}
-      </div>
-
-      <div className="coverage-row"><div><span>확인 범위</span><strong>이번에 살펴본 내 차 정보</strong></div><div className="coverage-chips">{coverage.map(([label, available]) => <span key={label} className={available ? 'available' : ''}><i />{label}</span>)}</div></div>
-    </section>
-  );
-}
-
-function GuestGaragePanel({ setModal, navigate }) {
-  return (
-    <section className="garage-empty-panel" aria-labelledby="garage-empty-title">
-      <div className="garage-empty-copy"><span className="command-eyebrow"><Plus size={14} /> MY HYUNDAI GARAGE</span><h2 id="garage-empty-title">내 차를 등록하면<br />매일 필요한 정보가 한 화면에 모여요.</h2><p>차량을 연결하면 배터리, 주행거리, 타이어와 안전 점검을 내 차 기준으로 확인할 수 있습니다.</p><button className="button primary" onClick={() => setModal('connect')}>내 차 등록 시작 <ArrowRight size={16} /></button></div>
-      <div className="garage-empty-steps"><div><b>01</b><CarFront size={17} /><strong>차량 등록</strong><small>공식 화면에서 간단히</small></div><div><b>02</b><Activity size={17} /><strong>상태 확인</strong><small>내 차 소식을 한눈에</small></div><div><b>03</b><Route size={17} /><strong>바로 행동</strong><small>충전·케어로 이어져요</small></div></div>
-      <div className="garage-empty-links"><button onClick={() => navigate('charge')}>충전소 먼저 둘러보기 <ArrowRight size={14} /></button><button onClick={() => navigate('care')}>주변 블루핸즈 찾아보기 <ArrowRight size={14} /></button></div>
-    </section>
-  );
-}
 
 function TirePressureCard({ vehicle, compact = false, onDetails }) {
   const check = tireCheck(vehicle);
@@ -670,10 +519,6 @@ function TirePressureCard({ vehicle, compact = false, onDetails }) {
       {onDetails && <button className="tire-details-button" onClick={onDetails}>안전 점검 자세히 보기 <ArrowRight size={14} /></button>}
     </article>
   );
-}
-
-function VehicleStat({ icon: Icon, label, value, detail, tone }) {
-  return <article className={`vehicle-stat panel ${tone}`}><div className="vehicle-stat-icon"><Icon size={18} /></div><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>;
 }
 
 function VehicleEnergyCard({ vehicle, onConnect }) {
@@ -866,7 +711,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
             <button className={favoritesOnly ? 'active' : ''} onClick={() => setFavoritesOnly((current) => !current)} aria-pressed={favoritesOnly}><Star size={15} fill={favoritesOnly ? 'currentColor' : 'none'} /> 즐겨찾기{favoriteIds.length ? ` ${favoriteIds.length}` : ''}</button>
             <button onClick={refreshStations} disabled={locationBusy}><RefreshCcw className={locationBusy ? 'spin' : ''} size={15} /> 새로고침</button>
           </div>
-          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} notify={notify} userLocation={usingCurrentLocation ? chargerFeed.search : null} />
+          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} userLocation={usingCurrentLocation ? chargerFeed.search : null} />
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 순서</span><small>{chargerLive ? `${Math.min(6, visibleStations.length)}곳 추천` : '확인 중'}</small></div>
@@ -962,18 +807,15 @@ function loadKakaoSdk(key, retry = 0) {
   return kakaoSdkPromise;
 }
 
-function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, notify, userLocation }) {
+function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, userLocation }) {
   const mapElement = useRef(null);
   const mapRef = useRef(null);
   const kakaoRef = useRef(null);
-  const notifyRef = useRef(notify);
   const markerElements = useRef([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState('');
   const [mapRetryKey, setMapRetryKey] = useState(0);
   const key = window.__LIFEPASS_CONFIG__?.kakaoJavascriptKey || import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
-
-  useEffect(() => { notifyRef.current = notify; }, [notify]);
 
   useEffect(() => {
     setMapError('');
@@ -1254,18 +1096,32 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
     }
   }, [notify]);
 
-  useEffect(() => { findCenters(); }, [findCenters]);
-
-  function findFromCurrentLocation() {
+  const findFromCurrentLocation = useCallback(() => {
     setCenterBusy(true);
     getCurrentPosition()
       .then(({ coords }) => findCenters({ latitude: coords.latitude, longitude: coords.longitude, radius: 20000 }))
       .catch((error) => { setCenterBusy(false); notify(locationErrorMessage(error)); });
-  }
+  }, [findCenters, notify]);
 
   const retryCenters = () => findCenters(centerLocation.current
     ? { latitude: centerLocation.latitude, longitude: centerLocation.longitude, radius: 20000 }
     : undefined);
+
+  // 위치 권한을 이미 허용한 오너라면 정비소도 충전소처럼 처음부터 현재 위치를 사용합니다.
+  // 처음 방문자에게 권한 팝업을 강제로 띄우지는 않고, 기본 위치를 보여준 뒤 버튼으로 선택하게 합니다.
+  useEffect(() => {
+    let active = true;
+    if (!navigator.permissions?.query) {
+      findCenters();
+      return () => { active = false; };
+    }
+    navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
+      if (!active) return;
+      if (permission.state === 'granted') findFromCurrentLocation();
+      else findCenters();
+    }).catch(() => { if (active) findCenters(); });
+    return () => { active = false; };
+  }, [findCenters, findFromCurrentLocation]);
 
   return (
     <div className="page container">
@@ -1330,7 +1186,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
   );
 }
 
-function PassportPage({ vehicle, notify, setModal, passport }) {
+function PassportPage({ vehicle, notify, setModal, passport, passportError }) {
   if (!vehicle) return <div className="page container"><PageIntro eyebrow="MY CAR STORY" title="내 차 기록을 모아보세요" description="차량을 연결하면 내 차의 중요한 정보와 기록을 한곳에서 확인할 수 있어요." /><FeaturePurpose icon={FileCheck2} title="확인된 차량 상태와 주요 변화를 시간순으로 보관하는 기능입니다." description="Life Pass가 실제로 받은 차량 정보만 기록하며, 확인되지 않은 값은 임의로 만들지 않습니다." steps={['내 차 연결', '확인된 이벤트 저장', '기록 확인·공유']} /><VehicleConnectPanel onConnect={() => setModal('connect')} /></div>;
   const timelineEvents = passport?.events ?? [];
   return (
@@ -1344,7 +1200,7 @@ function PassportPage({ vehicle, notify, setModal, passport }) {
       </section>
       <section className="section-sub reveal" data-reveal>
         <SectionHeading eyebrow="YOUR CAR TIMELINE" title="차량과 함께한 순간" description="차량을 연결한 뒤 확인된 중요한 기록만 시간 순서로 보여드려요." />
-        {timelineEvents.length ? <div className="timeline panel">{timelineEvents.map((event, index) => <div className="timeline-row" key={event.id}><div className="timeline-marker"><span>{index + 1}</span></div><time>{formatDate(event.occurredAt)}</time><div><span>{event.type}</span><strong>{event.title}</strong><p>{event.detail}</p></div><span className="timeline-trust"><ShieldCheck size={13} /> 확인됨</span></div>)}</div> : <div className="empty-records panel"><FileCheck2 size={24} /><strong>아직 남겨진 기록이 없어요.</strong><span>차량을 연결하고 첫 기록을 만들어 보세요.</span></div>}
+        {passportError ? <div className="empty-records panel" role="alert"><AlertTriangle size={24} /><strong>차량 기록을 확인하지 못했어요.</strong><span>{passportError}</span></div> : timelineEvents.length ? <div className="timeline panel">{timelineEvents.map((event, index) => <div className="timeline-row" key={event.id}><div className="timeline-marker"><span>{index + 1}</span></div><time>{formatDate(event.occurredAt)}</time><div><span>{event.type}</span><strong>{event.title}</strong><p>{event.detail}</p></div><span className="timeline-trust"><ShieldCheck size={13} /> 확인됨</span></div>)}</div> : <div className="empty-records panel"><FileCheck2 size={24} /><strong>아직 남겨진 기록이 없어요.</strong><span>차량을 연결하고 첫 기록을 만들어 보세요.</span></div>}
       </section>
     </div>
   );
@@ -1402,10 +1258,6 @@ function VehicleConnectPanel({ onConnect, compact = false }) {
   return <section className={`vehicle-connect-panel panel ${compact ? 'compact' : ''}`}><div className="connect-orbit"><CarFront size={26} /></div><div><span>MY HYUNDAI CAR</span><h2>아직 연결된 차량이 없어요.</h2><p>현대자동차 공식 로그인에서 내 차를 선택하면 배터리·주행거리·안전 점검을 한눈에 볼 수 있어요.</p></div><button className="button primary" onClick={onConnect}>내 차 연결하기 <ArrowRight size={16} /></button></section>;
 }
 
-function OperationBanner({ icon: Icon, label, title, detail, action, tone }) {
-  return <section className={`operation-banner ${tone}`}><div><Icon size={20} /></div><div><span>{label}</span><strong>{title}</strong><small>{detail}</small></div>{action && <div>{action}</div>}</section>;
-}
-
 function formatDateTime(value) {
   return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 }
@@ -1432,14 +1284,6 @@ function formatTime(value) {
   return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(value));
 }
 
-function handoverLabel(status) {
-  return { INITIATED: '디지털 키 회수 준비', PRIVACY_CLEARED: '개인정보 삭제 완료', PASSPORT_SIGNED: '차량 여권 서명 완료', COMPLETED: '인수인계 완료' }[status] ?? status;
-}
-
-function ServiceCard({ number, icon: Icon, title, description, action, onClick, tone }) {
-  return <button className={`service-card service-${tone}`} onClick={onClick}><div className="service-card-top"><span>{number}</span><div><Icon size={23} /></div></div><h3>{title}</h3><p>{description}</p><span className="service-action">{action}<ArrowRight size={15} /></span></button>;
-}
-
 function SectionHeading({ eyebrow, title, description }) {
   return <div className="section-heading"><span>{eyebrow}</span><h2>{title}</h2>{description && <p>{description}</p>}</div>;
 }
@@ -1452,20 +1296,8 @@ function FeaturePurpose({ icon: Icon, title, description, steps }) {
   return <details className="feature-help"><summary><Icon size={16} /> 이용 방법 <ChevronDown size={14} /></summary><strong>{title}</strong><p>{description}</p><ol>{steps.map((step) => <li key={step}>{step}</li>)}</ol></details>;
 }
 
-function ApiCoveragePanel() {
-  return <section className="api-coverage reveal" data-reveal aria-labelledby="api-coverage-title"><div className="api-coverage-heading"><span>CONNECTED DATA MAP</span><h2 id="api-coverage-title">어떤 API가 실제로 연결되어 있나요?</h2><p>공개 규격과 현재 프로젝트 승인 범위를 분리해 보여드립니다. 제공되지 않는 값은 추정하지 않습니다.</p></div><div className="api-coverage-grid"><article><span>01 · ACCOUNT</span><strong>계정·차량 연결</strong><p>현대 통합계정 OAuth, 사용자 확인, 동의 차량 목록, 커넥티드 서비스 계약기간</p><small>현재 연동</small></article><article><span>02 · VEHICLE STATUS</span><strong>차량 상태 11종+</strong><p>배터리, 주행 가능 거리, 누적 주행거리, 충전 여부·목표량·남은 시간, 7종 경고</p><small>현재 연동</small></article><article><span>03 · NEARBY LIFE</span><strong>충전·정비 인프라</strong><p>한국환경공단 충전기 현황과 Kakao 위치·지도·블루핸즈 검색</p><small>현재 연동</small></article><article className="planned"><span>04 · NEXT APPROVAL</span><strong>다음 확장 후보</strong><p>차량 제원·옵션, 운행 기록, 최종 주차 위치, 고장코드, 안전운전점수</p><small>현대차 추가 승인·규격 확인 필요</small></article></div></section>;
-}
-
 function Metric({ icon: Icon, label, value, detail }) {
   return <div className="metric"><Icon size={19} /><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></div>;
-}
-
-function ActionRow({ icon: Icon, color, title, detail, badge, onClick }) {
-  return <button className="action-row" onClick={onClick}><div className={`action-icon ${color}`}><Icon size={18} /></div><div><strong>{title}</strong><span>{detail}</span></div><em>{badge}</em><ChevronRight size={17} /></button>;
-}
-
-function JourneyStep({ icon: Icon, number, title, detail, done = false, onClick }) {
-  return <button className={`journey-step ${done ? 'done' : ''}`} onClick={onClick} aria-label={`${number} ${title} ${done ? '완료' : '시작하기'}`}><div><Icon size={20} /></div><span>{done ? <CheckCircle2 size={15} /> : number}</span><h3>{title}</h3><p>{detail}</p><strong className="journey-cta">{done ? '다시 확인' : '시작하기'} <ArrowRight size={14} /></strong></button>;
 }
 
 function PassportScore({ label, value, unit, note }) {
@@ -1473,11 +1305,12 @@ function PassportScore({ label, value, unit, note }) {
 }
 
 function SiteFooter({ navigate }) {
+  const labMode = new URLSearchParams(window.location.search).get('lab') === '1';
   return (
     <footer className="site-footer">
       <div className="container">
         <div><strong>HYUNDAI LIFE PASS</strong><span>내 차를 더 잘 알고, 더 편하게 돌보는 하루</span></div>
-        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>처음 이용하기</button><button onClick={() => navigate('settings')}>내 정보</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>이용 안내</button><button onClick={() => navigate('proposal')}>현대차 제안</button><button onClick={() => navigate('canary')}>SDV 운영 데모</button></nav>
+        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>처음 이용하기</button><button onClick={() => navigate('settings')}>내 정보</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>이용 안내</button>{labMode && <><button onClick={() => navigate('proposal')}>현대차 제안</button><button onClick={() => navigate('canary')}>SDV 운영 데모</button></>}</nav>
         <small>차량 정보는 사용자가 허락한 범위에서만 확인합니다. 현대자동차 공식 서비스와는 별개의 서비스입니다.</small>
       </div>
     </footer>
@@ -1614,7 +1447,7 @@ function LegalPage({ type }) {
 }
 
 function MobileNav({ page, navigate }) {
-  return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{navigation.filter((item) => item.id !== 'settings').map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={21} /><span>{label}</span></button>)}</nav>;
+  return <nav className="mobile-nav" aria-label="모바일 주요 메뉴">{primaryNavigation.map(({ id, label, icon: Icon }) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={21} /><span>{label}</span></button>)}</nav>;
 }
 
 function Modal({ vehicle, platform, close, notify, actions, busy }) {

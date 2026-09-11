@@ -1804,3 +1804,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 @media (prefers-reduced-motion: reduce) {
   .battery-liquid,.battery-liquid::after,.battery-liquid i,.recommended-charger { animation: none; transition: none; }
 }
+
+/* Owner-first navigation: keep the daily path visible and tuck away infrequent tools. */
+.mobile-drawer-label { margin: 14px 5px 2px; color: #8a9aab; font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+.mobile-drawer-secondary { color: #536678; }
+@media (max-width: 760px) {
+  .mobile-nav { grid-template-columns: repeat(4, 1fr); }
+  .mobile-nav button:last-child { display: flex; }
+}
