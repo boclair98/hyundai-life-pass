@@ -36,4 +36,5 @@ test('service-centre location follows the same consent-first behavior as chargin
   assert.match(appSource, /navigator\.permissions\.query\(\{ name: 'geolocation' \}\)/g);
   assert.match(appSource, /if \(active && permission\.state === 'granted'\) findFromCurrentLocation\(\)/);
   assert.match(appSource, /내 위치로 다시 찾기/);
+  assert.match(appSource, /finishReject\(\{ code: 3 \}\), 25000\)/);
 });

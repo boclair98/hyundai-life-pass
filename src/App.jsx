@@ -147,18 +147,36 @@ function getCurrentPosition() {
   if (!window.isSecureContext && window.location.hostname !== 'localhost') return Promise.reject({ code: 'INSECURE_CONTEXT' });
   return new Promise((resolve, reject) => {
     let retried = false;
-    const retryOrReject = (error) => {
-      if (!retried && [2, 3].includes(error?.code)) {
-        retried = true;
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 });
-        return;
-      }
+    let settled = false;
+    let timer;
+    const finishResolve = (value) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve(value);
+    };
+    const finishReject = (error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
       reject(error);
     };
+    const retryOrReject = (error) => {
+      if (settled) return;
+      if (!retried && [2, 3].includes(error?.code)) {
+        retried = true;
+        navigator.geolocation.getCurrentPosition(finishResolve, finishReject, { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 });
+        return;
+      }
+      finishReject(error);
+    };
+    // Some mobile browsers leave the permission prompt pending without firing
+    // the Geolocation timeout callback. Keep every dependent button recoverable.
+    timer = window.setTimeout(() => finishReject({ code: 3 }), 25000);
     try {
-      navigator.geolocation.getCurrentPosition(resolve, retryOrReject, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+      navigator.geolocation.getCurrentPosition(finishResolve, retryOrReject, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
     } catch (error) {
-      reject(error);
+      finishReject(error);
     }
   });
 }
