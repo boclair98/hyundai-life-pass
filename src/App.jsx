@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
+  AlertTriangle,
   ArrowRight,
   ArrowUpRight,
   BatteryCharging,
@@ -50,6 +51,7 @@ import {
   loadPassport,
   loadPlatform,
   loadServiceCenters,
+  loadReleases,
   readNotification,
   revokeHyundaiConnection,
   syncHyundaiVehicles,
@@ -101,7 +103,7 @@ const pageHeroVisuals = {
   'SERVICE GUIDE': { src: '/space-drive-01-v1.webp', index: '07', label: 'SERVICE BOUNDARY' },
 };
 
-const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide', 'proposal']);
+const validPages = new Set([...navigation.map((item) => item.id), 'privacy', 'terms', 'guide', 'proposal', 'canary']);
 
 const hyundaiStatusLabel = (provider) => {
   if (!provider) return '상태 확인 중';
@@ -408,7 +410,10 @@ export default function App() {
 
   const tour = useMobilityTour(page, sectionTarget, Boolean(modal));
   const shared = { vehicle, navigate, notify, setModal, platform, passport, actions, busy, journal, sectionTarget, tour };
-  useEffect(() => { document.title = `${page === 'proposal' ? '현대차 제안' : navigation.find((item) => item.id === page)?.label ?? '이용 안내'} · LIFE PASS`; }, [page]);
+  useEffect(() => {
+    const pageTitle = page === 'proposal' ? '현대차 제안' : page === 'canary' ? 'SDV 운영 데모' : navigation.find((item) => item.id === page)?.label ?? '이용 안내';
+    document.title = `${pageTitle} · LIFE PASS`;
+  }, [page]);
   useEffect(() => {
     const panel = document.getElementById('main-content');
     panel?.scrollTo({ top: 0, behavior: 'instant' });
@@ -435,6 +440,7 @@ export default function App() {
         busy={busy}
       />
 
+      <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
 
 
       {refreshError && <div className="connectivity-banner" role="alert"><span>일부 정보를 아직 불러오지 못했어요.</span><button onClick={() => refreshPlatform().catch(() => undefined)}>다시 시도</button></div>}
@@ -450,6 +456,7 @@ export default function App() {
         {page === 'terms' && <LegalPage type="terms" />}
         {page === 'guide' && <GuidePage navigate={navigate} />}
         {page === 'proposal' && <ProposalPage navigate={navigate} />}
+        {page === 'canary' && <CanaryPage navigate={navigate} />}
       <SiteFooter navigate={navigate} />
       </main>
       <MobileNav page={page} navigate={navigate} />
@@ -1218,7 +1225,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
   const [centerError, setCenterError] = useState('');
   const [centerLocation, setCenterLocation] = useState({ current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
   const nextAction = vehicle?.warningCount > 0
-    ? { title: '경고 항목부터 확인하세요', detail: `차량 경고 ${vehicle.warningCount}건이 현대 데이터에 보고되었습니다. 가까운 서비스 거점에서 점검을 예약할 수 있습니다.`, button: '서비스 거점 보기' }
+    ? { title: '경고 항목부터 확인하세요', detail: `차량 경고 ${vehicle.warningCount}건이 현대 데이터에 보고되었습니다. 가까운 서비스 거점을 확인하고 상담을 준비할 수 있습니다.`, button: '서비스 거점 보기' }
     : vehicle?.nextServiceKm != null
       ? { title: `${Number(vehicle.nextServiceKm).toLocaleString()}km 후 정기 점검 권장`, detail: '차량에 제공된 주행 기준을 바탕으로 다음 점검 시점을 안내합니다.', button: '거점 찾기' }
       : { title: '다음 운행을 위한 거점 저장', detail: '차량별 점검 주기는 현재 제공되지 않아 가까운 블루핸즈를 먼저 저장해 두는 것을 권장합니다.', button: '거점 찾기' };
@@ -1470,7 +1477,7 @@ function SiteFooter({ navigate }) {
     <footer className="site-footer">
       <div className="container">
         <div><strong>HYUNDAI LIFE PASS</strong><span>내 차를 더 잘 알고, 더 편하게 돌보는 하루</span></div>
-        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>처음 이용하기</button><button onClick={() => navigate('settings')}>내 정보</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>이용 안내</button><button onClick={() => navigate('proposal')}>현대차 제안</button></nav>
+        <nav aria-label="서비스 정책"><button onClick={() => navigate('guide')}>처음 이용하기</button><button onClick={() => navigate('settings')}>내 정보</button><button onClick={() => navigate('privacy')}>개인정보 안내</button><button onClick={() => navigate('terms')}>이용 안내</button><button onClick={() => navigate('proposal')}>현대차 제안</button><button onClick={() => navigate('canary')}>SDV 운영 데모</button></nav>
         <small>차량 정보는 사용자가 허락한 범위에서만 확인합니다. 현대자동차 공식 서비스와는 별개의 서비스입니다.</small>
       </div>
     </footer>
@@ -1522,7 +1529,61 @@ function ProposalPage({ navigate }) {
       <article className="proposal-trust panel"><ShieldCheck size={22} /><div><span>TRUST BY DESIGN</span><h3>허락한 정보만, 확인된 값만</h3><p>연결 범위·최근 수신 시점·제공되지 않은 항목을 숨기지 않고 안내합니다.</p></div></article>
       <article className="proposal-trust panel"><CheckCircle2 size={22} /><div><span>READY TO PILOT</span><h3>작게 검증하고 크게 확장</h3><p>오너의 충전·케어·기록 여정을 먼저 검증한 뒤 차량 라인업과 파트너 서비스로 넓힐 수 있습니다.</p></div></article>
     </section>
-    <section className="proposal-next panel"><div><span>NEXT WITH HYUNDAI</span><h2>현대차 오너 경험의 다음 장면을 함께 만듭니다.</h2><p>현재 공개 베타에서 흐름을 확인할 수 있습니다. 상용 출시에는 현대자동차의 공식 승인과 파트너·법무 검토가 필요합니다.</p></div><div className="proposal-next-actions"><button className="button primary" onClick={() => navigate('home')}>공개 베타 둘러보기 <ArrowRight size={15} /></button><button className="button outline" onClick={() => navigate('settings')}>차량 연결 흐름 보기 <CarFront size={15} /></button></div></section>
+    <section className="proposal-next panel"><div><span>NEXT WITH HYUNDAI</span><h2>현대차 오너 경험의 다음 장면을 함께 만듭니다.</h2><p>현재 공개 베타에서 흐름을 확인할 수 있습니다. 상용 출시에는 현대자동차의 공식 승인과 파트너·법무 검토가 필요합니다.</p></div><div className="proposal-next-actions"><button className="button primary" onClick={() => navigate('home')}>공개 베타 둘러보기 <ArrowRight size={15} /></button><button className="button outline" onClick={() => navigate('settings')}>차량 연결 흐름 보기 <CarFront size={15} /></button><button className="button outline" onClick={() => navigate('canary')}>SDV 운영 데모 <Activity size={15} /></button></div></section>
+  </div>;
+}
+
+const canaryStatus = {
+  ROLLING: { label: '배포 진행 중', tone: 'rolling', icon: Activity },
+  COMPLETE: { label: '배포 완료', tone: 'complete', icon: CheckCircle2 },
+  PAUSED: { label: '자동 보호 모드', tone: 'paused', icon: AlertTriangle },
+  DRAFT: { label: '검토 대기', tone: 'draft', icon: Clock3 },
+};
+
+function CanaryPage({ navigate }) {
+  const [releases, setReleases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [updatedAt, setUpdatedAt] = useState(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await loadReleases();
+      setReleases(Array.isArray(result) ? result : []);
+      setUpdatedAt(new Date());
+    } catch (failure) {
+      setError(failure.message || '릴리스 상태를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const rolling = releases.filter((item) => item.status === 'ROLLING').length;
+  const paused = releases.filter((item) => item.status === 'PAUSED').length;
+  const averageProgress = releases.length ? Math.round(releases.reduce((sum, item) => sum + Number(item.progress || 0), 0) / releases.length) : 0;
+  const requirements = [
+    { label: '차량 배포 신호', title: '대상·진행률·실패 사유', detail: '현대차 운영 시스템에서 릴리스 이벤트와 롤백 상태를 받아야 합니다.', tone: 'blue' },
+    { label: '보호 규칙', title: '이상 징후 자동 중지', detail: '차량 안전 지표와 운영 승인 규칙을 연결해야 합니다.', tone: 'mint' },
+    { label: '운영 권한', title: '담당자만 실행·승인', detail: '현대차 내부 계정과 권한 체계를 연동해야 합니다.', tone: 'violet' },
+  ];
+
+  return <div className="page container canary-page">
+    <PageIntro eyebrow="SDV / CANARY LAB" title="배포 전에, 차량의 리스크를 먼저 읽습니다." description="실차 명령 없이 OTA 릴리스 진행률과 보호 상태를 검토하는 읽기 전용 공간입니다." actions={<><button className="button light" onClick={() => navigate('proposal')}>제안 배경 <ArrowRight size={15} /></button><button className="button light" onClick={refresh} disabled={loading}>{loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCcw size={15} />} 새로고침</button></>} />
+    <section className="canary-notice panel" role="note"><div className="canary-notice-icon"><ShieldCheck size={20} /></div><div><span>PUBLIC BETA · READ ONLY</span><strong>현재 화면은 릴리스 구조를 확인하는 공개 데모입니다.</strong><p>실차 OTA 실행이나 차량 제어는 하지 않습니다. 아래 값은 서비스 API가 반환한 릴리스 상태이며, 운영 전환에는 현대차 승인·운영 계정·차량 이벤트 연동이 필요합니다.</p></div></section>
+    <section className="canary-overview" aria-label="릴리스 요약"><article className="panel"><span>확인한 릴리스</span><strong>{loading ? '—' : releases.length}</strong><small>최근 API 응답 기준</small></article><article className="panel"><span>진행 중</span><strong>{loading ? '—' : rolling}</strong><small>자동으로 상태를 확인</small></article><article className="panel"><span>보호 모드</span><strong className={paused ? 'warn' : ''}>{loading ? '—' : paused}</strong><small>검토가 필요한 흐름</small></article><article className="panel"><span>평균 진행률</span><strong>{loading ? '—' : `${averageProgress}%`}</strong><small>{updatedAt ? `마지막 확인 ${formatTime(updatedAt)}` : '확인 중'}</small></article></section>
+    <section className="canary-release-section"><div className="canary-section-heading"><div><span>RELEASE STREAM</span><h2>차량에 전달되는 변경을 한눈에</h2><p>위험도가 올라가면 먼저 멈추고 검토하는 흐름을 보여줍니다.</p></div><span className="canary-data-badge"><i /> API 상태 {error ? '확인 필요' : loading ? '확인 중' : '연결됨'}</span></div>
+      {error ? <div className="canary-empty panel" role="alert"><AlertTriangle size={22} /><strong>릴리스 상태를 확인하지 못했어요.</strong><p>{error}</p><button className="button compact" onClick={refresh} disabled={loading}><RefreshCcw size={14} /> 다시 시도</button></div> : loading ? <div className="canary-empty panel" role="status"><LoaderCircle className="spin" size={22} /><strong>릴리스 상태를 불러오는 중이에요.</strong><p>서비스 API와 연결하고 있습니다.</p></div> : releases.length ? <div className="canary-release-grid">{releases.map((release) => {
+        const meta = canaryStatus[release.status] ?? canaryStatus.DRAFT;
+        const Icon = meta.icon;
+        return <article className={`canary-release-card panel ${meta.tone}`} key={release.id}><div className="canary-release-top"><span>{release.version}</span><strong><Icon size={14} />{meta.label}</strong></div><h3>{release.title}</h3><p>{release.target}</p><div className="canary-progress-label"><span>진행률</span><b>{Number(release.progress || 0)}%</b></div><div className="canary-progress" aria-label={`${release.title} 진행률 ${release.progress}%`}><i style={{ width: `${Math.max(0, Math.min(100, Number(release.progress || 0)))}%` }} /></div><div className="canary-release-meta"><span><ShieldCheck size={13} /> 위험도 {release.risk === 'Review' ? '검토 필요' : '낮음'}</span><time>{release.createdAt ? formatDateTime(release.createdAt) : '시각 미제공'}</time></div></article>;
+      })}</div> : <div className="canary-empty panel" role="status"><Activity size={22} /><strong>확인할 릴리스가 없습니다.</strong><p>운영 API가 릴리스 정보를 반환하면 이곳에 표시됩니다.</p></div>}
+    </section>
+    <section className="canary-requirements panel"><div className="canary-section-heading"><div><span>NEXT CONNECTIONS</span><h2>상용화를 위해 필요한 연결</h2><p>지금은 구조를 확인하고, 아래 연동이 승인되면 실제 운영 흐름으로 확장할 수 있습니다.</p></div></div><div className="canary-requirement-grid">{requirements.map(({ label, title, detail, tone }) => <article className={`canary-requirement ${tone}`} key={label}><span>{label}</span><h3>{title}</h3><p>{detail}</p></article>)}</div></section>
+    <section className="canary-bottom-actions"><button className="button primary" onClick={() => navigate('home')}>오너 서비스로 돌아가기 <ArrowRight size={15} /></button><button className="button outline" onClick={() => navigate('settings')}>현대 계정 연결 흐름 <CarFront size={15} /></button></section>
   </div>;
 }
 

@@ -193,6 +193,89 @@
 }
 @media(prefers-reduced-motion:reduce) { .platform.mobility-shell *, .platform.mobility-shell *::before { animation:none!important; transition:none!important; } }
 
+/* SDV Canary surface: a calm, read-only operational view for the Hyundai proposal. */
+.platform.mobility-shell .canary-page { padding-bottom:64px; }
+.platform.mobility-shell .canary-page .workspace-heading { --journey-heading:url('/journey/connect-v1-1536.webp'); }
+.platform.mobility-shell .canary-page .workspace-heading-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.platform.mobility-shell .canary-notice { margin-top:16px; padding:20px 24px; display:flex; align-items:flex-start; gap:14px; border:1px solid #ffffff38; background:linear-gradient(120deg,#082d4be8,#0a3b55d4); color:#fff; }
+.platform.mobility-shell .canary-notice-icon { width:40px; height:40px; flex:0 0 auto; display:grid; place-items:center; border-radius:13px; background:#a9ecf5; color:#002c5f; }
+.platform.mobility-shell .canary-notice > div:last-child { min-width:0; }
+.platform.mobility-shell .canary-notice span,.platform.mobility-shell .canary-section-heading > div > span { color:#83e3f2; font:700 8px 'DM Mono',monospace; letter-spacing:.15em; }
+.platform.mobility-shell .canary-notice strong { display:block; margin-top:7px; color:#fff; font-size:15px; letter-spacing:-.025em; }
+.platform.mobility-shell .canary-notice p { margin:7px 0 0; color:#c3dce7; font-size:11px; line-height:1.7; }
+.platform.mobility-shell .canary-overview { margin-top:14px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.platform.mobility-shell .canary-overview article { min-height:118px; padding:19px 20px; border:1px solid #ffffff30; background:#f4f9fced; }
+.platform.mobility-shell .canary-overview article > span { display:block; color:#6b8292; font-size:10px; }
+.platform.mobility-shell .canary-overview article > strong { display:block; margin-top:12px; color:#002c5f; font-size:29px; line-height:1; letter-spacing:-.055em; }
+.platform.mobility-shell .canary-overview article > strong.warn { color:#bb6a1d; }
+.platform.mobility-shell .canary-overview article > small { display:block; margin-top:9px; color:#8a9ca8; font-size:9px; }
+.platform.mobility-shell .canary-release-section { margin-top:30px; }
+.platform.mobility-shell .canary-section-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:16px; }
+.platform.mobility-shell .canary-section-heading h2 { margin:9px 0 5px; color:#f4fbff; font-size:clamp(24px,3vw,34px); line-height:1.2; letter-spacing:-.05em; }
+.platform.mobility-shell .canary-section-heading p { margin:0; color:#bad3df; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .canary-data-badge { display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:0 11px; border-radius:99px; background:#092b44e8; color:#c9e4ef; font:600 9px 'DM Mono',monospace; white-space:nowrap; }
+.platform.mobility-shell .canary-data-badge i { width:6px; height:6px; border-radius:50%; background:#38c993; box-shadow:0 0 0 4px #38c9931f; }
+.platform.mobility-shell .canary-release-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; }
+.platform.mobility-shell .canary-release-card { min-height:255px; padding:21px; border:1px solid #ffffff32; background:#f4f9fced; }
+.platform.mobility-shell .canary-release-card.rolling { border-top:3px solid #00a6c6; }
+.platform.mobility-shell .canary-release-card.complete { border-top:3px solid #27a87c; }
+.platform.mobility-shell .canary-release-card.paused { border-top:3px solid #e29a43; }
+.platform.mobility-shell .canary-release-card.draft { border-top:3px solid #879bad; }
+.platform.mobility-shell .canary-release-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.platform.mobility-shell .canary-release-top > span { color:#008db5; font:700 10px 'DM Mono',monospace; letter-spacing:.08em; }
+.platform.mobility-shell .canary-release-top > strong { display:inline-flex; align-items:center; gap:5px; color:#4d6b80; font-size:10px; }
+.platform.mobility-shell .canary-release-card.rolling .canary-release-top > strong { color:#007e9f; }
+.platform.mobility-shell .canary-release-card.complete .canary-release-top > strong { color:#16835f; }
+.platform.mobility-shell .canary-release-card.paused .canary-release-top > strong { color:#b36d1f; }
+.platform.mobility-shell .canary-release-card h3 { margin:22px 0 6px; color:#002c5f; font-size:18px; line-height:1.35; letter-spacing:-.04em; }
+.platform.mobility-shell .canary-release-card > p { min-height:32px; margin:0; color:#718695; font-size:11px; line-height:1.5; }
+.platform.mobility-shell .canary-progress-label { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:24px; color:#78909f; font-size:10px; }
+.platform.mobility-shell .canary-progress-label b { color:#173f60; font-size:12px; }
+.platform.mobility-shell .canary-progress { height:7px; margin-top:8px; overflow:hidden; border-radius:99px; background:#dce8ee; }
+.platform.mobility-shell .canary-progress i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#00a6c6,#62d4df); transition:width .55s ease; }
+.platform.mobility-shell .canary-release-card.complete .canary-progress i { background:#27a87c; }
+.platform.mobility-shell .canary-release-card.paused .canary-progress i { background:#e29a43; }
+.platform.mobility-shell .canary-release-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:18px; padding-top:14px; border-top:1px solid #e0e9ee; color:#728898; font-size:9px; }
+.platform.mobility-shell .canary-release-meta span { display:inline-flex; align-items:center; gap:5px; }
+.platform.mobility-shell .canary-release-card.paused .canary-release-meta span { color:#b36d1f; }
+.platform.mobility-shell .canary-release-meta time { white-space:nowrap; }
+.platform.mobility-shell .canary-empty { min-height:188px; padding:30px; display:grid; place-items:center; align-content:center; gap:9px; border:1px solid #ffffff30; background:#f4f9fced; color:#7090a4; text-align:center; }
+.platform.mobility-shell .canary-empty strong { color:#214e6e; font-size:15px; }
+.platform.mobility-shell .canary-empty p { margin:0; color:#758c9b; font-size:11px; line-height:1.6; }
+.platform.mobility-shell .canary-empty > svg { color:#008db5; }
+.platform.mobility-shell .canary-requirements { margin-top:30px; padding:28px 30px; border:1px solid #ffffff35; background:#06243ce8; }
+.platform.mobility-shell .canary-requirements .canary-section-heading { margin-bottom:20px; }
+.platform.mobility-shell .canary-requirements .canary-section-heading h2 { color:#fff; }
+.platform.mobility-shell .canary-requirement-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; }
+.platform.mobility-shell .canary-requirement { min-height:145px; padding:18px; border:1px solid #ffffff20; border-radius:14px; background:#ffffff09; }
+.platform.mobility-shell .canary-requirement > span { color:#8fdee9; font:700 8px 'DM Mono',monospace; letter-spacing:.12em; }
+.platform.mobility-shell .canary-requirement h3 { margin:17px 0 7px; color:#fff; font-size:15px; letter-spacing:-.03em; }
+.platform.mobility-shell .canary-requirement p { margin:0; color:#b6d0dc; font-size:10px; line-height:1.7; }
+.platform.mobility-shell .canary-requirement.mint { background:linear-gradient(145deg,#0a534b30,#ffffff06); }
+.platform.mobility-shell .canary-requirement.violet { background:linear-gradient(145deg,#3b397230,#ffffff06); }
+.platform.mobility-shell .canary-bottom-actions { margin-top:20px; display:flex; justify-content:flex-end; flex-wrap:wrap; gap:9px; }
+.platform.mobility-shell .canary-bottom-actions .button { white-space:nowrap; }
+@media(max-width:760px) {
+  .platform.mobility-shell .canary-page .workspace-heading-actions { width:100%; display:grid; grid-template-columns:1fr 1fr; }
+  .platform.mobility-shell .canary-page .workspace-heading-actions .button { width:100%; padding-inline:10px; }
+  .platform.mobility-shell .canary-notice { padding:17px; }
+  .platform.mobility-shell .canary-notice strong { font-size:13px; }
+  .platform.mobility-shell .canary-notice p { font-size:10px; }
+  .platform.mobility-shell .canary-overview { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .platform.mobility-shell .canary-overview article { min-height:104px; padding:15px; }
+  .platform.mobility-shell .canary-overview article > strong { margin-top:9px; font-size:24px; }
+  .platform.mobility-shell .canary-overview article > small { margin-top:7px; font-size:8px; }
+  .platform.mobility-shell .canary-section-heading { display:block; }
+  .platform.mobility-shell .canary-data-badge { margin-top:12px; }
+  .platform.mobility-shell .canary-release-grid,.platform.mobility-shell .canary-requirement-grid { grid-template-columns:1fr; gap:10px; }
+  .platform.mobility-shell .canary-release-card { min-height:0; padding:18px; }
+  .platform.mobility-shell .canary-release-card h3 { margin-top:18px; }
+  .platform.mobility-shell .canary-requirements { padding:22px 17px; }
+  .platform.mobility-shell .canary-requirement { min-height:0; }
+  .platform.mobility-shell .canary-bottom-actions { display:grid; grid-template-columns:1fr; }
+  .platform.mobility-shell .canary-bottom-actions .button { width:100%; }
+}
+
 /* Typography pass: a calmer Korean rhythm keeps the cinematic layout easy to scan. */
 .platform.mobility-shell {
   font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
