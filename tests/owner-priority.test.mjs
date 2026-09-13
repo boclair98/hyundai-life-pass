@@ -73,6 +73,18 @@ test('care can prepare an honest service handoff brief without inventing diagnos
   assert.match(appSource, /<ServiceHandoffBrief vehicle=\{vehicle\} notify=\{notify\} \/>/);
 });
 
+test('care keeps a device-local vehicle signal timeline and compares only received values', () => {
+  assert.match(appSource, /VEHICLE_SIGNAL_HISTORY_KEY = 'hyundai-life-pass:vehicle-signals:v1'/);
+  assert.match(appSource, /function readVehicleSignalHistory\(vehicleId\)/);
+  assert.match(appSource, /function buildVehicleSignalSnapshot\(vehicle\)/);
+  assert.match(appSource, /function VehicleSignalTimeline\(\{ vehicle, actions, busy \}\)/);
+  assert.match(appSource, /window\.localStorage\.setItem\(VEHICLE_SIGNAL_HISTORY_KEY/);
+  assert.match(appSource, /signalDelta\(latest\?\.batterySoc, previous\?\.batterySoc, '%'\)/);
+  assert.match(appSource, /최대 30회 · 오래된 기록부터 자동 정리/);
+  assert.match(appSource, /공식 정비 이력·진단·주행 허가가 아니며, 미제공 값은 추정하지 않습니다/);
+  assert.match(appSource, /<VehicleSignalTimeline vehicle=\{vehicle\} actions=\{actions\} busy=\{busy\} \/>/);
+});
+
 test('mobile browser back and forward keep the hash route in sync', () => {
   assert.match(appSource, /window\.addEventListener\('popstate', syncFromLocation\)/);
   assert.match(appSource, /window\.removeEventListener\('popstate', syncFromLocation\)/);

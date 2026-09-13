@@ -1182,6 +1182,126 @@ function ServiceHandoffBrief({ vehicle, notify }) {
   </section>;
 }
 
+const VEHICLE_SIGNAL_HISTORY_KEY = 'hyundai-life-pass:vehicle-signals:v1';
+
+function readVehicleSignalHistory(vehicleId) {
+  if (typeof window === 'undefined' || !vehicleId) return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(VEHICLE_SIGNAL_HISTORY_KEY) ?? '{}');
+    const history = parsed?.[String(vehicleId)];
+    return Array.isArray(history) ? history.filter((item) => item && typeof item === 'object').slice(0, 30) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeVehicleSignalHistory(vehicleId, history) {
+  if (typeof window === 'undefined' || !vehicleId) return;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(VEHICLE_SIGNAL_HISTORY_KEY) ?? '{}');
+    window.localStorage.setItem(VEHICLE_SIGNAL_HISTORY_KEY, JSON.stringify({ ...parsed, [String(vehicleId)]: history.slice(0, 30) }));
+  } catch {
+    // Private browsing or a full storage quota must not interrupt vehicle care.
+  }
+}
+
+function buildVehicleSignalSnapshot(vehicle) {
+  const checkedWarnings = Number(vehicle.checkedWarnings);
+  const warningCount = Number(vehicle.warningCount);
+  const safeWarningCount = Number.isFinite(warningCount) && (Number.isFinite(checkedWarnings) && checkedWarnings > 0) ? warningCount : null;
+  const values = {
+    batterySoc: vehicle.batterySoc == null || vehicle.batterySoc === '' ? null : Number(vehicle.batterySoc),
+    range: vehicle.range == null || vehicle.range === '' ? null : Number(vehicle.range),
+    odometer: vehicle.odometer == null || vehicle.odometer === '' ? null : Number(vehicle.odometer),
+    warningCount: safeWarningCount,
+    chargingState: vehicle.chargingState || null,
+    tirePressureWarning: vehicle.tirePressureWarning == null ? null : Boolean(vehicle.tirePressureWarning),
+    nextServiceKm: vehicle.nextServiceKm == null || vehicle.nextServiceKm === '' ? null : Number(vehicle.nextServiceKm),
+  };
+  Object.keys(values).forEach((key) => {
+    if (typeof values[key] === 'number' && !Number.isFinite(values[key])) values[key] = null;
+  });
+  const sourceUpdatedAt = vehicle.updatedAt || null;
+  const signature = [sourceUpdatedAt, values.batterySoc, values.range, values.odometer, values.warningCount, values.chargingState, values.tirePressureWarning, values.nextServiceKm].join('|');
+  return { ...values, sourceUpdatedAt, capturedAt: new Date().toISOString(), signature };
+}
+
+function signalMetric(value, unit) {
+  if (value == null || value === '') return '미제공';
+  if (typeof value === 'number') return `${value.toLocaleString()}${unit}`;
+  return `${value}${unit}`;
+}
+
+function signalDelta(current, previous, unit) {
+  if (current == null || previous == null) return null;
+  const delta = Number(current) - Number(previous);
+  if (!Number.isFinite(delta) || delta === 0) return null;
+  return `${delta > 0 ? '+' : ''}${delta.toLocaleString()}${unit}`;
+}
+
+function signalCapturedLabel(snapshot) {
+  const value = snapshot?.sourceUpdatedAt || snapshot?.capturedAt;
+  if (!value) return '수신 시각 미제공';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '수신 시각 미제공';
+  return new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
+function signalSnapshotSummary(snapshot) {
+  const parts = [
+    snapshot.batterySoc == null ? null : `배터리 ${signalMetric(snapshot.batterySoc, '%')}`,
+    snapshot.range == null ? null : `주행 ${signalMetric(snapshot.range, 'km')}`,
+    snapshot.odometer == null ? null : `누적 ${signalMetric(snapshot.odometer, 'km')}`,
+    snapshot.warningCount == null ? null : `경고 ${signalMetric(snapshot.warningCount, '건')}`,
+    snapshot.chargingState ? `충전 ${snapshot.chargingState}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : '수신된 상태 값이 없습니다.';
+}
+
+function VehicleSignalTimeline({ vehicle, actions, busy }) {
+  const vehicleId = vehicle?.databaseId ?? vehicle?.id;
+  const [history, setHistory] = useState(() => readVehicleSignalHistory(vehicleId));
+  const capturedRef = useRef('');
+  useEffect(() => {
+    setHistory(readVehicleSignalHistory(vehicleId));
+    capturedRef.current = '';
+  }, [vehicleId]);
+  useEffect(() => {
+    if (!vehicleId) return;
+    const snapshot = buildVehicleSignalSnapshot(vehicle);
+    if (capturedRef.current === snapshot.signature) return;
+    capturedRef.current = snapshot.signature;
+    setHistory((current) => current[0]?.signature === snapshot.signature ? current : [snapshot, ...current].slice(0, 30));
+  }, [vehicle, vehicleId, vehicle?.updatedAt, vehicle?.dataTimestamp, vehicle?.batterySoc, vehicle?.range, vehicle?.odometer, vehicle?.warningCount, vehicle?.checkedWarnings, vehicle?.chargingState, vehicle?.tirePressureWarning, vehicle?.nextServiceKm]);
+  useEffect(() => {
+    if (vehicleId) writeVehicleSignalHistory(vehicleId, history);
+  }, [vehicleId, history]);
+  if (!vehicle) return null;
+
+  const latest = history[0];
+  const previous = history[1];
+  const comparisons = [
+    { label: '배터리', icon: BatteryCharging, value: signalMetric(latest?.batterySoc, '%'), delta: signalDelta(latest?.batterySoc, previous?.batterySoc, '%'), note: '수신된 잔량' },
+    { label: '주행 가능', icon: Navigation, value: signalMetric(latest?.range, 'km'), delta: signalDelta(latest?.range, previous?.range, 'km'), note: '수신된 거리' },
+    { label: '누적 주행', icon: Gauge, value: signalMetric(latest?.odometer, 'km'), delta: signalDelta(latest?.odometer, previous?.odometer, 'km'), note: '계기판 수신값' },
+    { label: '차량 경고', icon: ShieldCheck, value: signalMetric(latest?.warningCount, '건'), delta: signalDelta(latest?.warningCount, previous?.warningCount, '건'), note: '확인된 경고 수' },
+  ];
+  const stateChanged = latest?.chargingState && previous?.chargingState && latest.chargingState !== previous.chargingState;
+  return <section className="signal-timeline panel reveal" data-reveal aria-labelledby="signal-timeline-title">
+    <div className="signal-timeline-heading">
+      <div><span>TRUST TIMELINE</span><h2 id="signal-timeline-title">내 차의 변화를 한 화면에</h2><p>현대차에서 실제로 수신한 순간을 쌓아, 지난 확인과 달라진 점만 보여드려요.</p></div>
+      {actions?.syncHyundai && <button className="button outline" type="button" onClick={actions.syncHyundai} disabled={busy}><RefreshCcw className={busy ? 'spin' : ''} size={15} /> {busy ? '확인 중' : '지금 새로고침'}</button>}
+    </div>
+    <div className="signal-timeline-meta"><span><i /> {latest ? `마지막 수신 ${signalCapturedLabel(latest)}` : '첫 수신을 기다리는 중'}</span><small>{history.length ? `${history.length}회 기록 · 이 기기에만 저장` : '차량 상태를 확인하면 이 기기에 기록'}</small></div>
+    <div className="signal-change-grid">
+      {comparisons.map(({ label, icon: Icon, value, delta, note }) => <article key={label} className="signal-change-card"><div><Icon size={17} /><span>{label}</span></div><strong>{latest ? value : '수신 대기'}</strong><small>{delta ? `이전 확인 대비 ${delta}` : previous ? '이전 확인과 같은 값' : note}</small></article>)}
+    </div>
+    <div className="signal-state-note">{stateChanged ? <><Zap size={15} /><span>충전 상태 변화 <strong>{previous.chargingState}</strong> <ArrowRight size={13} /> <strong>{latest.chargingState}</strong></span></> : <><Activity size={15} /><span>충전 상태는 {latest?.chargingState || '아직 확인되지 않았고'}, 다음 수신 때 변화를 비교합니다.</span></>}</div>
+    <div className="signal-history"><div className="signal-history-heading"><strong>최근 수신 기록</strong><small>최대 30회 · 오래된 기록부터 자동 정리</small></div>{history.length ? <ol>{history.slice(0, 4).map((snapshot, index) => <li key={`${snapshot.signature}-${snapshot.capturedAt}`}><span className={`signal-history-dot ${index === 0 ? 'current' : ''}`}><i /></span><div><strong>{index === 0 ? '가장 최근 수신' : `${index}회 전 확인`}</strong><time>{signalCapturedLabel(snapshot)}</time><p>{signalSnapshotSummary(snapshot)}</p></div></li>)}</ol> : <div className="signal-history-empty"><Activity size={18} /><span>차량 상태를 한 번 확인하면 이곳에 변화 기록이 시작됩니다.</span></div>}</div>
+    <small className="signal-timeline-note">이 기록은 오너가 변화 흐름을 이해하도록 이 기기에만 보관합니다. 공식 정비 이력·진단·주행 허가가 아니며, 미제공 값은 추정하지 않습니다.</small>
+  </section>;
+}
+
 function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget }) {
   const [careTab, setCareTab] = useState(sectionTarget || (vehicle ? 'status' : 'centers'));
   useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
@@ -1259,6 +1379,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
         <div className="live-summary-metrics"><Metric icon={BatteryCharging} label="구동 배터리" value={formatMetric(vehicle.batterySoc, '%')} detail={vehicle.batterySoc == null ? '아직 확인되지 않음' : vehicle.chargingState} /><Metric icon={Navigation} label="주행 가능" value={formatMetric(vehicle.range, 'km')} detail={vehicle.range == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Gauge} label="누적 주행" value={formatMetric(vehicle.odometer, 'km')} detail={vehicle.odometer == null ? '아직 확인되지 않음' : '최근 확인한 값'} /><Metric icon={Zap} label="목표 충전" value={formatMetric(vehicle.chargingTargetSoc, '%')} detail={vehicle.chargingPlugType ?? '충전기 정보 미제공'} /><Metric icon={Clock3} label="남은 충전" value={formatMetric(vehicle.chargingRemainingMinutes, '분')} detail="목표 충전까지" /></div>
         <small>확인된 정보만 보여드리고, 알 수 없는 값은 억지로 채우지 않아요. · 차량 전송 {formatHyundaiTimestamp(vehicle.dataTimestamp)}</small>
       </section>
+      <VehicleSignalTimeline vehicle={vehicle} actions={actions} busy={busy} />
       <section className="care-next-action panel reveal" data-reveal aria-label="다음 추천 행동">
         <div className="care-next-icon"><Route size={20} /></div>
         <div><span>NEXT BEST ACTION</span><strong>{nextAction.title}</strong><p>{nextAction.detail}</p></div>
