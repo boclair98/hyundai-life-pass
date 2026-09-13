@@ -721,7 +721,12 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
 
   useEffect(() => {
     let active = true;
-    if (!navigator.permissions?.query) return undefined;
+    // Safari on iOS does not expose Permissions API. Still request the browser's
+    // real location instead of silently falling back to the Seoul default.
+    if (!navigator.permissions?.query) {
+      findFromCurrentLocation();
+      return () => { active = false; };
+    }
     navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
       if (active && permission.state === 'granted') findFromCurrentLocation();
     }).catch(() => undefined);
@@ -1148,7 +1153,9 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
   useEffect(() => {
     let active = true;
     if (!navigator.permissions?.query) {
-      findCenters();
+      // Safari on iOS does not expose Permissions API. Ask for the real location
+      // rather than showing a misleading default neighbourhood as if it were current.
+      findFromCurrentLocation();
       return () => { active = false; };
     }
     navigator.permissions.query({ name: 'geolocation' }).then((permission) => {

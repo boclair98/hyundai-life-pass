@@ -35,8 +35,13 @@ test('home shortcuts focus on charging, vehicle care, service and records', () =
 test('service-centre location follows the same consent-first behavior as charging', () => {
   assert.match(appSource, /navigator\.permissions\.query\(\{ name: 'geolocation' \}\)/g);
   assert.match(appSource, /if \(active && permission\.state === 'granted'\) findFromCurrentLocation\(\)/);
+  assert.match(appSource, /if \(!navigator\.permissions\?\.query\) \{\s*\/\/ Safari on iOS does not expose Permissions API\. Ask for the real location[\s\S]*?findFromCurrentLocation\(\);/);
   assert.match(appSource, /내 위치로 다시 찾기/);
   assert.match(appSource, /finishReject\(\{ code: 3 \}\), 25000\)/);
+});
+
+test('charging location does not silently use the Seoul default on Safari', () => {
+  assert.match(appSource, /\/\/ Safari on iOS does not expose Permissions API\. Still request the browser's[\s\S]*?if \(!navigator\.permissions\?\.query\) \{[\s\S]*?findFromCurrentLocation\(\);/);
 });
 
 test('mobile browser back and forward keep the hash route in sync', () => {
