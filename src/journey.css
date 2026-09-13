@@ -321,6 +321,24 @@
   .platform.mobility-shell .signal-change-card > strong { font-size:17px; }
   .platform.mobility-shell .signal-history-heading { display:grid; gap:3px; }
 }
+
+/* Official roadside support — an honest bridge to Hyundai's staffed channel. */
+.platform.mobility-shell .official-assistance { margin-top:15px; padding:18px 20px; display:grid; grid-template-columns:43px minmax(0,1fr) auto; align-items:center; gap:13px; border:1px solid #ffffff2d; background:linear-gradient(120deg,#071f39eb,#112e4ad9); color:#fff; }
+.platform.mobility-shell .official-assistance-icon { width:43px; height:43px; display:grid; place-items:center; border-radius:13px; color:#073250; background:#a9ecf5; }
+.platform.mobility-shell .official-assistance-copy { min-width:0; }
+.platform.mobility-shell .official-assistance-copy > span { color:#8fe2ef; font:700 8px 'DM Mono',monospace; letter-spacing:.14em; }
+.platform.mobility-shell .official-assistance-copy h2 { margin:5px 0 4px; color:#fff; font-size:15px; line-height:1.35; letter-spacing:-.035em; }
+.platform.mobility-shell .official-assistance-copy p { margin:0; color:#b8d3df; font-size:10px; line-height:1.6; }
+.platform.mobility-shell .official-assistance > .button { min-height:44px; white-space:nowrap; }
+.platform.mobility-shell .official-assistance > small { grid-column:2/-1; margin-top:1px; color:#88aab8; font-size:8px; line-height:1.55; }
+@media(max-width:760px) {
+  .platform.mobility-shell .official-assistance { padding:16px; grid-template-columns:36px minmax(0,1fr); gap:10px; border-radius:16px; }
+  .platform.mobility-shell .official-assistance-icon { width:36px; height:36px; border-radius:11px; }
+  .platform.mobility-shell .official-assistance-copy h2 { font-size:14px; }
+  .platform.mobility-shell .official-assistance-copy p { font-size:9px; }
+  .platform.mobility-shell .official-assistance > .button { grid-column:1/-1; width:100%; justify-content:center; }
+  .platform.mobility-shell .official-assistance > small { grid-column:1/-1; }
+}
 @media(prefers-reduced-motion:reduce) { .platform.mobility-shell *, .platform.mobility-shell *::before { animation:none!important; transition:none!important; } }
 
 /* SDV Canary surface: a calm, read-only operational view for the Hyundai proposal. */

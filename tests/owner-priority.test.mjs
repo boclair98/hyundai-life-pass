@@ -85,6 +85,14 @@ test('care keeps a device-local vehicle signal timeline and compares only receiv
   assert.match(appSource, /<VehicleSignalTimeline vehicle=\{vehicle\} actions=\{actions\} busy=\{busy\} \/>/);
 });
 
+test('care provides a clear bridge to official roadside support without pretending to submit a request', () => {
+  assert.match(appSource, /function OfficialAssistanceCard\(\)/);
+  assert.match(appSource, /OFFICIAL SUPPORT/);
+  assert.match(appSource, /href="tel:080-600-6000"/);
+  assert.match(appSource, /앱에서 출동 접수·처리가 완료됐다고 표시하지 않습니다/);
+  assert.match(appSource, /<OfficialAssistanceCard \/>/);
+});
+
 test('mobile browser back and forward keep the hash route in sync', () => {
   assert.match(appSource, /window\.addEventListener\('popstate', syncFromLocation\)/);
   assert.match(appSource, /window\.removeEventListener\('popstate', syncFromLocation\)/);

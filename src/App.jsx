@@ -26,6 +26,7 @@ import {
   Minus,
   Navigation,
   Plus,
+  PhoneCall,
   RefreshCcw,
   Route,
   Search,
@@ -1302,6 +1303,15 @@ function VehicleSignalTimeline({ vehicle, actions, busy }) {
   </section>;
 }
 
+function OfficialAssistanceCard() {
+  return <section className="official-assistance panel" aria-labelledby="official-assistance-title">
+    <div className="official-assistance-icon"><PhoneCall size={20} /></div>
+    <div className="official-assistance-copy"><span>OFFICIAL SUPPORT</span><h2 id="official-assistance-title">차량이 멈췄다면, 바로 도움받기</h2><p>현대자동차 긴급출동은 공식 고객센터에서 접수합니다. 상담원이 위치와 차량 상태를 확인한 뒤 가능한 지원을 안내해요.</p></div>
+    <a className="button primary" href="tel:080-600-6000"><PhoneCall size={15} /> 080-600-6000 연결</a>
+    <small>이 버튼은 전화 앱을 열 뿐이며, 앱에서 출동 접수·처리가 완료됐다고 표시하지 않습니다.</small>
+  </section>;
+}
+
 function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget }) {
   const [careTab, setCareTab] = useState(sectionTarget || (vehicle ? 'status' : 'centers'));
   useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
@@ -1386,6 +1396,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
         <button className="button outline" onClick={() => setCareTab('centers')}>{nextAction.button} <ArrowRight size={15} /></button>
       </section>
       <ServiceHandoffBrief vehicle={vehicle} notify={notify} />
+      <OfficialAssistanceCard />
       <TirePressureCard vehicle={vehicle} onDetails={() => document.getElementById('vehicle-health')?.scrollIntoView({ behavior: 'smooth' })} />
       <section className="section-sub vehicle-health-section reveal" data-reveal id="vehicle-health">
         <div className="health-section-heading">
