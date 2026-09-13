@@ -1418,14 +1418,14 @@ function GuidePage({ navigate }) {
 
 function ProposalPage({ navigate }) {
   const pillars = [
-    { number: '01', icon: Activity, title: '차량 신호를 오늘의 행동으로', description: '배터리·주행거리·안전 신호를 한 번에 읽고, 충전·점검·출발 확인으로 바로 이어집니다.' },
+    { number: '01', icon: Activity, title: '차량 신호를 출발 준비도로', description: '안전·에너지·케어 신호를 확인된 값만으로 묶어, 가장 먼저 필요한 행동을 제안합니다.' },
     { number: '02', icon: MapPin, title: '차량 밖의 생활까지 연결', description: '내 위치 주변 충전소와 서비스 거점을 같은 흐름 안에서 발견하고 길 안내까지 이어갑니다.' },
     { number: '03', icon: FileCheck2, title: '차량의 시간을 오래 보존', description: '직접 남긴 정비·충전·지출 기록과 차량에서 받은 정보를 구분해 내 차의 맥락을 쌓습니다.' },
   ];
   const flow = [
     { icon: CarFront, title: '연결', detail: '사용자가 허락한 현대 계정과 차량만 불러옵니다.' },
-    { icon: ShieldCheck, title: '해석', detail: '받은 값과 마지막 확인 시점을 분명하게 보여줍니다.' },
-    { icon: Route, title: '행동', detail: '충전·케어·주행·기록 중 다음 한 가지를 제안합니다.' },
+    { icon: ShieldCheck, title: '준비도', detail: '안전·에너지·케어를 받은 값과 마지막 확인 시점으로 설명합니다.' },
+    { icon: Route, title: '행동', detail: '충전·케어·주행·기록 중 지금 필요한 한 가지로 이어집니다.' },
   ];
   return <div className="page container proposal-page">
     <PageIntro eyebrow="HYUNDAI MOBILITY PROPOSAL" title="차량을 연결하는 순간, 생활이 먼저 움직입니다." description="HYUNDAI LIFE PASS는 차량 상태를 보여주는 화면에서 멈추지 않고, 오늘 필요한 다음 행동까지 이어주는 오너 경험을 제안합니다." actions={<button className="button light" onClick={() => navigate('home')}>서비스 직접 체험 <ArrowRight size={15} /></button>} />
