@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, ChevronRight, CircleGauge, Download, FileText, Fuel, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
+import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
 import { loadJournal, createJournalEntry, changeJournalStatus } from './api';
 import './cinematic.css';
 import { FeatureImage, SceneControls } from './MobilityBackdrop';
@@ -144,6 +144,50 @@ function TodayBrief({ vehicle, navigate, setModal }) {
   </section>;
 }
 
+function OwnerValueHub({ vehicle, navigate, spent, journal }) {
+  const recordedCost = journal.loading ? '불러오는 중…' : journal.error ? '확인 필요' : vehicle ? money(spent) : '연결 후 확인';
+  const recordDetail = journal.loading
+    ? '내 차량 기록을 확인하고 있어요.'
+    : journal.error
+      ? '기록을 다시 불러오면 실제 지출 흐름을 볼 수 있어요.'
+      : vehicle
+        ? '이번 달 직접 남긴 완료 지출 기준입니다.'
+        : '현대차를 연결하면 직접 남긴 비용을 모아볼 수 있어요.';
+  return <section className="owner-value-hub" aria-labelledby="owner-value-title" data-reveal>
+    <div className="owner-value-heading">
+      <div><span>OWNER VALUE LOOP</span><h2 id="owner-value-title">내 차 혜택을 한곳에서</h2><p>기록은 지금 바로, 공식 혜택과 제휴 케어는 승인된 범위에서 이어집니다.</p></div>
+      <span className="owner-value-badge">선택형 혜택</span>
+    </div>
+    <div className="owner-value-grid">
+      <article className="owner-value-card recorded">
+        <div className="owner-value-icon"><Wallet size={18} /></div>
+        <span className="owner-value-kicker">MY RECORD</span>
+        <h3>{recordedCost}</h3>
+        <p>{recordDetail}</p>
+        <button type="button" onClick={() => navigate('passport')}>관리 기록 열기 <ArrowUpRight size={15} /></button>
+      </article>
+      <article className="owner-value-card official">
+        <div className="owner-value-icon"><Gift size={18} /></div>
+        <span className="owner-value-kicker">HYUNDAI OFFICIAL</span>
+        <h3>공식 오너 혜택</h3>
+        <p>블루멤버스 포인트와 현대 공식 서비스는 원문 페이지에서 확인하세요.</p>
+        <div className="owner-value-links">
+          <a href="https://www.hyundai.com/kr/ko/service-membership/bluemembers/bluemembers-point" target="_blank" rel="noreferrer">포인트 확인 <ExternalLink size={13} /></a>
+          <a href="https://www.hyundai.com/kr/ko/service-membership/service-network/service-reservation-search/service-network-reservation" target="_blank" rel="noreferrer">정비 예약 <ExternalLink size={13} /></a>
+        </div>
+      </article>
+      <article className="owner-value-card partner">
+        <div className="owner-value-icon"><Wrench size={18} /></div>
+        <span className="owner-value-kicker">PARTNER CARE</span>
+        <h3>정비·세차·충전을 한 흐름으로</h3>
+        <p>공식 파트너가 연결되면 비교·예약·결제까지 확장합니다. 현재는 준비 상태만 안내해요.</p>
+        <span className="owner-value-status">제휴 준비 중</span>
+      </article>
+    </div>
+    <p className="owner-value-note"><ShieldCheck size={15} />안전 알림과 기본 차량 상태는 유료로 막지 않습니다. 구독·제휴 혜택은 선택형으로 운영합니다.</p>
+  </section>;
+}
+
 export function useVehicleJournal(vehicleId) {
   const [state, setState] = useState({ vehicleId: null, entries: [], loading: false, error: '' });
   const requestId = useRef(0);
@@ -202,6 +246,7 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <section className="owner-agenda"><div className="workspace-section-title"><div><span>MY SCHEDULE</span><h2>잊지 말아야 할 일</h2></div><button onClick={() => navigate('passport')}>일정 관리 <ChevronRight size={15} /></button></div><div className="agenda-list">{journal.loading ? <p>일정을 불러오고 있어요.</p> : journal.error ? <button onClick={journal.refresh}>일정을 불러오지 못했어요 · 다시 시도</button> : tasks.length ? tasks.map((item) => <button key={item.id} onClick={() => navigate('passport')}><span className="agenda-date">{dateLabel(item.entryDate)}</span><strong>{item.title}</strong><ChevronRight size={15} /></button>) : <div className="agenda-empty"><CalendarDays size={29} /><strong>다음 정비일을 기억해 둘까요?</strong><p>검사, 보험 갱신, 소모품 교체 일정을 남겨보세요.</p><button onClick={() => vehicle ? navigate('passport') : setModal('connect')}>일정 추가하기 <Plus size={15} /></button></div>}</div></section>
       <section className="owner-cost"><div className="workspace-section-title"><div><span>CAR LIFE COST</span><h2>이번 달 차량 지출</h2></div><Wallet size={22} /></div><strong>{journal.loading ? '불러오는 중…' : journal.error ? '기록 확인이 필요해요' : vehicle ? money(spent) : '기록부터 시작해요'}</strong><p>직접 남긴 충전·정비·주유 비용을 모아보세요.</p><button onClick={() => navigate('passport')}>지출 기록하기 <ArrowUpRight size={18} /></button></section>
     </div>
+    <OwnerValueHub vehicle={vehicle} navigate={navigate} spent={spent} journal={journal} />
     <div className="owner-bottom-links"><button onClick={() => navigate('drive', 'checklist')}><ShieldCheck size={22} /><span><strong>출발 전, 한 번 더 확인</strong><small>타이어부터 차량 주변까지 오늘의 체크리스트</small></span><ArrowRight size={17} /></button><button onClick={() => navigate('drive')}><Navigation size={22} /><span><strong>주행 도구 열기</strong><small>거리 계산·주차 위치처럼 필요할 때만 쓰는 기능</small></span><ArrowRight size={17} /></button></div>
   </div>;
 }

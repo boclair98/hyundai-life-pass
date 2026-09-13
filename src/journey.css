@@ -494,3 +494,55 @@
   .platform.mobility-shell .drive-planner-grid,
   .platform.mobility-shell .journal-summary { gap:12px; }
 }
+
+/* Owner value hub: a calm, transparent bridge from useful ownership tools to future revenue. */
+.platform.mobility-shell .owner-value-hub {
+  grid-column:1 / -1;
+  min-width:0;
+  margin-top:0;
+  padding:24px;
+  border:1px solid #ffffff32;
+  border-radius:22px;
+  background:linear-gradient(135deg,#072942f2,#0a3d54e4 55%,#0c4d5edc);
+  box-shadow:0 18px 42px #0014263d;
+  color:#fff;
+}
+.platform.mobility-shell .owner-value-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.platform.mobility-shell .owner-value-heading > div { min-width:0; }
+.platform.mobility-shell .owner-value-heading > div > span { color:#8fe3ee; font:700 8px 'DM Mono',monospace; letter-spacing:.15em; }
+.platform.mobility-shell .owner-value-heading h2 { margin:7px 0 5px; color:#fff; font-size:22px; line-height:1.25; letter-spacing:-.045em; }
+.platform.mobility-shell .owner-value-heading p { max-width:580px; margin:0; color:#c2dce8; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .owner-value-badge { flex:0 0 auto; display:inline-flex; align-items:center; min-height:30px; padding:0 11px; border:1px solid #b2edf044; border-radius:999px; background:#b2edf014; color:#b8f0f7; font-size:9px; font-weight:700; white-space:nowrap; }
+.platform.mobility-shell .owner-value-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-top:20px; }
+.platform.mobility-shell .owner-value-card { min-width:0; min-height:212px; padding:18px; display:flex; flex-direction:column; align-items:flex-start; border:1px solid #ffffff24; border-radius:16px; background:#ffffff0b; }
+.platform.mobility-shell .owner-value-card.recorded { background:linear-gradient(145deg,#0b567055,#ffffff09); }
+.platform.mobility-shell .owner-value-card.official { background:linear-gradient(145deg,#17456b66,#ffffff09); }
+.platform.mobility-shell .owner-value-card.partner { background:linear-gradient(145deg,#24545b55,#ffffff09); }
+.platform.mobility-shell .owner-value-icon { width:35px; height:35px; display:grid; place-items:center; border-radius:11px; color:#07314e; background:#b9eff3; }
+.platform.mobility-shell .owner-value-card.official .owner-value-icon { color:#243b69; background:#d8e6ff; }
+.platform.mobility-shell .owner-value-card.partner .owner-value-icon { color:#075d58; background:#b8f0da; }
+.platform.mobility-shell .owner-value-kicker { margin-top:14px; color:#9ddce8; font:700 8px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .owner-value-card h3 { max-width:100%; margin:8px 0 6px; color:#fff; font-size:17px; line-height:1.35; letter-spacing:-.04em; }
+.platform.mobility-shell .owner-value-card p { margin:0; color:#c5dde7; font-size:10px; line-height:1.65; }
+.platform.mobility-shell .owner-value-card > button { min-height:43px; margin-top:auto; padding:0; display:inline-flex; align-items:center; gap:6px; border:0; background:none; color:#d0f5fb; font-size:10px; font-weight:750; cursor:pointer; }
+.platform.mobility-shell .owner-value-card > button:hover { color:#fff; }
+.platform.mobility-shell .owner-value-links { width:100%; display:grid; gap:7px; margin-top:auto; padding-top:14px; }
+.platform.mobility-shell .owner-value-links a { min-height:38px; padding:0 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; border:1px solid #ffffff2b; border-radius:9px; background:#ffffff0d; color:#e3f8fc; font-size:10px; text-decoration:none; }
+.platform.mobility-shell .owner-value-links a:hover { background:#ffffff1b; }
+.platform.mobility-shell .owner-value-status { min-height:34px; margin-top:auto; padding:0 10px; display:inline-flex; align-items:center; border:1px solid #b8f0da3d; border-radius:9px; background:#b8f0da13; color:#b9f1d8; font-size:10px; font-weight:700; }
+.platform.mobility-shell .owner-value-note { margin:18px 0 0; padding-top:14px; display:flex; align-items:center; gap:7px; border-top:1px solid #ffffff1b; color:#b4d0dc; font-size:9px; line-height:1.55; }
+.platform.mobility-shell .owner-value-note svg { flex:0 0 auto; color:#9ae6ed; }
+@media(max-width:760px) {
+  .platform.mobility-shell .owner-value-hub { padding:19px 16px; border-radius:19px; }
+  .platform.mobility-shell .owner-value-heading { display:block; }
+  .platform.mobility-shell .owner-value-heading h2 { font-size:20px; }
+  .platform.mobility-shell .owner-value-heading p { font-size:10px; }
+  .platform.mobility-shell .owner-value-badge { margin-top:12px; }
+  .platform.mobility-shell .owner-value-grid { grid-template-columns:1fr; gap:9px; margin-top:16px; }
+  .platform.mobility-shell .owner-value-card { min-height:0; padding:16px; }
+  .platform.mobility-shell .owner-value-card h3 { font-size:16px; }
+  .platform.mobility-shell .owner-value-card p { font-size:10px; }
+  .platform.mobility-shell .owner-value-card > button { width:100%; justify-content:space-between; padding-top:13px; }
+  .platform.mobility-shell .owner-value-links { padding-top:13px; }
+  .platform.mobility-shell .owner-value-note { align-items:flex-start; font-size:9px; }
+}

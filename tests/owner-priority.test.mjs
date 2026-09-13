@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const appSource = await readFile(new URL('src/App.jsx', root), 'utf8');
 const ownerSource = await readFile(new URL('src/OwnerExperience.jsx', root), 'utf8');
+const monetizationPlanSource = await readFile(new URL('docs/MONETIZATION_PLAN.md', root), 'utf8');
 
 function idsFromDeclaration(source, name) {
   const match = source.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\n\\];`));
@@ -91,6 +92,25 @@ test('care provides a clear bridge to official roadside support without pretendi
   assert.match(appSource, /href="tel:080-600-6000"/);
   assert.match(appSource, /앱에서 출동 접수·처리가 완료됐다고 표시하지 않습니다/);
   assert.match(appSource, /<OfficialAssistanceCard \/>/);
+});
+
+test('owner value hub keeps monetization useful, official and transparent', () => {
+  assert.match(ownerSource, /function OwnerValueHub\(\{ vehicle, navigate, spent, journal \}\)/);
+  assert.match(ownerSource, /OWNER VALUE LOOP/);
+  assert.match(ownerSource, /직접 남긴 완료 지출 기준입니다/);
+  assert.match(ownerSource, /bluemembers-point/);
+  assert.match(ownerSource, /service-reservation-search\/service-network-reservation/);
+  assert.match(ownerSource, /제휴 준비 중/);
+  assert.match(ownerSource, /안전 알림과 기본 차량 상태는 유료로 막지 않습니다/);
+  assert.match(ownerSource, /<OwnerValueHub vehicle=\{vehicle\} navigate=\{navigate\} spent=\{spent\} journal=\{journal\} \/>/);
+});
+
+test('monetization plan separates product value from future revenue gates', () => {
+  assert.match(monetizationPlanSource, /수익화는 목적이고, 신뢰받는 오너 경험이 먼저다/);
+  assert.match(monetizationPlanSource, /공식 케어 제휴 수수료/);
+  assert.match(monetizationPlanSource, /선택형 LIFE PASS\+/);
+  assert.match(monetizationPlanSource, /가짜 할인, 가짜 포인트, 가짜 예약번호·결제번호/);
+  assert.match(monetizationPlanSource, /현재 추가로 필요한 키는 없다/);
 });
 
 test('mobile browser back and forward keep the hash route in sync', () => {

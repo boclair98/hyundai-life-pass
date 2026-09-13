@@ -19,7 +19,7 @@ export function useGentleReveal(root) {
       observer?.disconnect();
       delete element.dataset.motionReady;
       if (preference.matches) return;
-      const cards = element.querySelectorAll('.home-car-section, .owner-lower-grid > section, .owner-bottom-links');
+      const cards = element.querySelectorAll('.home-car-section, .owner-lower-grid > section, .owner-value-hub, .owner-bottom-links');
       observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
         if (entry.isIntersecting) { entry.target.classList.add('cinema-visible'); observer.unobserve(entry.target); }
       }), { threshold: .08 });
