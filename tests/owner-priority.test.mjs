@@ -54,6 +54,16 @@ test('Kakao directions use a fresh current location as the origin', () => {
   assert.match(appSource, /현재 위치에서 길찾기 시작/);
 });
 
+test('home readiness translates only received signals into a next action', () => {
+  assert.match(ownerSource, /function readinessModel\(vehicle\)/);
+  assert.match(ownerSource, /score: null/);
+  assert.match(ownerSource, /현대차를 연결하면 출발 준비도를 확인할 수 있어요/);
+  assert.match(ownerSource, /warningCount > 0 \? `경고 \$\{warningCount\}건 확인`/);
+  assert.match(ownerSource, /배터리 \$\{battery\}% · 충전 권장/);
+  assert.match(ownerSource, /점검 기준 미제공/);
+  assert.match(ownerSource, /현대차에서 받은 신호 기준/);
+});
+
 test('mobile browser back and forward keep the hash route in sync', () => {
   assert.match(appSource, /window\.addEventListener\('popstate', syncFromLocation\)/);
   assert.match(appSource, /window\.removeEventListener\('popstate', syncFromLocation\)/);

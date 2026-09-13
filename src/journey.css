@@ -30,7 +30,35 @@
 .platform.mobility-shell .today-brief.waiting { background:linear-gradient(120deg,#243951e8,#1f4057cf); }
 .platform.mobility-shell .today-brief.waiting .today-brief-icon { background:#dce8f1; color:#254866; }
 .platform.mobility-shell .today-brief.ready .today-brief-icon { background:#b4f1db; color:#075d58; }
-.platform.mobility-shell .owner-shortcuts { grid-row:3; }
+.platform.mobility-shell .vehicle-readiness { grid-column:1; grid-row:3; min-width:0; padding:18px; border:1px solid #ffffff35; border-radius:18px; background:linear-gradient(135deg,#082b47e8,#0a455bcf); box-shadow:0 16px 36px #00142645; color:#fff; backdrop-filter:blur(16px); }
+.platform.mobility-shell .readiness-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; min-width:0; }
+.platform.mobility-shell .readiness-heading > div:first-child { min-width:0; }
+.platform.mobility-shell .readiness-heading > div:first-child > span { color:#8ee4f1; font:700 8px 'DM Mono',monospace; letter-spacing:.15em; }
+.platform.mobility-shell .readiness-heading h2 { margin:7px 0 4px; color:#fff; font-size:18px; line-height:1.3; letter-spacing:-.04em; }
+.platform.mobility-shell .readiness-heading p { margin:0; color:#c6dfe9; font-size:10px; line-height:1.55; }
+.platform.mobility-shell .readiness-score { position:relative; width:66px; height:66px; flex:0 0 auto; display:grid; place-items:center; align-content:center; border-radius:50%; background:conic-gradient(#8de4ed var(--readiness-score),#ffffff1c 0); isolation:isolate; }
+.platform.mobility-shell .readiness-score::before { content:''; position:absolute; inset:5px; z-index:-1; border-radius:inherit; background:#082943; }
+.platform.mobility-shell .readiness-score strong { color:#fff; font-size:21px; line-height:1; letter-spacing:-.06em; }
+.platform.mobility-shell .readiness-score small { margin-top:3px; color:#9fd8e7; font-size:8px; }
+.platform.mobility-shell .readiness-pillars { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:17px; }
+.platform.mobility-shell .readiness-pillar { min-width:0; min-height:74px; padding:11px 10px; display:grid; grid-template-columns:27px minmax(0,1fr); align-items:center; gap:7px; border:1px solid #ffffff20; border-radius:12px; background:#ffffff0a; }
+.platform.mobility-shell .readiness-pillar-icon { width:27px; height:27px; display:grid; place-items:center; border-radius:9px; color:#b4eff6; background:#ffffff13; }
+.platform.mobility-shell .readiness-pillar > div { min-width:0; display:grid; gap:3px; }
+.platform.mobility-shell .readiness-pillar strong { color:#f5fbff; font-size:11px; }
+.platform.mobility-shell .readiness-pillar small { color:#b4d1dd; font-size:9px; line-height:1.4; overflow-wrap:anywhere; }
+.platform.mobility-shell .readiness-pillar b { grid-column:1/-1; color:#8ee4b7; font-size:8px; font-weight:700; }
+.platform.mobility-shell .readiness-pillar.attention { border-color:#ffc38d55; background:#ffc38d0d; }
+.platform.mobility-shell .readiness-pillar.attention .readiness-pillar-icon { color:#ffd5ae; background:#ffc38d1c; }
+.platform.mobility-shell .readiness-pillar.attention b { color:#ffd0ad; }
+.platform.mobility-shell .readiness-pillar.waiting,.platform.mobility-shell .readiness-pillar.connect { border-color:#ffffff18; }
+.platform.mobility-shell .readiness-pillar.waiting b,.platform.mobility-shell .readiness-pillar.connect b { color:#b8ccda; }
+.platform.mobility-shell .readiness-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:15px; padding-top:13px; border-top:1px solid #ffffff1b; }
+.platform.mobility-shell .readiness-footer > span { min-width:0; color:#a9c8d6; font-size:8px; line-height:1.45; }
+.platform.mobility-shell .readiness-footer > span i { display:inline-block; width:5px; height:5px; margin-right:5px; border-radius:50%; background:#65d5b0; box-shadow:0 0 0 4px #65d5b01c; }
+.platform.mobility-shell .vehicle-readiness.pending .readiness-footer > span i { background:#b5c8d5; box-shadow:0 0 0 4px #b5c8d51c; }
+.platform.mobility-shell .readiness-footer button { min-height:35px; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:0 10px; border:1px solid #ffffff3d; border-radius:9px; background:#ffffff12; color:#f4fcff; font-size:9px; font-weight:700; cursor:pointer; }
+.platform.mobility-shell .readiness-footer button:hover { background:#ffffff24; }
+.platform.mobility-shell .owner-shortcuts { grid-row:4; }
 .platform.mobility-shell .owner-shortcuts button { position:relative; isolation:isolate; min-height:150px; overflow:hidden; border:1px solid #ffffff38; padding:14px; border-radius:18px; background:#071e38; text-align:left; align-items:flex-start; justify-content:flex-end; }
 .platform.mobility-shell .owner-shortcuts button::after { content:''; position:absolute; inset:0; background:linear-gradient(0deg,#021429f5,transparent 85%); z-index:-1; pointer-events:none; }
 .platform.mobility-shell .owner-shortcuts .journey-image { position:absolute; inset:0; z-index:-2; transition:transform .5s ease; }
@@ -130,6 +158,7 @@
   .platform.mobility-shell .cinematic-home { grid-template-columns:1fr; gap:20px; }
   .platform.mobility-shell .mobility-welcome,
   .platform.mobility-shell .owner-shortcuts,
+  .platform.mobility-shell .vehicle-readiness,
   .platform.mobility-shell .home-car-section { grid-column:1; grid-row:auto; }
   .platform.mobility-shell .owner-shortcuts { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .platform.mobility-shell .today-brief { grid-column:1; grid-row:auto; }
@@ -148,12 +177,29 @@
   .journey-controls button { width:37px; }
   .platform.mobility-shell .owner-shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
   .platform.mobility-shell .today-brief { grid-column:1; grid-row:auto; }
+  .platform.mobility-shell .vehicle-readiness { grid-column:1; grid-row:auto; padding:15px; border-radius:16px; }
+  .platform.mobility-shell .readiness-heading { gap:10px; }
+  .platform.mobility-shell .readiness-heading h2 { font-size:16px; }
+  .platform.mobility-shell .readiness-heading p { font-size:9px; }
+  .platform.mobility-shell .readiness-score { width:58px; height:58px; }
+  .platform.mobility-shell .readiness-score strong { font-size:19px; }
+  .platform.mobility-shell .readiness-pillars { grid-template-columns:1fr; gap:7px; margin-top:14px; }
+  .platform.mobility-shell .readiness-pillar { min-height:49px; padding:8px 9px; grid-template-columns:27px minmax(0,1fr) auto; }
+  .platform.mobility-shell .readiness-pillar b { grid-column:auto; white-space:nowrap; }
+  .platform.mobility-shell .readiness-footer { align-items:stretch; flex-direction:column; gap:9px; margin-top:12px; }
+  .platform.mobility-shell .readiness-footer button { width:100%; justify-content:center; }
   .platform.mobility-shell .owner-shortcuts button { min-height:139px; padding:14px 12px; border-radius:16px; }
   .platform.mobility-shell .today-brief { grid-template-columns:37px minmax(0,1fr); padding:14px; gap:10px; border-radius:16px; }
   .platform.mobility-shell .today-brief-icon { width:37px; height:37px; border-radius:11px; }
   .platform.mobility-shell .today-brief-copy h2 { font-size:14px; }
   .platform.mobility-shell .today-brief-copy p { font-size:9px; }
   .platform.mobility-shell .today-brief-action { grid-column:1/-1; width:100%; justify-content:center; min-height:40px; }
+  .platform.mobility-shell .vehicle-readiness { padding:16px; }
+  .platform.mobility-shell .readiness-pillars { gap:7px; }
+  .platform.mobility-shell .readiness-pillar { padding:10px 9px; }
+  .platform.mobility-shell .readiness-heading h2 { font-size:16px; }
+  .platform.mobility-shell .readiness-footer { align-items:flex-start; flex-direction:column; }
+  .platform.mobility-shell .readiness-footer button { width:100%; justify-content:center; }
   .platform.mobility-shell .proposal-intent { display:block; padding:24px 20px; }
   .platform.mobility-shell .proposal-intent p { margin-top:18px; font-size:10px; }
   .platform.mobility-shell .proposal-pillars,.platform.mobility-shell .proposal-trust-grid { grid-template-columns:1fr; gap:10px; }

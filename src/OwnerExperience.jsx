@@ -71,6 +71,68 @@ function vehicleBrief(vehicle) {
   };
 }
 
+function readinessModel(vehicle) {
+  if (!vehicle) return {
+    score: null,
+    summary: '현대차를 연결하면 출발 준비도를 확인할 수 있어요.',
+    action: '내 차 연결하기',
+    actionKind: 'connect',
+    pillars: [
+      { id: 'safety', label: '안전', detail: '차량 연결 필요', state: 'CONNECT', icon: ShieldCheck },
+      { id: 'energy', label: '에너지', detail: '배터리 수신 대기', state: 'CONNECT', icon: BatteryCharging },
+      { id: 'care', label: '케어', detail: '점검 기준 수신 대기', state: 'CONNECT', icon: Wrench },
+    ],
+  };
+
+  const warningCount = Number(vehicle.warningCount);
+  const checkedWarnings = Number(vehicle.checkedWarnings);
+  const hasWarningSignal = Number.isFinite(warningCount) && (warningCount > 0 || checkedWarnings >= 7 || (vehicle.healthChecks?.length > 0 && vehicle.healthChecks.every((check) => check.state !== 'UNAVAILABLE')));
+  const battery = vehicle.batterySoc == null || vehicle.batterySoc === '' ? null : Number(vehicle.batterySoc);
+  const nextService = vehicle.nextServiceKm == null || vehicle.nextServiceKm === '' ? null : Number(vehicle.nextServiceKm);
+  const pillars = [
+    hasWarningSignal
+      ? { id: 'safety', label: '안전', detail: warningCount > 0 ? `경고 ${warningCount}건 확인` : '수신한 경고 없음', state: warningCount > 0 ? 'ATTENTION' : 'READY', icon: ShieldCheck }
+      : { id: 'safety', label: '안전', detail: '아직 확인되지 않음', state: 'WAITING', icon: ShieldCheck },
+    Number.isFinite(battery)
+      ? { id: 'energy', label: '에너지', detail: battery <= 20 ? `배터리 ${battery}% · 충전 권장` : `배터리 ${battery}%`, state: battery <= 20 ? 'ATTENTION' : 'READY', icon: BatteryCharging }
+      : { id: 'energy', label: '에너지', detail: '배터리 수신 대기', state: 'WAITING', icon: BatteryCharging },
+    Number.isFinite(nextService)
+      ? { id: 'care', label: '케어', detail: nextService <= 1000 ? `${nextService.toLocaleString('ko-KR')}km 후 점검` : `점검까지 ${nextService.toLocaleString('ko-KR')}km`, state: nextService <= 1000 ? 'ATTENTION' : 'READY', icon: Wrench }
+      : { id: 'care', label: '케어', detail: '점검 기준 미제공', state: 'WAITING', icon: Wrench },
+  ];
+  const known = pillars.filter((pillar) => ['READY', 'ATTENTION'].includes(pillar.state));
+  const ready = known.filter((pillar) => pillar.state === 'READY').length;
+  const priority = pillars.find((pillar) => pillar.state === 'ATTENTION') ?? pillars.find((pillar) => pillar.state === 'WAITING');
+  const actionByPillar = { safety: ['안전 점검 보기', 'care'], energy: ['충전소 찾기', 'charge'], care: ['서비스 거점 보기', 'care'] };
+  const [action, target] = actionByPillar[priority?.id] ?? ['차량 상태 보기', 'care'];
+  return {
+    score: known.length ? Math.round((ready / known.length) * 100) : null,
+    summary: known.length === 3 ? `${ready}/3개 신호를 기준으로 계산했어요.` : `${known.length}/3개 신호를 확인했어요. 나머지는 아직 수신되지 않았어요.`,
+    action,
+    actionKind: priority?.state === 'WAITING' ? 'status' : 'navigate',
+    target,
+    pillars,
+  };
+}
+
+function VehicleReadiness({ vehicle, navigate, setModal, actions, busy }) {
+  const model = readinessModel(vehicle);
+  const updatedAt = vehicle?.updatedAt ?? vehicle?.dataTimestamp;
+  const updatedLabel = updatedAt && !Number.isNaN(new Date(updatedAt).getTime())
+    ? `마지막 수신 ${new Date(updatedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`
+    : '수신 시각 확인 필요';
+  const handleAction = () => {
+    if (model.actionKind === 'connect') return setModal('connect');
+    if (model.actionKind === 'status' && actions?.syncHyundai) return actions.syncHyundai();
+    navigate(model.target ?? 'care', model.target === 'care' ? 'status' : '');
+  };
+  return <section className={`vehicle-readiness ${model.score == null ? 'pending' : model.score < 70 ? 'attention' : 'ready'}`} aria-labelledby="readiness-title" data-reveal>
+    <div className="readiness-heading"><div><span>DRIVE READINESS</span><h2 id="readiness-title">오늘 출발 준비도</h2><p>{model.summary}</p></div><div className="readiness-score" style={{ '--readiness-score': `${model.score ?? 0}%` }} aria-label={model.score == null ? '출발 준비도 계산 대기' : `출발 준비도 ${model.score}점`}><strong>{model.score ?? '—'}</strong><small>{model.score == null ? '신호 대기' : '점'}</small></div></div>
+    <div className="readiness-pillars">{model.pillars.map(({ id, label, detail, state, icon: Icon }) => <article className={`readiness-pillar ${state.toLowerCase()}`} key={id}><span className="readiness-pillar-icon"><Icon size={16} /></span><div><strong>{label}</strong><small>{detail}</small></div><b>{state === 'READY' ? '준비됨' : state === 'ATTENTION' ? '확인 필요' : state === 'CONNECT' ? '연결 필요' : '미수신'}</b></article>)}</div>
+    <div className="readiness-footer"><span><i />{vehicle ? '현대차에서 받은 신호 기준' : '현대차 연결 후 실제 신호로 계산'} · {updatedLabel}</span><button type="button" onClick={handleAction} disabled={busy}>{model.action}<ArrowRight size={14} /></button></div>
+  </section>;
+}
+
 function TodayBrief({ vehicle, navigate, setModal }) {
   const brief = vehicleBrief(vehicle);
   const Icon = brief.icon;
@@ -126,6 +188,7 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <SceneControls tour={tour} />
     </section>
     <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
+    <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
     <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
       <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
