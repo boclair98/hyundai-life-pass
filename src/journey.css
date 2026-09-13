@@ -56,7 +56,7 @@
 .platform.mobility-shell .readiness-footer > span { min-width:0; color:#a9c8d6; font-size:8px; line-height:1.45; }
 .platform.mobility-shell .readiness-footer > span i { display:inline-block; width:5px; height:5px; margin-right:5px; border-radius:50%; background:#65d5b0; box-shadow:0 0 0 4px #65d5b01c; }
 .platform.mobility-shell .vehicle-readiness.pending .readiness-footer > span i { background:#b5c8d5; box-shadow:0 0 0 4px #b5c8d51c; }
-.platform.mobility-shell .readiness-footer button { min-height:35px; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:0 10px; border:1px solid #ffffff3d; border-radius:9px; background:#ffffff12; color:#f4fcff; font-size:9px; font-weight:700; cursor:pointer; }
+.platform.mobility-shell .readiness-footer button { min-height:44px; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:0 10px; border:1px solid #ffffff3d; border-radius:9px; background:#ffffff12; color:#f4fcff; font-size:9px; font-weight:700; cursor:pointer; }
 .platform.mobility-shell .readiness-footer button:hover { background:#ffffff24; }
 .platform.mobility-shell .owner-shortcuts { grid-row:4; }
 .platform.mobility-shell .owner-shortcuts button { position:relative; isolation:isolate; min-height:150px; overflow:hidden; border:1px solid #ffffff38; padding:14px; border-radius:18px; background:#071e38; text-align:left; align-items:flex-start; justify-content:flex-end; }
