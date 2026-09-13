@@ -205,6 +205,7 @@ export default function App() {
   const [passport, setPassport] = useState(null);
   const [passportError, setPassportError] = useState('');
   const [refreshError, setRefreshError] = useState('');
+  const initialRetryScheduled = useRef(false);
 
   const vehicle = vehicles.find((item) => item.id === selectedVehicleId) ?? vehicles[0] ?? null;
   const journal = useVehicleJournal(vehicle?.databaseId);
@@ -235,6 +236,17 @@ export default function App() {
   }, [refreshPlatform]);
 
   useEffect(() => {
+    if ((!refreshError && !vehicleError) || initialRetryScheduled.current) return undefined;
+    // A sleeping API can return a gateway error while the static shell is already visible.
+    // Give the service one quiet recovery attempt so owners are not left with a dead banner.
+    initialRetryScheduled.current = true;
+    const timer = window.setTimeout(() => {
+      Promise.allSettled([refreshPlatform(), refreshVehicles()]);
+    }, 4500);
+    return () => window.clearTimeout(timer);
+  }, [refreshError, vehicleError, refreshPlatform, refreshVehicles]);
+
+  useEffect(() => {
     let active = true;
     setPassport(null);
     setPassportError('');
@@ -243,13 +255,19 @@ export default function App() {
   }, [vehicle?.databaseId]);
 
   useEffect(() => {
-    const onHashChange = () => {
+    const syncFromLocation = () => {
       const nextPage = window.location.hash.replace('#', '');
       setPage(validPages.has(nextPage) ? nextPage : 'home');
       setMenuOpen(false); setSectionTarget(''); window.scrollTo({ top: 0, behavior: 'instant' });
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    // Navigation uses pushState so mobile browser back/forward must listen to popstate.
+    // hashchange alone does not fire for history entries created with pushState.
+    window.addEventListener('hashchange', syncFromLocation);
+    window.addEventListener('popstate', syncFromLocation);
+    return () => {
+      window.removeEventListener('hashchange', syncFromLocation);
+      window.removeEventListener('popstate', syncFromLocation);
+    };
   }, []);
 
   useEffect(() => {

@@ -38,3 +38,14 @@ test('service-centre location follows the same consent-first behavior as chargin
   assert.match(appSource, /내 위치로 다시 찾기/);
   assert.match(appSource, /finishReject\(\{ code: 3 \}\), 25000\)/);
 });
+
+test('mobile browser back and forward keep the hash route in sync', () => {
+  assert.match(appSource, /window\.addEventListener\('popstate', syncFromLocation\)/);
+  assert.match(appSource, /window\.removeEventListener\('popstate', syncFromLocation\)/);
+});
+
+test('a sleeping API gets one automatic recovery attempt after the shell loads', () => {
+  assert.match(appSource, /initialRetryScheduled = useRef\(false\)/);
+  assert.match(appSource, /Promise\.allSettled\(\[refreshPlatform\(\), refreshVehicles\(\)\]\)/);
+  assert.match(appSource, /4500\)/);
+});
