@@ -1137,6 +1137,51 @@ function DrivePage({ vehicle, navigate, notify, setModal, sectionTarget, tour })
   );
 }
 
+function ServiceHandoffBrief({ vehicle, notify }) {
+  const [open, setOpen] = useState(false);
+  if (!vehicle) return null;
+  const warningCount = Number(vehicle.warningCount);
+  const warningLabel = Number.isFinite(warningCount) ? `${warningCount}건${warningCount > 0 ? ' 확인 필요' : ''}` : '미제공';
+  const tireLabel = vehicle.tirePressureWarning == null ? '개별 수치 미제공' : vehicle.tirePressureWarning ? '경고 수신' : '경고 없음';
+  const updatedLabel = vehicle.updatedAt ? formatDateTime(vehicle.updatedAt) : formatHyundaiTimestamp(vehicle.dataTimestamp);
+  const facts = [
+    ['차량', `${vehicle.name}${vehicle.trim ? ` · ${vehicle.trim}` : ''}`],
+    ['누적 주행', formatMetric(vehicle.odometer, 'km')],
+    ['배터리', formatMetric(vehicle.batterySoc, '%')],
+    ['차량 경고', warningLabel],
+    ['타이어', tireLabel],
+    ['마지막 수신', updatedLabel],
+  ];
+  const brief = [
+    '[HYUNDAI LIFE PASS · 정비 방문 브리프]',
+    ...facts.map(([label, value]) => `${label}: ${value}`),
+    '',
+    '※ 현대차에서 받은 정보와 오너가 확인할 내용을 정리한 참고용 브리프입니다. 공식 정비 이력·예약·진단 결과가 아닙니다.',
+  ].join('\n');
+  const copyBrief = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard-unavailable');
+      await navigator.clipboard.writeText(brief);
+      notify('정비 방문 브리프를 복사했습니다.');
+    } catch {
+      notify('브리프를 복사하지 못했어요. 미리보기 내용을 직접 사용해 주세요.');
+    }
+  };
+  const shareBrief = async () => {
+    if (!navigator.share) return copyBrief();
+    try {
+      await navigator.share({ title: `${vehicle.name} 정비 방문 브리프`, text: brief });
+      notify('정비 방문 브리프를 공유했습니다.');
+    } catch (error) {
+      if (error?.name !== 'AbortError') notify('브리프를 공유하지 못했어요.');
+    }
+  };
+  return <section className={`service-handoff panel ${open ? 'open' : ''}`} aria-labelledby="service-handoff-title">
+    <div className="service-handoff-heading"><div className="service-handoff-icon"><FileCheck2 size={20} /></div><div><span>CARE HANDOFF</span><h2 id="service-handoff-title">정비소에서 내 차를 바로 설명할 수 있게</h2><p>현재 수신한 차량 정보를 짧은 브리프로 정리해 상담 전에 확인하세요.</p></div><button className="button outline" type="button" onClick={() => setOpen((value) => !value)}>{open ? '접기' : '브리프 보기'} <ArrowRight size={14} /></button></div>
+    {open && <div className="service-handoff-body"><dl>{facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><pre>{brief}</pre><div className="service-handoff-actions"><button className="button primary" type="button" onClick={copyBrief}>브리프 복사 <Check size={15} /></button><button className="button outline" type="button" onClick={shareBrief}><Share2 size={15} /> 공유하기</button></div><small>차량에서 확인되지 않은 정보는 비워두며, 이 브리프는 공식 정비 이력이나 예약을 대신하지 않습니다.</small></div>}
+  </section>;
+}
+
 function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget }) {
   const [careTab, setCareTab] = useState(sectionTarget || (vehicle ? 'status' : 'centers'));
   useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
@@ -1219,6 +1264,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
         <div><span>NEXT BEST ACTION</span><strong>{nextAction.title}</strong><p>{nextAction.detail}</p></div>
         <button className="button outline" onClick={() => setCareTab('centers')}>{nextAction.button} <ArrowRight size={15} /></button>
       </section>
+      <ServiceHandoffBrief vehicle={vehicle} notify={notify} />
       <TirePressureCard vehicle={vehicle} onDetails={() => document.getElementById('vehicle-health')?.scrollIntoView({ behavior: 'smooth' })} />
       <section className="section-sub vehicle-health-section reveal" data-reveal id="vehicle-health">
         <div className="health-section-heading">

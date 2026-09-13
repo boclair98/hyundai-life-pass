@@ -109,6 +109,25 @@
 .platform.mobility-shell .service-center-heading h2,.platform.mobility-shell .service-center-heading p { color:#e6f4ff; }
 .platform.mobility-shell .journal-footnote { color:#d4e7f3; }
 
+.platform.mobility-shell .service-handoff { margin-top:15px; padding:20px; border:1px solid #ffffff2f; background:linear-gradient(135deg,#082942e8,#0b4356d1); color:#fff; }
+.platform.mobility-shell .service-handoff-heading { display:grid; grid-template-columns:43px minmax(0,1fr) auto; align-items:center; gap:13px; }
+.platform.mobility-shell .service-handoff-icon { width:43px; height:43px; display:grid; place-items:center; border-radius:13px; color:#073250; background:#b8eef4; }
+.platform.mobility-shell .service-handoff-heading > div:nth-child(2) { min-width:0; }
+.platform.mobility-shell .service-handoff-heading span { color:#8fe2ef; font:700 8px 'DM Mono',monospace; letter-spacing:.14em; }
+.platform.mobility-shell .service-handoff-heading h2 { margin:6px 0 4px; color:#fff; font-size:16px; line-height:1.35; letter-spacing:-.04em; }
+.platform.mobility-shell .service-handoff-heading p { margin:0; color:#bdd7e2; font-size:10px; line-height:1.55; }
+.platform.mobility-shell .service-handoff-heading > .button { min-height:44px; white-space:nowrap; border-color:#ffffff3d; color:#fff; background:#ffffff12; }
+.platform.mobility-shell .service-handoff-heading > .button:hover { background:#ffffff23; }
+.platform.mobility-shell .service-handoff-body { margin:18px 0 0 56px; padding-top:16px; border-top:1px solid #ffffff1c; }
+.platform.mobility-shell .service-handoff-body dl { margin:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.platform.mobility-shell .service-handoff-body dl > div { min-width:0; padding:10px 11px; border:1px solid #ffffff18; border-radius:10px; background:#ffffff09; }
+.platform.mobility-shell .service-handoff-body dt { color:#96b8c8; font-size:8px; }
+.platform.mobility-shell .service-handoff-body dd { margin:5px 0 0; color:#f4fbff; font-size:10px; font-weight:700; overflow-wrap:anywhere; }
+.platform.mobility-shell .service-handoff-body pre { margin:12px 0 0; padding:13px; overflow:auto; white-space:pre-wrap; border:1px solid #ffffff18; border-radius:10px; background:#041b2de8; color:#cce5ed; font:500 10px/1.65 'Noto Sans KR',sans-serif; }
+.platform.mobility-shell .service-handoff-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
+.platform.mobility-shell .service-handoff-actions .button { min-height:44px; }
+.platform.mobility-shell .service-handoff-body > small { display:block; margin-top:10px; color:#9ebdca; font-size:8px; line-height:1.55; }
+
 /* Submission narrative: a reviewer can understand the product without leaving the experience. */
 .platform.mobility-shell .proposal-intent { margin-top:16px; padding:31px 34px; display:grid; grid-template-columns:minmax(250px,.8fr) minmax(0,1.2fr); gap:34px; align-items:center; border:1px solid #ffffff35; background:linear-gradient(120deg,#082a45e8,#0a3a55d4); color:#fff; }
 .platform.mobility-shell .proposal-intent > div > span,.platform.mobility-shell .proposal-section-heading > span,.platform.mobility-shell .proposal-trust span,.platform.mobility-shell .proposal-next > div > span { color:#83e3f2; font:700 8px 'DM Mono',monospace; letter-spacing:.15em; }
@@ -200,6 +219,16 @@
   .platform.mobility-shell .readiness-heading h2 { font-size:16px; }
   .platform.mobility-shell .readiness-footer { align-items:flex-start; flex-direction:column; }
   .platform.mobility-shell .readiness-footer button { width:100%; justify-content:center; }
+  .platform.mobility-shell .service-handoff { padding:16px; border-radius:16px; }
+  .platform.mobility-shell .service-handoff-heading { grid-template-columns:36px minmax(0,1fr); gap:10px; }
+  .platform.mobility-shell .service-handoff-icon { width:36px; height:36px; border-radius:11px; }
+  .platform.mobility-shell .service-handoff-heading h2 { font-size:14px; }
+  .platform.mobility-shell .service-handoff-heading p { font-size:9px; }
+  .platform.mobility-shell .service-handoff-heading > .button { grid-column:1/-1; width:100%; justify-content:center; }
+  .platform.mobility-shell .service-handoff-body { margin-left:0; }
+  .platform.mobility-shell .service-handoff-body dl { grid-template-columns:1fr 1fr; }
+  .platform.mobility-shell .service-handoff-actions { display:grid; grid-template-columns:1fr; }
+  .platform.mobility-shell .service-handoff-actions .button { width:100%; justify-content:center; }
   .platform.mobility-shell .proposal-intent { display:block; padding:24px 20px; }
   .platform.mobility-shell .proposal-intent p { margin-top:18px; font-size:10px; }
   .platform.mobility-shell .proposal-pillars,.platform.mobility-shell .proposal-trust-grid { grid-template-columns:1fr; gap:10px; }

@@ -64,6 +64,15 @@ test('home readiness translates only received signals into a next action', () =>
   assert.match(ownerSource, /현대차에서 받은 신호 기준/);
 });
 
+test('care can prepare an honest service handoff brief without inventing diagnostics', () => {
+  assert.match(appSource, /function ServiceHandoffBrief\(\{ vehicle, notify \}\)/);
+  assert.match(appSource, /정비 방문 브리프/);
+  assert.match(appSource, /공식 정비 이력·예약·진단 결과가 아닙니다/);
+  assert.match(appSource, /navigator\.clipboard\?\.writeText/);
+  assert.match(appSource, /navigator\.share\(\{ title: `\$\{vehicle\.name\} 정비 방문 브리프`/);
+  assert.match(appSource, /<ServiceHandoffBrief vehicle=\{vehicle\} notify=\{notify\} \/>/);
+});
+
 test('mobile browser back and forward keep the hash route in sync', () => {
   assert.match(appSource, /window\.addEventListener\('popstate', syncFromLocation\)/);
   assert.match(appSource, /window\.removeEventListener\('popstate', syncFromLocation\)/);
