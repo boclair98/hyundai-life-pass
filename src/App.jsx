@@ -729,7 +729,11 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
     }
     navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
       if (active && permission.state === 'granted') findFromCurrentLocation();
-    }).catch(() => undefined);
+    }).catch(() => {
+      // A permission lookup can fail even when geolocation itself is available.
+      // Try the real browser location instead of leaving the default region active.
+      if (active) findFromCurrentLocation();
+    });
     return () => { active = false; };
   }, [findFromCurrentLocation]);
 
@@ -1162,7 +1166,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       if (!active) return;
       if (permission.state === 'granted') findFromCurrentLocation();
       else findCenters();
-    }).catch(() => { if (active) findCenters(); });
+    }).catch(() => { if (active) findFromCurrentLocation(); });
     return () => { active = false; };
   }, [findCenters, findFromCurrentLocation]);
 

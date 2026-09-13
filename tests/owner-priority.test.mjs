@@ -42,6 +42,7 @@ test('service-centre location follows the same consent-first behavior as chargin
 
 test('charging location does not silently use the Seoul default on Safari', () => {
   assert.match(appSource, /\/\/ Safari on iOS does not expose Permissions API\. Still request the browser's[\s\S]*?if \(!navigator\.permissions\?\.query\) \{[\s\S]*?findFromCurrentLocation\(\);/);
+  assert.match(appSource, /A permission lookup can fail even when geolocation itself is available\.[\s\S]*?if \(active\) findFromCurrentLocation\(\);/);
 });
 
 test('mobile browser back and forward keep the hash route in sync', () => {
