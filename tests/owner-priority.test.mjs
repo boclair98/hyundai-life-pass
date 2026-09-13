@@ -45,6 +45,15 @@ test('charging location does not silently use the Seoul default on Safari', () =
   assert.match(appSource, /A permission lookup can fail even when geolocation itself is available\.[\s\S]*?if \(active\) findFromCurrentLocation\(\);/);
 });
 
+test('Kakao directions use a fresh current location as the origin', () => {
+  assert.match(appSource, /function kakaoDirectionsUrl\(origin, destination\)/);
+  assert.match(appSource, /sName: '현재 위치'/);
+  assert.match(appSource, /sX: String\(origin\.longitude\)/);
+  assert.match(appSource, /sY: String\(origin\.latitude\)/);
+  assert.match(appSource, /openKakaoDirections\(station, notify\)/);
+  assert.match(appSource, /현재 위치에서 길찾기 시작/);
+});
+
 test('mobile browser back and forward keep the hash route in sync', () => {
   assert.match(appSource, /window\.addEventListener\('popstate', syncFromLocation\)/);
   assert.match(appSource, /window\.removeEventListener\('popstate', syncFromLocation\)/);

@@ -189,6 +189,30 @@ function locationErrorMessage(error) {
   return '현재 위치를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 }
 
+function kakaoDirectionsUrl(origin, destination) {
+  const query = new URLSearchParams({
+    sName: '현재 위치',
+    sX: String(origin.longitude),
+    sY: String(origin.latitude),
+    eName: destination.name,
+    eX: String(destination.longitude),
+    eY: String(destination.latitude),
+  });
+  return `https://map.kakao.com/?${query.toString()}`;
+}
+
+function openKakaoDirections(destination, notify) {
+  return getCurrentPosition().then(({ coords }) => {
+    const url = kakaoDirectionsUrl({ latitude: coords.latitude, longitude: coords.longitude }, destination);
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!opened) window.location.assign(url);
+    return url;
+  }).catch((error) => {
+    notify(locationErrorMessage(error));
+    throw error;
+  });
+}
+
 export default function App() {
   const appRef = useRef(null);
   const initialPage = window.location.hash.replace('#', '');
@@ -619,6 +643,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [sortMode, setSortMode] = useState('distance');
   const [quickFilter, setQuickFilter] = useState('all');
+  const [directionsBusy, setDirectionsBusy] = useState(false);
   const stationList = useMemo(() => (chargerFeed.stations ?? []).map((item) => ({
     ...item,
     distanceValue: Number(item.distanceKm) || 0,
@@ -719,6 +744,14 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
       });
   }, [loadFromCoordinates, notify]);
 
+  const startDirections = useCallback((station) => {
+    if (!station || directionsBusy) return;
+    setDirectionsBusy(true);
+    openKakaoDirections(station, notify)
+      .catch(() => undefined)
+      .finally(() => setDirectionsBusy(false));
+  }, [directionsBusy, notify]);
+
   useEffect(() => {
     let active = true;
     // Safari on iOS does not expose Permissions API. Still request the browser's
@@ -756,7 +789,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
             <button className={favoritesOnly ? 'active' : ''} onClick={() => setFavoritesOnly((current) => !current)} aria-pressed={favoritesOnly}><Star size={15} fill={favoritesOnly ? 'currentColor' : 'none'} /> 즐겨찾기{favoriteIds.length ? ` ${favoriteIds.length}` : ''}</button>
             <button onClick={refreshStations} disabled={locationBusy}><RefreshCcw className={locationBusy ? 'spin' : ''} size={15} /> 새로고침</button>
           </div>
-          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} userLocation={usingCurrentLocation ? chargerFeed.search : null} />
+          <KakaoStationMap stations={visibleStations} selectedStation={activeStation} onSelect={setSelectedStation} onDirections={startDirections} userLocation={usingCurrentLocation ? chargerFeed.search : null} />
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 순서</span><small>{chargerLive ? `${Math.min(6, visibleStations.length)}곳 추천` : '확인 중'}</small></div>
@@ -771,7 +804,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
           {activeStation ? <div className="station-detail">
             <div className="station-detail-heading"><div><span>선택한 충전소</span><strong>{activeStation.name}</strong><p>{activeStation.address}</p></div><button className={`station-favorite ${favoriteIds.includes(favoriteKey(activeStation)) ? 'active' : ''}`} onClick={() => toggleFavorite(activeStation)} aria-label={favoriteIds.includes(favoriteKey(activeStation)) ? '즐겨찾기 삭제' : '즐겨찾기 추가'} aria-pressed={favoriteIds.includes(favoriteKey(activeStation))}><Star size={18} fill={favoriteIds.includes(favoriteKey(activeStation)) ? 'currentColor' : 'none'} /></button></div>
             <div className="charge-price"><span>충전 요금</span><strong>운영사에서 확인</strong><small>회원·로밍·충전기별로 달라 현장 요금을 확인해 주세요.</small></div>
-            <button className="button primary full" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(activeStation.name)},${activeStation.latitude},${activeStation.longitude}`, '_blank', 'noopener,noreferrer')}><Navigation size={16} />길찾기 시작</button>
+            <button className="button primary full" onClick={() => startDirections(activeStation)} disabled={directionsBusy}>{directionsBusy ? <LoaderCircle className="spin" size={16} /> : <Navigation size={16} />}{directionsBusy ? '현재 위치 확인 중' : '현재 위치에서 길찾기 시작'}</button>
           </div> : <div className="station-empty" role={chargerError ? 'alert' : undefined}><MapPin size={22} /><strong>{stationList.length ? '검색 결과가 없습니다.' : chargerError ? '충전소 연결이 잠시 지연되고 있어요.' : '충전소를 불러오는 중입니다.'}</strong><span>{stationList.length ? '다른 충전소명이나 지역을 입력해 보세요.' : chargerError ? '실시간 데이터를 받지 못했습니다. 잠시 후 다시 확인해 주세요.' : '데이터를 확인하는 동안 잠시만 기다려 주세요.'}</span>{chargerError && <button className="button compact" onClick={refreshStations} disabled={locationBusy}><RefreshCcw size={14} /> 다시 확인</button>}</div>}
         </aside>
       </div>
@@ -852,7 +885,7 @@ function loadKakaoSdk(key, retry = 0) {
   return kakaoSdkPromise;
 }
 
-function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, userLocation }) {
+function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, onDirections, userLocation }) {
   const mapElement = useRef(null);
   const mapRef = useRef(null);
   const kakaoRef = useRef(null);
@@ -950,7 +983,7 @@ function KakaoStationMap({ stations: stationItems, selectedStation, onSelect, us
       <div className="map-live-chip"><i /> 충전기 현황</div>
       {key && mapReady && <div className="map-zoom-controls" aria-label="지도 확대 축소"><button onClick={() => changeZoom(-1)} aria-label="지도 확대"><Plus size={18} /></button><button onClick={() => changeZoom(1)} aria-label="지도 축소"><Minus size={18} /></button></div>}
       {mapReady && <button className="map-recenter" onClick={focusMap} aria-label="선택한 위치로 지도 이동"><LocateFixed size={18} /></button>}
-      {selectedStation && <button className="map-selected-card" onClick={() => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(selectedStation.name)},${selectedStation.latitude},${selectedStation.longitude}`, '_blank', 'noopener,noreferrer')} aria-label={`${selectedStation.name} 카카오맵 길찾기`}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed} · 눌러서 길찾기</small><Navigation size={17} /></button>}
+      {selectedStation && <button className="map-selected-card" onClick={() => onDirections(selectedStation)} aria-label={`${selectedStation.name} 현재 위치에서 길찾기`}><span><i className={selectedStation.available > 0 ? 'available' : ''} />{selectedStation.available > 0 ? `${selectedStation.available}대 사용 가능` : '현재 대기'}</span><strong>{selectedStation.name}</strong><small>{selectedStation.distance} · {selectedStation.speed} · 현재 위치에서 길찾기</small><Navigation size={17} /></button>}
     </div>
   );
 }
