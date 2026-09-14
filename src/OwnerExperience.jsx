@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
+import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, CheckCircle2, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
 import { loadJournal, createJournalEntry, changeJournalStatus } from './api';
 import './cinematic.css';
 import { FeatureImage, SceneControls } from './MobilityBackdrop';
@@ -10,6 +10,7 @@ const money = (value) => `${Number(value).toLocaleString('ko-KR')}원`;
 const dateKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 const metric = (value, unit) => value == null ? '연결 후 확인' : `${Number(value).toLocaleString('ko-KR')}${unit}`;
 const dateLabel = (date) => new Date(`${date}T12:00:00`).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+const CHECKLIST_STORAGE_KEY = 'life-pass:departure-checklist:v1';
 
 function vehicleBrief(vehicle) {
   if (!vehicle) return {
@@ -170,6 +171,29 @@ function NextActionPanel({ vehicle, tasks, navigate, setModal }) {
   return <section className="next-action-panel" aria-labelledby="next-action-title" data-reveal><div className="next-action-icon"><Icon size={20} /></div><div><span>NEXT BEST ACTION</span><h2 id="next-action-title">{next.label}</h2><p>{next.detail}</p></div><button type="button" onClick={next.run}>{next.action}<ArrowRight size={15} /></button></section>;
 }
 
+function DepartureChecklist({ navigate }) {
+  const today = dateKey();
+  const [checked, setChecked] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) ?? '{}');
+      return saved.date === today && Array.isArray(saved.items) ? saved.items : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify({ date: today, items: checked })); } catch { /* device storage is optional */ }
+  }, [today, checked]);
+  const items = ['차량 주변에 장애물이 없는지 확인', '타이어와 외관에 이상이 없는지 확인', '오늘 목적지와 충전 여유를 확인'];
+  const toggle = (index) => setChecked((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index]);
+  return <section className="departure-checklist" aria-labelledby="departure-checklist-title" data-reveal><div className="checklist-heading"><div><span>DAILY DEPARTURE CHECK</span><h2 id="departure-checklist-title">오늘 출발 전 3분</h2><p>차량 신호와 별개로, 직접 확인할 항목을 매일 새로 시작해요.</p></div><strong>{checked.length}/{items.length}<small>완료</small></strong></div><div className="checklist-items">{items.map((item, index) => <button type="button" className={checked.includes(index) ? 'done' : ''} key={item} onClick={() => toggle(index)} aria-pressed={checked.includes(index)}><CheckCircle2 size={19} /><span>{item}</span></button>)}</div><button className="checklist-more" type="button" onClick={() => navigate('drive', 'checklist')}>전체 출발 체크리스트 보기 <ArrowRight size={15} /></button></section>;
+}
+
+function VehicleCareSummary({ vehicle, journal, navigate, setModal }) {
+  const doneCount = journal.entries.filter((item) => item.status === 'DONE').length;
+  const plannedCount = journal.entries.filter((item) => item.status === 'PLANNED').length;
+  const signalCount = vehicle ? [vehicle.batterySoc, vehicle.range, vehicle.odometer, vehicle.chargingState].filter((value) => value != null && value !== '').length : 0;
+  return <section className="care-summary-panel" aria-labelledby="care-summary-title" data-reveal><div className="care-summary-heading"><div><span>MY CARE SNAPSHOT</span><h2 id="care-summary-title">내 차 케어 요약</h2><p>{vehicle ? '차량에서 받은 신호와 내가 남긴 기록을 나눠서 보여드려요.' : '차량을 연결하거나 관리 기록을 시작하면 이 공간이 채워져요.'}</p></div><button type="button" onClick={() => vehicle ? navigate('care', 'status') : setModal('connect')}>{vehicle ? '상태 자세히' : '차량 연결'} <ArrowRight size={15} /></button></div><div className="care-summary-grid"><article><span>받은 차량 신호</span><strong>{vehicle ? `${signalCount}개` : '—'}</strong><small>{vehicle ? '마지막 수신 기준' : '연결 후 확인'}</small></article><article><span>예정된 관리</span><strong>{vehicle ? plannedCount : '—'}<small>건</small></strong><small>검사·정비·보험</small></article><article><span>완료한 기록</span><strong>{vehicle ? doneCount : '—'}<small>건</small></strong><small>직접 남긴 타임라인</small></article></div></section>;
+}
+
 function OwnerValueHub({ vehicle, navigate, spent, journal }) {
   const recordedCost = journal.loading ? '불러오는 중…' : journal.error ? '확인 필요' : vehicle ? money(spent) : '연결 후 확인';
   const recordDetail = journal.loading
@@ -261,6 +285,8 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
     <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
     <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
     <NextActionPanel vehicle={vehicle} tasks={tasks} navigate={navigate} setModal={setModal} />
+    <DepartureChecklist navigate={navigate} />
+    <VehicleCareSummary vehicle={vehicle} journal={journal} navigate={navigate} setModal={setModal} />
     <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority={index < 2} /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
       <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
