@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, CheckCircle2, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
 import { loadJournal, loadJournalReport, createJournalEntry, changeJournalStatus } from './api';
+import { demoJournalEntries } from './data';
 import './cinematic.css';
 import { FeatureImage, SceneControls } from './MobilityBackdrop';
 
@@ -247,7 +248,7 @@ function OwnerValueHub({ vehicle, navigate, spent, journal }) {
   </section>;
 }
 
-export function useVehicleJournal(vehicleId) {
+export function useVehicleJournal(vehicleId, demoMode = false) {
   const [state, setState] = useState({ vehicleId: null, entries: [], loading: false, error: '' });
   const requestId = useRef(0);
   const currentVehicle = useRef(vehicleId);
@@ -256,6 +257,12 @@ export function useVehicleJournal(vehicleId) {
     if (currentVehicle.current !== vehicleId) return;
     const id = ++requestId.current;
     if (!vehicleId) { setState({ vehicleId, entries: [], loading: false, error: '' }); return; }
+    if (demoMode) {
+      setState((old) => old.vehicleId === vehicleId && old.entries.length
+        ? { ...old, loading: false, error: '' }
+        : { vehicleId, entries: demoJournalEntries.map((entry) => ({ ...entry })), loading: false, error: '' });
+      return;
+    }
     setState((old) => ({ vehicleId, entries: old.vehicleId === vehicleId ? old.entries : [], loading: true, error: '' }));
     try {
       const entries = await loadJournal(vehicleId);
@@ -263,9 +270,34 @@ export function useVehicleJournal(vehicleId) {
     } catch (error) {
       if (id === requestId.current) setState((old) => ({ ...old, loading: false, error: error.message }));
     }
-  }, [vehicleId]);
+  }, [demoMode, vehicleId]);
   useEffect(() => { refresh(); return () => { requestId.current += 1; }; }, [refresh]);
-  return { entries: state.vehicleId === vehicleId ? state.entries : [], loading: Boolean(vehicleId) && (state.vehicleId !== vehicleId || state.loading), error: state.vehicleId === vehicleId ? state.error : '', refresh };
+  const createEntry = useCallback(async (entry) => {
+    if (!vehicleId) throw new Error('차량을 먼저 선택해 주세요.');
+    if (!demoMode) return createJournalEntry(vehicleId, entry);
+    const now = new Date().toISOString();
+    const created = { ...entry, id: `demo-entry-${Date.now()}`, vehicleId, createdAt: now, updatedAt: now };
+    setState((old) => ({ ...old, vehicleId, entries: [created, ...old.entries] }));
+    return created;
+  }, [demoMode, vehicleId]);
+  const changeStatus = useCallback(async (entryId, status) => {
+    if (!vehicleId) throw new Error('차량을 먼저 선택해 주세요.');
+    if (!demoMode) return changeJournalStatus(vehicleId, entryId, status);
+    setState((old) => ({ ...old, vehicleId, entries: old.entries.map((entry) => entry.id === entryId ? { ...entry, status: status === 'RESTORE' ? entry.archivedStatus ?? 'PLANNED' : status, archivedStatus: status === 'ARCHIVED' ? entry.status : entry.archivedStatus, updatedAt: new Date().toISOString() } : entry) }));
+    return true;
+  }, [demoMode, vehicleId]);
+  const loadReport = useCallback(async (month) => {
+    if (!vehicleId) return null;
+    if (!demoMode) return loadJournalReport(vehicleId, month);
+    const entries = state.vehicleId === vehicleId ? state.entries : demoJournalEntries;
+    const completed = entries.filter((entry) => entry.status === 'DONE' && entry.entryDate.startsWith(month));
+    const costEntries = completed.filter((entry) => Number.isFinite(Number(entry.amount)) && Number(entry.amount) >= 0);
+    const totals = costEntries.reduce((result, entry) => ({ ...result, [entry.category]: (result[entry.category] ?? 0) + Number(entry.amount) }), {});
+    const categoryTotals = Object.entries(totals).map(([category, totalAmount]) => ({ category, totalAmount, recordCount: costEntries.filter((entry) => entry.category === category).length })).sort((left, right) => right.totalAmount - left.totalAmount);
+    const totalAmount = costEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+    return { vehicleId, month, currency: 'KRW', source: 'DEMO', completedRecordCount: completed.length, costRecordCount: costEntries.length, recordsWithoutAmount: completed.length - costEntries.length, totalAmount, averageAmount: costEntries.length ? Math.round(totalAmount / costEntries.length) : 0, categoryTotals };
+  }, [demoMode, state.entries, state.vehicleId, vehicleId]);
+  return { entries: state.vehicleId === vehicleId ? state.entries : [], loading: Boolean(vehicleId) && (state.vehicleId !== vehicleId || state.loading), error: state.vehicleId === vehicleId ? state.error : '', refresh, createEntry, changeStatus, loadReport, demoMode };
 }
 
 export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy, journal, tour }) {
@@ -338,25 +370,25 @@ export function OwnershipPage({ vehicle, journal, notify, setModal, children }) 
       return () => { cancelled = true; };
     }
     setReport(null); setReportLoading(true); setReportError('');
-    loadJournalReport(vehicle.databaseId, month)
+    journal.loadReport(month)
       .then((data) => { if (!cancelled) setReport(data); })
       .catch((failure) => { if (!cancelled) setReportError(failure.message); })
       .finally(() => { if (!cancelled) setReportLoading(false); });
     return () => { cancelled = true; };
-  }, [vehicle?.databaseId, month, reportRevision]);
+  }, [journal.loadReport, month, reportRevision, vehicle?.databaseId]);
 
   const save = async (event) => {
     event.preventDefault();
     if (!vehicle || saving) return;
     setSaving(true); setError('');
     try {
-      await createJournalEntry(vehicle.databaseId, { ...draft, amount: draft.amount === '' ? null : Number(draft.amount), odometer: draft.odometer === '' ? null : Number(draft.odometer) });
+      await journal.createEntry({ ...draft, amount: draft.amount === '' ? null : Number(draft.amount), odometer: draft.odometer === '' ? null : Number(draft.odometer) });
       await journal.refresh(); setReportRevision((revision) => revision + 1); setFormOpen(false); setDraft({ category: 'MAINTENANCE', title: '', note: '', entryDate: dateKey(), amount: '', odometer: '', status: 'DONE' }); notify('내 차량의 관리 기록에 저장했습니다.');
     } catch (failure) { setError(failure.message); } finally { setSaving(false); }
   };
   const change = async (item, status) => {
     setSaving(true); setError('');
-    try { await changeJournalStatus(vehicle.databaseId, item.id, status); await journal.refresh(); setReportRevision((revision) => revision + 1); notify(status === 'ARCHIVED' ? '보관함으로 이동했습니다. 언제든 다시 꺼낼 수 있어요.' : '기록 상태를 변경했습니다.'); } catch (failure) { setError(failure.message); } finally { setSaving(false); }
+    try { await journal.changeStatus(item.id, status); await journal.refresh(); setReportRevision((revision) => revision + 1); notify(status === 'ARCHIVED' ? '보관함으로 이동했습니다. 언제든 다시 꺼낼 수 있어요.' : '기록 상태를 변경했습니다.'); } catch (failure) { setError(failure.message); } finally { setSaving(false); }
   };
   const exportRecords = () => {
     const escape = (value) => `"${String(value ?? '').replace(/^[=+@\-\t\r]/, "'$&").replaceAll('"', '""')}"`;
