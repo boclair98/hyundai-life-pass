@@ -230,3 +230,34 @@ textarea { font:inherit; }
   .platform.mobility-shell .care-summary-heading { display:block; }
   .platform.mobility-shell .care-summary-heading > button { margin-top:13px; width:100%; justify-content:center; }
 }
+/* A lightweight monthly report uses only owner-entered records, so it stays useful and trustworthy before partner APIs exist. */
+.platform.mobility-shell .journal-insights { margin-top:14px; padding:22px; border:1px solid #dbe8ed; border-radius:16px; background:linear-gradient(135deg,#f4fbfc,#eaf5f8); color:#073250; }
+.platform.mobility-shell .journal-insights-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.platform.mobility-shell .journal-insights-heading > div > span,
+.platform.mobility-shell .journal-insights.guest > div > span { color:#0089a8; font:700 9px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .journal-insights h2 { margin:7px 0 5px; color:#073250; font-size:20px; line-height:1.3; letter-spacing:-.04em; }
+.platform.mobility-shell .journal-insights p { margin:0; color:#547082; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .journal-insights-heading > strong { display:flex; align-items:baseline; gap:4px; color:#0089a8; font-size:28px; line-height:1; }
+.platform.mobility-shell .journal-insights-heading > strong small { color:#66818e; font-size:10px; font-weight:650; }
+.platform.mobility-shell .journal-insights-content { display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:24px; margin-top:21px; }
+.platform.mobility-shell .journal-bars h3 { margin:0 0 12px; color:#204e64; font-size:12px; }
+.platform.mobility-shell .journal-bar-row + .journal-bar-row { margin-top:11px; }
+.platform.mobility-shell .journal-bar-row > div { display:flex; justify-content:space-between; gap:12px; color:#5e7b88; font-size:10px; }
+.platform.mobility-shell .journal-bar-row > div strong { color:#204e64; font-weight:750; }
+.platform.mobility-shell .journal-bar-row > i { display:block; height:8px; margin-top:6px; overflow:hidden; border-radius:99px; background:#d9e9ee; }
+.platform.mobility-shell .journal-bar-row > i b { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#08a0b6,#65d4d5); }
+.platform.mobility-shell .journal-insights-kpis { display:grid; align-content:start; gap:9px; }
+.platform.mobility-shell .journal-insights-kpis article { padding:14px; border:1px solid #d7e6eb; border-radius:11px; background:#ffffffb8; }
+.platform.mobility-shell .journal-insights-kpis article span { display:block; color:#66818e; font-size:10px; }
+.platform.mobility-shell .journal-insights-kpis article strong { display:block; margin-top:9px; color:#073250; font-size:18px; letter-spacing:-.04em; }
+.platform.mobility-shell .journal-insights-empty { min-height:92px; margin-top:18px; padding:17px; display:flex; align-items:center; gap:10px; border:1px dashed #a9cbd4; border-radius:11px; background:#ffffff8f; color:#66818e; }
+.platform.mobility-shell .journal-insights-empty svg { flex:0 0 auto; color:#1a9eb2; }
+.platform.mobility-shell .journal-insights-empty strong { color:#285b70; font-size:12px; }
+.platform.mobility-shell .journal-insights-empty p { margin-left:auto; }
+.platform.mobility-shell .journal-insights.guest .journal-insights-empty { margin-top:16px; }
+@media(max-width:760px) {
+  .platform.mobility-shell .journal-insights { padding:18px 16px; }
+  .platform.mobility-shell .journal-insights-content { grid-template-columns:1fr; gap:15px; }
+  .platform.mobility-shell .journal-insights-empty { align-items:flex-start; flex-wrap:wrap; }
+  .platform.mobility-shell .journal-insights-empty p { width:100%; margin:0 0 0 32px; }
+}
