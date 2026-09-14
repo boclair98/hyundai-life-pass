@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.security.access.AccessDeniedException
+import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import com.hyundai.lifepass.service.OperationNotSupportedException
 import com.hyundai.lifepass.service.UpstreamUnavailableException
@@ -35,6 +36,11 @@ class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun invalid(exception: MethodArgumentNotValidException, request: HttpServletRequest) = error("VALIDATION_FAILED", "입력값을 확인해 주세요.", request, false) + mapOf("fields" to exception.bindingResult.fieldErrors.associate { it.field to (it.defaultMessage ?: "invalid") })
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun concurrentChange(exception: ObjectOptimisticLockingFailureException, request: HttpServletRequest) =
+        error("CONCURRENT_CHANGE", "다른 변경이 먼저 저장되었습니다. 최신 기록을 다시 불러와 주세요.", request, false)
 
     private fun error(code: String, message: String, request: HttpServletRequest, retryable: Boolean): Map<String, Any> = mapOf(
         "code" to code,

@@ -18,4 +18,5 @@ class VehicleJournal(
     @Column(nullable = false, length = 16) var status: String = "DONE",
     @Column(length = 16) var archivedStatus: String? = null,
     @Column(nullable = false) var createdAt: Instant = Instant.now(),
+    @Version @Column(nullable = false) var version: Long = 0,
 )
