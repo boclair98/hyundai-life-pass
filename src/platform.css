@@ -150,3 +150,47 @@ textarea { font:inherit; }
 .platform .kakao-station-marker.active strong { font-size: 15px; }
 .platform .kakao-station-marker.active span { display: block; margin-top: 2px; font-size: 9px; color: #fff; }
 .platform .kakao-station-marker:focus-visible { outline: 3px solid #00aad2; outline-offset: 3px; }
+/* First-run and next-action surfaces: make the empty state useful without fabricating vehicle data. */
+.platform.mobility-shell .guest-start-panel,
+.platform.mobility-shell .next-action-panel { margin-top:14px; padding:20px 22px; border:1px solid #ffffff35; border-radius:18px; background:linear-gradient(120deg,#f5fbfcf5,#e9f5f8eb); color:#073250; box-shadow:0 12px 28px #00142618; }
+.platform.mobility-shell .guest-start-panel { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:center; }
+.platform.mobility-shell .guest-start-copy { min-width:0; }
+.platform.mobility-shell .guest-start-copy > span,
+.platform.mobility-shell .next-action-panel > div > span { color:#0089a8; font:700 9px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .guest-start-copy h2,
+.platform.mobility-shell .next-action-panel h2 { margin:7px 0 5px; color:#073250; font-size:18px; line-height:1.35; letter-spacing:-.04em; }
+.platform.mobility-shell .guest-start-copy p,
+.platform.mobility-shell .next-action-panel p { margin:0; color:#547082; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .guest-start-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.platform.mobility-shell .guest-start-actions .button { min-height:42px; white-space:nowrap; }
+.platform.mobility-shell .guest-demo-grid { grid-column:1/-1; display:grid; grid-template-columns:1.4fr repeat(3,1fr); gap:9px; padding-top:16px; border-top:1px solid #0a5b7020; }
+.platform.mobility-shell .guest-demo-grid > * { min-height:135px; padding:16px; display:flex; flex-direction:column; align-items:flex-start; gap:7px; border:1px solid #0a5b7026; border-radius:13px; background:#ffffffa8; color:#073250; text-align:left; }
+.platform.mobility-shell .guest-demo-grid article { background:linear-gradient(145deg,#073250,#0b6173); color:#fff; }
+.platform.mobility-shell .guest-demo-grid span { color:#5c7c8b; font-size:9px; line-height:1.4; }
+.platform.mobility-shell .guest-demo-grid article span { color:#a9e8ef; }
+.platform.mobility-shell .guest-demo-grid strong { font-size:16px; letter-spacing:-.035em; }
+.platform.mobility-shell .guest-demo-grid small { color:#668391; font-size:10px; line-height:1.5; }
+.platform.mobility-shell .guest-demo-grid article small { color:#d2eef2; }
+.platform.mobility-shell .guest-demo-grid button { margin-top:auto; width:100%; display:flex; align-items:center; gap:7px; border:0; background:none; color:#087f9d; font-size:10px; font-weight:750; cursor:pointer; }
+.platform.mobility-shell .guest-demo-grid article button { color:#c8f6f8; }
+.platform.mobility-shell .next-action-panel { display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:13px; align-items:center; background:#062e49ed; color:#fff; }
+.platform.mobility-shell .next-action-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:#a8ebf1; color:#073250; }
+.platform.mobility-shell .next-action-panel h2 { color:#fff; font-size:17px; }
+.platform.mobility-shell .next-action-panel p { color:#c3dce5; }
+.platform.mobility-shell .next-action-panel > button { min-height:42px; display:inline-flex; align-items:center; gap:7px; border:1px solid #a8ebf155; border-radius:9px; padding:0 12px; background:#a8ebf112; color:#d8f8fa; font-size:10px; font-weight:750; white-space:nowrap; cursor:pointer; }
+.platform.mobility-shell .data-freshness { margin:0 14px 10px; padding:8px 10px; display:flex; align-items:center; gap:7px; border:1px solid #dbe8ed; border-radius:8px; background:#f7fbfc; color:#506f7e; font-size:9px; }
+.platform.mobility-shell .data-freshness i { width:6px; height:6px; flex:0 0 auto; border-radius:50%; background:#1daf82; box-shadow:0 0 0 3px #1daf8220; }
+.platform.mobility-shell .data-freshness span { margin-left:auto; color:#879ba5; }
+@media(max-width:760px) {
+  .platform.mobility-shell .guest-start-panel { display:block; padding:18px 16px; }
+  .platform.mobility-shell .guest-start-actions { display:grid; grid-template-columns:1fr; margin-top:14px; }
+  .platform.mobility-shell .guest-start-actions .button { width:100%; justify-content:center; }
+  .platform.mobility-shell .guest-demo-grid { grid-template-columns:1fr 1fr; }
+  .platform.mobility-shell .guest-demo-grid > * { min-height:132px; padding:13px; }
+  .platform.mobility-shell .guest-demo-grid article { grid-column:1/-1; min-height:122px; }
+  .platform.mobility-shell .next-action-panel { grid-template-columns:36px minmax(0,1fr); padding:17px 16px; }
+  .platform.mobility-shell .next-action-icon { width:36px; height:36px; }
+  .platform.mobility-shell .next-action-panel > button { grid-column:1/-1; width:100%; justify-content:center; }
+  .platform.mobility-shell .data-freshness { align-items:flex-start; flex-wrap:wrap; margin-inline:10px; }
+  .platform.mobility-shell .data-freshness span { width:100%; margin-left:13px; }
+}

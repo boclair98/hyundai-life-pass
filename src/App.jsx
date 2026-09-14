@@ -15,6 +15,7 @@ import {
   CircleGauge,
   Clock3,
   CloudCog,
+  ExternalLink,
   FileCheck2,
   Gauge,
   HeartHandshake,
@@ -794,10 +795,11 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 순서</span><small>{chargerLive ? `${Math.min(6, visibleStations.length)}곳 추천` : '확인 중'}</small></div>
+          <div className="data-freshness"><i />{chargerProvider?.refreshedAt ? `마지막 확인 ${formatDateTime(chargerProvider.refreshedAt)}` : '충전기 상태 확인 중'}<span>현장 상황에 따라 달라질 수 있어요</span></div>
           {visibleStations.slice(0, stationLimit).map((station) => (
             <button key={station.id} className={`station-row ${activeStation?.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className={`station-availability ${station.available > 0 ? 'available' : 'busy'}`}><strong>{station.available}</strong><span>/{station.total}</span><i /></div>
-              <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel}</small></div>
+              <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel} · 사용 가능 {station.available}대</small></div>
               <ChevronRight size={16} />
             </button>
           ))}
@@ -1433,6 +1435,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
               <div className="service-center-actions">
                 {center.phone && <a href={`tel:${center.phone.replace(/[^0-9+]/g, '')}`}><span>{center.phone}</span><strong>전화</strong></a>}
                 <button onClick={() => window.open(center.placeUrl, '_blank', 'noopener,noreferrer')}><span>지도 보기</span><strong>상세·길찾기</strong><Navigation size={14} /></button>
+                <a href="https://www.hyundai.com/kr/ko/service-membership/service-network/service-reservation-search/service-network-reservation" target="_blank" rel="noreferrer"><span>공식 예약</span><strong>현대 예약 페이지</strong><ExternalLink size={14} /></a>
               </div>
             </article>
           ))}

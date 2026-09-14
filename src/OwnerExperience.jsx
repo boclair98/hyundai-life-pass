@@ -144,6 +144,32 @@ function TodayBrief({ vehicle, navigate, setModal }) {
   </section>;
 }
 
+function GuestStartPanel({ navigate, setModal }) {
+  const [open, setOpen] = useState(false);
+  return <section className="guest-start-panel" aria-labelledby="guest-start-title" data-reveal>
+    <div className="guest-start-copy"><span>먼저 둘러보기</span><h2 id="guest-start-title">차량을 연결하기 전에, 필요한 기능부터 확인해 보세요.</h2><p>샘플 차량은 이해를 돕기 위한 예시입니다. 실제 차량 정보는 현대 계정 연결 후에만 표시됩니다.</p></div>
+    <div className="guest-start-actions"><button className="button primary" type="button" onClick={() => setOpen((value) => !value)}>{open ? '샘플 닫기' : '샘플 차량으로 둘러보기'} <ArrowRight size={15} /></button><button className="button outline" type="button" onClick={() => navigate('charge')}>주변 충전소 먼저 보기</button></div>
+    {open && <div className="guest-demo-grid" role="region" aria-label="샘플 차량 체험">
+      <article><span>샘플 차량 · 실제 데이터 아님</span><strong>IONIQ 5</strong><small>배터리 78% · 주행 가능 312km</small><button type="button" onClick={() => setModal('connect')}>내 차 연결하기 <ArrowUpRight size={14} /></button></article>
+      <button type="button" onClick={() => navigate('care', 'status')}><ShieldCheck size={19} /><strong>차량 상태</strong><small>배터리·안전 신호 화면 보기</small><ArrowRight size={15} /></button>
+      <button type="button" onClick={() => navigate('care', 'centers')}><Wrench size={19} /><strong>정비 거점</strong><small>내 주변 블루핸즈 찾기</small><ArrowRight size={15} /></button>
+      <button type="button" onClick={() => navigate('drive', 'checklist')}><Check size={19} /><strong>출발 체크</strong><small>오늘의 간단한 체크리스트</small><ArrowRight size={15} /></button>
+    </div>}
+  </section>;
+}
+
+function NextActionPanel({ vehicle, tasks, navigate, setModal }) {
+  const next = vehicle?.warningCount > 0
+    ? { icon: ShieldCheck, label: '안전 신호 확인', detail: `확인이 필요한 신호 ${vehicle.warningCount}건이 있어요.`, action: '상태 확인', run: () => navigate('care', 'status') }
+    : vehicle?.batterySoc != null && Number(vehicle.batterySoc) <= 20
+      ? { icon: BatteryCharging, label: '충전 준비', detail: `배터리 ${vehicle.batterySoc}% · 출발 전에 충전소를 찾아보세요.`, action: '충전소 보기', run: () => navigate('charge') }
+      : tasks.length
+        ? { icon: CalendarDays, label: tasks[0].title, detail: `${dateLabel(tasks[0].entryDate)} 예정 · 기록에서 완료 여부를 관리하세요.`, action: '일정 열기', run: () => navigate('passport') }
+        : { icon: FileText, label: '첫 관리 기록 남기기', detail: '충전 비용이나 다음 점검일을 남겨 두면 다음 방문이 더 편해져요.', action: vehicle ? '기록 시작' : '내 차 연결', run: () => vehicle ? navigate('passport') : setModal('connect') };
+  const Icon = next.icon;
+  return <section className="next-action-panel" aria-labelledby="next-action-title" data-reveal><div className="next-action-icon"><Icon size={20} /></div><div><span>NEXT BEST ACTION</span><h2 id="next-action-title">{next.label}</h2><p>{next.detail}</p></div><button type="button" onClick={next.run}>{next.action}<ArrowRight size={15} /></button></section>;
+}
+
 function OwnerValueHub({ vehicle, navigate, spent, journal }) {
   const recordedCost = journal.loading ? '불러오는 중…' : journal.error ? '확인 필요' : vehicle ? money(spent) : '연결 후 확인';
   const recordDetail = journal.loading
@@ -231,9 +257,11 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
+    {!vehicle && <GuestStartPanel navigate={navigate} setModal={setModal} />}
     <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
     <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
-    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
+    <NextActionPanel vehicle={vehicle} tasks={tasks} navigate={navigate} setModal={setModal} />
+    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority={index < 2} /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
       <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
       <div className="workspace-section-title"><div><span>MY HYUNDAI</span><h2 id="home-car-heading">오늘의 내 차</h2></div><button onClick={() => navigate('care', 'status')}>자세히 보기 <ChevronRight size={15} /></button></div>
