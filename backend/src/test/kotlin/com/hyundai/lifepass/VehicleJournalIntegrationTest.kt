@@ -81,4 +81,47 @@ class VehicleJournalIntegrationTest(
             header("X-Coders-User", "journal-multiple-owner"); contentType = MediaType.APPLICATION_JSON; content = """{"status":"ARCHIVED"}"""
         }.andExpect { status { isForbidden() } }
     }
+
+    @Test
+    fun `monthly report counts only completed records with an entered amount`() {
+        val car = ownCar("journal-report-owner")
+        mvc.post("/api/v1/vehicles/${car.id}/journal") {
+            header("X-Coders-User", "journal-report-owner"); contentType = MediaType.APPLICATION_JSON
+            content = """{"category":"MAINTENANCE","title":"타이어 교체","entryDate":"2026-01-05","amount":180000,"status":"DONE"}"""
+        }.andExpect { status { isCreated() } }
+        mvc.post("/api/v1/vehicles/${car.id}/journal") {
+            header("X-Coders-User", "journal-report-owner"); contentType = MediaType.APPLICATION_JSON
+            content = """{"category":"CHARGE","title":"충전","entryDate":"2026-01-08","status":"DONE"}"""
+        }.andExpect { status { isCreated() } }
+        mvc.post("/api/v1/vehicles/${car.id}/journal") {
+            header("X-Coders-User", "journal-report-owner"); contentType = MediaType.APPLICATION_JSON
+            content = """{"category":"INSURANCE","title":"보험 갱신","entryDate":"2026-01-20","amount":300000,"status":"PLANNED"}"""
+        }.andExpect { status { isCreated() } }
+
+        mvc.get("/api/v1/vehicles/${car.id}/journal/report?month=2026-01") {
+            header("X-Coders-User", "journal-report-owner")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.source") { value("OWNER_ENTERED") }
+            jsonPath("$.currency") { value("KRW") }
+            jsonPath("$.completedRecordCount") { value(2) }
+            jsonPath("$.costRecordCount") { value(1) }
+            jsonPath("$.recordsWithoutAmount") { value(1) }
+            jsonPath("$.totalAmount") { value(180000) }
+            jsonPath("$.averageAmount") { value(180000) }
+            jsonPath("$.categoryTotals[0].category") { value("MAINTENANCE") }
+            jsonPath("$.categoryTotals[0].recordCount") { value(1) }
+        }
+    }
+
+    @Test
+    fun `monthly report rejects invalid month and remains owner scoped`() {
+        val car = ownCar("journal-report-private-owner")
+        mvc.get("/api/v1/vehicles/${car.id}/journal/report?month=2026-13") {
+            header("X-Coders-User", "journal-report-private-owner")
+        }.andExpect { status { isBadRequest() } }
+        mvc.get("/api/v1/vehicles/${car.id}/journal/report?month=2026-01") {
+            header("X-Coders-User", "another-report-owner")
+        }.andExpect { status { isForbidden() } }
+    }
 }

@@ -19,6 +19,10 @@
 | GET | `/api/v1/vehicles/{id}` | 차량 상태 |
 | GET | `/api/v1/vehicles/{id}/events` | 서명된 차량 이벤트 |
 | POST | `/api/v1/vehicles/{id}/events` | 차량 이벤트 추가 |
+| GET | `/api/v1/vehicles/{id}/journal` | 소유자 입력 관리 기록 |
+| POST | `/api/v1/vehicles/{id}/journal` | 소유자 관리 기록 추가 |
+| GET | `/api/v1/vehicles/{id}/journal/report?month=YYYY-MM` | 월별 지출 리포트 |
+| PATCH | `/api/v1/vehicles/{id}/journal/{entryId}/status` | 기록 상태 변경·보관 |
 | GET | `/api/v1/vehicles/{id}/passport` | 차량 여권 |
 | GET | `/api/v1/releases` | OTA 릴리스 목록 |
 | POST | `/api/v1/releases/{id}/start|advance|pause` | Canary 상태 변경 |

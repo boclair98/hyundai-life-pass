@@ -15,6 +15,7 @@ import {
   CircleGauge,
   Clock3,
   CloudCog,
+  ExternalLink,
   FileCheck2,
   Gauge,
   HeartHandshake,
@@ -55,6 +56,7 @@ import {
   loadVehicles,
 } from './api';
 import { OwnerHome, OwnershipPage, useVehicleJournal } from './OwnerExperience';
+import { demoPlatform, demoPassport, demoServiceCenters, demoVehicle } from './data';
 import './app.css';
 import './platform.css';
 import { MobilityBackdrop, useMobilityTour, FeatureImage } from './MobilityBackdrop';
@@ -216,11 +218,12 @@ function openKakaoDirections(destination, notify) {
 
 export default function App() {
   const appRef = useRef(null);
+  const demoMode = useMemo(() => new URLSearchParams(window.location.search).get('demo') === '1', []);
   const initialPage = window.location.hash.replace('#', '');
   const [page, setPage] = useState(validPages.has(initialPage) ? initialPage : 'home');
   const [sectionTarget, setSectionTarget] = useState('');
-  const [vehicles, setVehicles] = useState([]);
-  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [vehicles, setVehicles] = useState(() => demoMode ? [demoVehicle] : []);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(() => demoMode ? demoVehicle.id : '');
   const [vehicleError, setVehicleError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState(null);
@@ -233,19 +236,30 @@ export default function App() {
   const initialRetryScheduled = useRef(false);
 
   const vehicle = vehicles.find((item) => item.id === selectedVehicleId) ?? vehicles[0] ?? null;
-  const journal = useVehicleJournal(vehicle?.databaseId);
+  const journal = useVehicleJournal(vehicle?.databaseId, demoMode);
 
   const refreshVehicles = useCallback(async () => {
+    if (demoMode) {
+      setVehicles([demoVehicle]);
+      setVehicleError('');
+      setSelectedVehicleId(demoVehicle.id);
+      return { vehicles: [demoVehicle], source: 'demo' };
+    }
     const result = await loadVehicles();
     setVehicles(result.vehicles);
     setVehicleError(result.error ?? '');
     setSelectedVehicleId((current) => result.vehicles.some((item) => item.id === current) ? current : result.vehicles[0]?.id ?? '');
     return result;
-  }, []);
+  }, [demoMode]);
 
   useEffect(() => { refreshVehicles().catch(() => undefined); }, [refreshVehicles]);
 
   const refreshPlatform = useCallback(async () => {
+    if (demoMode) {
+      setPlatform(demoPlatform);
+      setRefreshError('');
+      return demoPlatform;
+    }
     try {
       const snapshot = await loadPlatform();
       setPlatform(snapshot);
@@ -254,13 +268,14 @@ export default function App() {
       setRefreshError(error.message || '서비스 연결을 확인해 주세요.');
       throw error;
     }
-  }, []);
+  }, [demoMode]);
 
   useEffect(() => {
     refreshPlatform().catch(() => undefined);
   }, [refreshPlatform]);
 
   useEffect(() => {
+    if (demoMode) return undefined;
     if ((!refreshError && !vehicleError) || initialRetryScheduled.current) return undefined;
     // A sleeping API can return a gateway error while the static shell is already visible.
     // Give the service one quiet recovery attempt so owners are not left with a dead banner.
@@ -269,15 +284,19 @@ export default function App() {
       Promise.allSettled([refreshPlatform(), refreshVehicles()]);
     }, 4500);
     return () => window.clearTimeout(timer);
-  }, [refreshError, vehicleError, refreshPlatform, refreshVehicles]);
+  }, [demoMode, refreshError, vehicleError, refreshPlatform, refreshVehicles]);
 
   useEffect(() => {
     let active = true;
     setPassport(null);
     setPassportError('');
+    if (demoMode) {
+      setPassport(demoPassport);
+      return () => { active = false; };
+    }
     if (vehicle?.databaseId) loadPassport(vehicle.databaseId).then((result) => { if (active) setPassport(result); }).catch((error) => { if (active) setPassportError(error.message || '차량 기록을 불러오지 못했습니다.'); });
     return () => { active = false; };
-  }, [vehicle?.databaseId]);
+  }, [demoMode, vehicle?.databaseId]);
 
   useEffect(() => {
     const syncFromLocation = () => {
@@ -414,16 +433,20 @@ export default function App() {
 
   const actions = {
     connectHyundai: async () => {
+      if (demoMode) {
+        notify('시연용 샘플 차량입니다. 실제 현대차 계정 연결은 실행하지 않았어요.');
+        return false;
+      }
       window.location.assign(hyundaiAuthorizationPath);
     },
-    syncHyundai: () => transact(() => syncHyundaiVehicles(), '동의한 현대차 데이터를 동기화했습니다.'),
-    resumeHyundaiAgreement: () => window.location.assign('/api/v1/integrations/hyundai/agreement'),
-    revokeHyundai: () => transact(() => revokeHyundaiConnection(), '현대 계정 연결과 저장된 실차 데이터를 삭제했습니다.'),
-    markNotification: (id) => transact(() => readNotification(id), '알림을 확인했습니다.'),
+    syncHyundai: () => demoMode ? Promise.resolve(notify('시연용 화면에서는 실제 차량 동기화를 실행하지 않았어요.')) : transact(() => syncHyundaiVehicles(), '동의한 현대차 데이터를 동기화했습니다.'),
+    resumeHyundaiAgreement: () => demoMode ? Promise.resolve(notify('시연용 화면에서는 실제 동의 절차로 이동하지 않아요.')) : window.location.assign('/api/v1/integrations/hyundai/agreement'),
+    revokeHyundai: () => demoMode ? Promise.resolve(notify('시연용 화면에서는 샘플 데이터가 삭제되지 않아요.')) : transact(() => revokeHyundaiConnection(), '현대 계정 연결과 저장된 실차 데이터를 삭제했습니다.'),
+    markNotification: (id) => demoMode ? Promise.resolve(notify('시연용 알림입니다. 실제 알림 상태는 변경되지 않았어요.')) : transact(() => readNotification(id), '알림을 확인했습니다.'),
   };
 
   const tour = useMobilityTour(page, sectionTarget, Boolean(modal));
-  const shared = { vehicle, navigate, notify, setModal, platform, passport, passportError, actions, busy, journal, sectionTarget, tour };
+  const shared = { vehicle, navigate, notify, setModal, platform, passport, passportError, actions, busy, journal, sectionTarget, tour, demoMode };
   useEffect(() => {
     const pageTitle = page === 'proposal' ? '현대차 제안' : page === 'canary' ? 'SDV 운영 데모' : navigation.find((item) => item.id === page)?.label ?? '이용 안내';
     document.title = `${pageTitle} · LIFE PASS`;
@@ -451,9 +474,11 @@ export default function App() {
         platform={platform}
         actions={actions}
         busy={busy}
+        demoMode={demoMode}
       />
 
-      <DataProvenanceBar platform={platform} actions={actions} busy={busy} />
+      {demoMode && <DemoModeBanner />}
+      <DataProvenanceBar platform={platform} actions={actions} busy={busy} demoMode={demoMode} />
 
 
       {(refreshError || vehicleError) && <div className="connectivity-banner" role="alert"><span>{vehicleError ? '차량 정보를 아직 불러오지 못했어요.' : '일부 정보를 아직 불러오지 못했어요.'}</span><button onClick={() => Promise.allSettled([refreshPlatform(), refreshVehicles()])}>다시 시도</button></div>}
@@ -479,7 +504,12 @@ export default function App() {
   );
 }
 
-function DataProvenanceBar({ platform, actions, busy }) {
+function DemoModeBanner() {
+  const returnUrl = `${window.location.pathname}${window.location.hash || '#home'}`;
+  return <aside className="demo-mode-banner" role="status" aria-label="시연용 샘플 차량 안내"><div className="container"><span className="demo-mode-badge">DEMO</span><div><strong>시연용 샘플 차량으로 보고 있어요.</strong><p>실제 현대차 계정·차량 데이터가 아니며, 입력·동기화·위치 조회를 실행해도 운영 데이터에 반영되지 않습니다.</p></div><a href={returnUrl}>실제 서비스로 돌아가기</a></div></aside>;
+}
+
+function DataProvenanceBar({ platform, actions, busy, demoMode = false }) {
   const [expanded, setExpanded] = useState(false);
   const providers = platform.providers ?? [];
   if (!providers.length) return null;
@@ -487,13 +517,13 @@ function DataProvenanceBar({ platform, actions, busy }) {
   const isLive = (provider) => provider.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(provider.state);
   const carReady = isLive(hyundai);
   const chargerReady = isLive(providers.find((provider) => provider.id === 'ev-charger'));
-  const environmentLabel = carReady ? '오늘도 안전하게 출발해요' : '차량을 연결하면 더 편해져요';
+  const environmentLabel = demoMode ? '시연용 샘플 차량이 준비됐어요' : carReady ? '오늘도 안전하게 출발해요' : '차량을 연결하면 더 편해져요';
   return (
     <aside className={`data-provenance ${carReady ? 'live' : 'ready'} ${expanded ? 'open' : ''}`} aria-label="서비스 상태 안내">
       <div className="container">
         <div className="provenance-summary">
           <strong><i />{environmentLabel}</strong>
-          <span className="provenance-mobile-summary">{carReady ? '내 차 상태가 준비됐어요' : '충전소·블루핸즈는 위치를 허용하면 확인해요'}</span>
+          <span className="provenance-mobile-summary">{demoMode ? '실제 차량과 분리된 검수 화면' : carReady ? '내 차 상태가 준비됐어요' : '충전소·블루핸즈는 위치를 허용하면 확인해요'}</span>
           <button className="provenance-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>상태 보기 <ChevronDown size={14} /></button>
         </div>
         <div className="provenance-details">
@@ -501,16 +531,16 @@ function DataProvenanceBar({ platform, actions, busy }) {
             <span className={carReady ? 'live' : 'sample'}><i />내 차 상태: {carReady ? '최신 상태 확인' : '차량 연결 후 확인'}</span>
             <span className={chargerReady ? 'live' : 'sample'}><i />주변 충전소: {chargerReady ? '지금 이용 가능' : '잠시 확인 중'}</span>
           </div>
-          <small>{carReady ? '차량 상태와 주변 생활 정보를 한곳에서 확인할 수 있어요.' : '차량을 연결하지 않아도 위치를 허용하면 주변 충전소와 블루핸즈를 찾을 수 있어요.'}</small>
-          {hyundai?.mode === 'LIVE' && ['OAUTH_REQUIRED', 'REVOKED'].includes(hyundai.state) && <button className="provenance-action" disabled={busy} onClick={actions.connectHyundai}>{hyundai.state === 'REVOKED' ? '다시 연결' : '현대 계정 연결'}</button>}
-          {hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED' && <button className="provenance-action" disabled={busy} onClick={actions.resumeHyundaiAgreement}>동의 계속하기</button>}
+          <small>{demoMode ? '모든 값은 화면 검수를 위한 고정 샘플입니다.' : carReady ? '차량 상태와 주변 생활 정보를 한곳에서 확인할 수 있어요.' : '차량을 연결하지 않아도 위치를 허용하면 주변 충전소와 블루핸즈를 찾을 수 있어요.'}</small>
+          {!demoMode && hyundai?.mode === 'LIVE' && ['OAUTH_REQUIRED', 'REVOKED'].includes(hyundai.state) && <button className="provenance-action" disabled={busy} onClick={actions.connectHyundai}>{hyundai.state === 'REVOKED' ? '다시 연결' : '현대 계정 연결'}</button>}
+          {!demoMode && hyundai?.mode === 'LIVE' && hyundai.state === 'CONSENT_REQUIRED' && <button className="provenance-action" disabled={busy} onClick={actions.resumeHyundaiAgreement}>동의 계속하기</button>}
         </div>
       </div>
     </aside>
   );
 }
 
-function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, notify, platform, actions, busy }) {
+function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, selectedVehicleId, setSelectedVehicleId, notify, platform, actions, busy, demoMode = false }) {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const hyundai = platform.providers?.find((provider) => provider.id === 'hyundai-connected-car');
   const connected = hyundai?.mode === 'LIVE' && ['CONNECTED', 'STALE'].includes(hyundai.state);
@@ -546,7 +576,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
             <button className="header-icon" onClick={() => setAlertsOpen((value) => !value)} aria-label={`알림 ${platform.unreadNotifications ?? 0}개`}><Bell size={18} />{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
             {alertsOpen && <div className="notification-panel"><div><strong>알림 센터</strong><span>{vehicle ? '내 차 소식' : '주변 생활 소식'}</span></div>{platform.notifications?.length ? platform.notifications.slice(0, 5).map((item) => <button key={item.id} className={item.read ? 'read' : ''} onClick={() => actions.markNotification(item.id)}><span>{item.category}</span><strong>{item.title}</strong><small>{item.message}</small></button>) : <p>새로운 알림이 없습니다.</p>}</div>}
           </div>
-          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>현대 통합계정</small><strong>{connected ? '내 계정' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '계정 연결'}</strong></span></button>
+          <button className={`account-button ${connected ? 'connected' : ''}`} disabled={busy} onClick={accountAction}><UserRound size={16} /><span><small>{demoMode ? '검수용 화면' : '현대 통합계정'}</small><strong>{demoMode ? '시연용 차량' : connected ? '내 계정' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '계정 연결'}</strong></span></button>
           <button className="mobile-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}>{menuOpen ? <X size={21} /> : <Menu size={21} />}{platform.unreadNotifications > 0 && <i className="notification-count">{platform.unreadNotifications}</i>}</button>
         </div>
       </div>
@@ -554,7 +584,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
       {menuOpen && (
         <div className="mobile-drawer">
           <div className="mobile-vehicle"><span>{vehicle?.name ?? '아직 등록한 차량이 없어요'}</span><strong>{vehicle?.plate ?? '차량을 연결해 보세요'}</strong><small>{vehicle ? '내 차 소식이 준비됐어요' : '주변 충전·정비는 바로 이용할 수 있어요'}</small></div>
-          <div className={`mobile-account ${connected ? 'connected' : ''}`}><div><UserRound size={19} /><span><small>현대 통합계정</small><strong>{connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</strong></span></div><button disabled={busy} onClick={accountAction}>{connected ? '새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '연결하기'}</button></div>
+          <div className={`mobile-account ${connected ? 'connected' : ''}`}><div><UserRound size={19} /><span><small>{demoMode ? '검수용 화면' : '현대 통합계정'}</small><strong>{demoMode ? '시연용 차량' : connected && hyundai?.accountName ? `${hyundai.accountName}님` : hyundaiStatusLabel(hyundai)}</strong></span></div><button disabled={busy} onClick={accountAction}>{connected ? '새로고침' : hyundai?.state === 'CONSENT_REQUIRED' ? '동의 계속' : '연결하기'}</button></div>
           {primaryNavigation.map((item) => <button key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
           <div className="mobile-drawer-label">필요할 때만 쓰는 도구</div>
           {secondaryNavigation.map((item) => <button className="mobile-drawer-secondary" key={item.id} onClick={() => navigate(item.id)}><item.icon size={18} />{item.label}<ChevronRight size={16} /></button>)}
@@ -625,7 +655,7 @@ function ChargeHero({ availableCount, locationLabel, radiusKm, usingCurrentLocat
   );
 }
 
-function ChargePage({ vehicle, notify, platform, setModal }) {
+function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
   const [chargerFeed, setChargerFeed] = useState(() => ({
     stations: platform.stations ?? [],
     provider: platform.providers?.find((provider) => provider.id === 'ev-charger') ?? null,
@@ -690,6 +720,10 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
   }, [platform.stations, platform.providers, usingCurrentLocation]);
 
   const loadFromCoordinates = useCallback(async ({ latitude, longitude }) => {
+    if (demoMode) {
+      notify('시연용 화면에서는 실제 위치를 조회하지 않습니다.');
+      return;
+    }
     setLocationBusy(true);
     try {
       const result = await loadChargingStations({ latitude, longitude, radiusKm: 30 });
@@ -703,7 +737,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
     } finally {
       setLocationBusy(false);
     }
-  }, [notify]);
+  }, [demoMode, notify]);
 
   useEffect(() => {
     try {
@@ -720,6 +754,10 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
   }, [favoriteIds, notify]);
 
   const refreshStations = useCallback(async () => {
+    if (demoMode) {
+      notify('시연용 충전소 목록입니다. 실제 상태 조회는 실행하지 않습니다.');
+      return;
+    }
     const query = chargerFeed.search ?? { latitude: 37.5446, longitude: 127.0559, radiusKm: 30 };
     setLocationBusy(true);
     try {
@@ -732,9 +770,13 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
     } finally {
       setLocationBusy(false);
     }
-  }, [chargerFeed.search, notify]);
+  }, [chargerFeed.search, demoMode, notify]);
 
   const findFromCurrentLocation = useCallback(() => {
+    if (demoMode) {
+      notify('시연용 화면에서는 브라우저 위치 권한을 요청하지 않습니다.');
+      return;
+    }
     setLocationBusy(true);
     getCurrentPosition()
       .then(({ coords }) => loadFromCoordinates({ latitude: coords.latitude, longitude: coords.longitude }))
@@ -743,17 +785,22 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
         setUsingCurrentLocation(false);
         notify(locationErrorMessage(error));
       });
-  }, [loadFromCoordinates, notify]);
+  }, [demoMode, loadFromCoordinates, notify]);
 
   const startDirections = useCallback((station) => {
     if (!station || directionsBusy) return;
+    if (demoMode) {
+      notify('시연용 화면에서는 외부 길찾기를 열지 않습니다.');
+      return;
+    }
     setDirectionsBusy(true);
     openKakaoDirections(station, notify)
       .catch(() => undefined)
       .finally(() => setDirectionsBusy(false));
-  }, [directionsBusy, notify]);
+  }, [demoMode, directionsBusy, notify]);
 
   useEffect(() => {
+    if (demoMode) return undefined;
     let active = true;
     // Safari on iOS does not expose Permissions API. Still request the browser's
     // real location instead of silently falling back to the Seoul default.
@@ -769,7 +816,7 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
       if (active) findFromCurrentLocation();
     });
     return () => { active = false; };
-  }, [findFromCurrentLocation]);
+  }, [demoMode, findFromCurrentLocation]);
 
   return (
     <div className="page container charge-page">
@@ -794,10 +841,11 @@ function ChargePage({ vehicle, notify, platform, setModal }) {
         </section>
         <aside className="station-panel panel">
           <div className="station-panel-head"><span>가까운 순서</span><small>{chargerLive ? `${Math.min(6, visibleStations.length)}곳 추천` : '확인 중'}</small></div>
+          <div className="data-freshness"><i />{chargerProvider?.refreshedAt ? `마지막 확인 ${formatDateTime(chargerProvider.refreshedAt)}` : '충전기 상태 확인 중'}<span>현장 상황에 따라 달라질 수 있어요</span></div>
           {visibleStations.slice(0, stationLimit).map((station) => (
             <button key={station.id} className={`station-row ${activeStation?.id === station.id ? 'active' : ''}`} onClick={() => setSelectedStation(station)}>
               <div className={`station-availability ${station.available > 0 ? 'available' : 'busy'}`}><strong>{station.available}</strong><span>/{station.total}</span><i /></div>
-              <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel}</small></div>
+              <div><strong>{station.name}</strong><span>{station.distance} · {station.speed} · {station.eta}</span><small>{station.operator} · {station.statusLabel} · 사용 가능 {station.available}대</small></div>
               <ChevronRight size={16} />
             </button>
           ))}
@@ -1312,7 +1360,7 @@ function OfficialAssistanceCard() {
   </section>;
 }
 
-function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget }) {
+function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget, demoMode = false }) {
   const [careTab, setCareTab] = useState(sectionTarget || (vehicle ? 'status' : 'centers'));
   useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
   const [centerFeed, setCenterFeed] = useState({ centers: [], provider: null });
@@ -1326,6 +1374,18 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       : { title: '다음 운행을 위한 거점 저장', detail: '차량별 점검 주기는 현재 제공되지 않아 가까운 블루핸즈를 먼저 저장해 두는 것을 권장합니다.', button: '거점 찾기' };
 
   const findCenters = useCallback(async (coordinates) => {
+    if (demoMode) {
+      setCenterFeed({ centers: demoServiceCenters, provider: platform.providers?.find((provider) => provider.id === 'service-center') ?? { state: 'CONNECTED', source: 'DEMO', message: '시연용 서비스 거점 데이터입니다.' } });
+      setCenterBusy(false);
+      setCenterError('');
+      setCenterLocation(coordinates ? {
+        current: true,
+        label: '시연 위치',
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+      } : { current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
+      return;
+    }
     setCenterBusy(true);
     setCenterError('');
     setCenterLocation(coordinates ? {
@@ -1347,14 +1407,18 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
     } finally {
       setCenterBusy(false);
     }
-  }, [notify]);
+  }, [demoMode, notify, platform.providers]);
 
   const findFromCurrentLocation = useCallback(() => {
+    if (demoMode) {
+      notify('시연용 화면에서는 브라우저 위치 권한을 요청하지 않습니다.');
+      return;
+    }
     setCenterBusy(true);
     getCurrentPosition()
       .then(({ coords }) => findCenters({ latitude: coords.latitude, longitude: coords.longitude, radius: 20000 }))
       .catch((error) => { setCenterBusy(false); notify(locationErrorMessage(error)); });
-  }, [findCenters, notify]);
+  }, [demoMode, findCenters, notify]);
 
   const retryCenters = () => findCenters(centerLocation.current
     ? { latitude: centerLocation.latitude, longitude: centerLocation.longitude, radius: 20000 }
@@ -1363,6 +1427,10 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
   // 위치 권한을 이미 허용한 오너라면 정비소도 충전소처럼 처음부터 현재 위치를 사용합니다.
   // 처음 방문자에게 권한 팝업을 강제로 띄우지는 않고, 기본 위치를 보여준 뒤 버튼으로 선택하게 합니다.
   useEffect(() => {
+    if (demoMode) {
+      findCenters();
+      return undefined;
+    }
     let active = true;
     if (!navigator.permissions?.query) {
       // Safari on iOS does not expose Permissions API. Ask for the real location
@@ -1376,7 +1444,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       else findCenters();
     }).catch(() => { if (active) findFromCurrentLocation(); });
     return () => { active = false; };
-  }, [findCenters, findFromCurrentLocation]);
+  }, [demoMode, findCenters, findFromCurrentLocation]);
 
   return (
     <div className="page container">
@@ -1433,6 +1501,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
               <div className="service-center-actions">
                 {center.phone && <a href={`tel:${center.phone.replace(/[^0-9+]/g, '')}`}><span>{center.phone}</span><strong>전화</strong></a>}
                 <button onClick={() => window.open(center.placeUrl, '_blank', 'noopener,noreferrer')}><span>지도 보기</span><strong>상세·길찾기</strong><Navigation size={14} /></button>
+                <a href="https://www.hyundai.com/kr/ko/service-membership/service-network/service-reservation-search/service-network-reservation" target="_blank" rel="noreferrer"><span>공식 예약</span><strong>현대 예약 페이지</strong><ExternalLink size={14} /></a>
               </div>
             </article>
           ))}

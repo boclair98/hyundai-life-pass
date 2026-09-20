@@ -81,6 +81,7 @@ export const loadReleases = () => request('/api/v1/releases');
 export const loadAuditLogs = () => request('/api/v1/platform/audit-logs').catch(() => []);
 export const loadPassport = (vehicleDatabaseId) => request(`/api/v1/vehicles/${vehicleDatabaseId}/passport`);
 export const loadJournal = (vehicleId) => request(`/api/v1/vehicles/${vehicleId}/journal`);
+export const loadJournalReport = (vehicleId, month) => request(`/api/v1/vehicles/${vehicleId}/journal/report?month=${encodeURIComponent(month)}`);
 export const createJournalEntry = (vehicleId, entry) => request(`/api/v1/vehicles/${vehicleId}/journal`, { method: 'POST', body: JSON.stringify(entry) });
 export const changeJournalStatus = (vehicleId, entryId, status) => request(`/api/v1/vehicles/${vehicleId}/journal/${entryId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
 export const connectVehicle = (externalId) => request(`/api/v1/platform/vehicles/${externalId}/connect`, { method: 'POST' });

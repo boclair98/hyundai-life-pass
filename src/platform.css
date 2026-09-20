@@ -8,6 +8,12 @@ textarea { font:inherit; }
 .platform { background:#f6f8fa; overflow:clip; }
 .platform .container { width:min(1180px,calc(100% - 64px)); }
 .platform main { min-height:65vh; outline:none; }
+.demo-mode-banner { position:relative; z-index:20; background:#fff7e6; border-bottom:1px solid #f0d39a; color:#654b1d; }
+.demo-mode-banner .container { display:flex; align-items:center; gap:13px; min-height:60px; padding-top:9px; padding-bottom:9px; }
+.demo-mode-badge { flex:0 0 auto; padding:5px 8px; border-radius:6px; background:#9a6800; color:#fff; font-size:10px; font-weight:800; letter-spacing:.08em; }
+.demo-mode-banner strong { display:block; font-size:13px; color:#62440d; }
+.demo-mode-banner p { margin:3px 0 0; font-size:11px; line-height:1.5; color:#866a35; }
+.demo-mode-banner a { flex:0 0 auto; margin-left:auto; color:#76520c; font-size:11px; font-weight:700; text-decoration:underline; white-space:nowrap; }
 .platform .page { padding-top:32px; padding-bottom:56px; }
 .platform .site-header, .platform.page-home .site-header { position:sticky; height:76px; top:0; background:rgba(255,255,255,.96); border-bottom:1px solid #e5ebef; color:#002c5f; backdrop-filter:blur(18px); box-shadow:none; }
 .platform .header-inner { width:min(1280px,calc(100% - 48px)); gap:24px; }
@@ -126,6 +132,7 @@ textarea { font:inherit; }
 @media(max-width:1050px) { .platform .desktop-nav { display:none; }.platform .header-actions { margin-left:auto; }.platform .mobile-menu-button { display:grid; }.platform .charge-hero { grid-template-columns:1fr auto; }.platform .charge-hero > button { grid-column:1/-1; }.platform .mobile-drawer { display:block; position:absolute; top:76px; width:100%; background:#fff; max-height:calc(100dvh - 140px); overflow:auto; box-shadow:0 15px 30px #123e5c20; }.platform .mobile-drawer > button { font-size:14px; min-height:48px; }.platform .mobile-vehicle strong { font-size:16px; }.platform .mobile-vehicle small { font-size:12px; } }
 @media(max-width:700px) {
   .platform .container { width:calc(100% - 32px); }.platform .page { padding-top:22px; padding-bottom:34px; }.platform .site-header,.platform.page-home .site-header { height:62px; }.platform .header-inner { width:calc(100% - 32px); gap:10px; }.platform .brand-copy strong { font-size:21px; }.platform .brand-copy small { font-size:9px; }.platform .header-actions { gap:3px; }.platform .account-button,.platform .notification-wrap { display:none; }.platform .mobile-menu-button { width:42px; height:42px; }.platform .mobile-drawer { top:62px; }.platform .mobile-account strong { font-size:13px; }.platform .mobile-account small { font-size:11px; }.platform .mobile-account button { font-size:12px; min-height:42px; }
+  .demo-mode-banner .container { align-items:flex-start; gap:9px; min-height:0; padding-top:10px; padding-bottom:10px; }.demo-mode-banner strong { font-size:11px; }.demo-mode-banner p { margin-top:2px; font-size:10px; line-height:1.45; }.demo-mode-banner a { align-self:center; font-size:10px; }
   .platform .mobile-nav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); height:auto; min-height:66px; bottom:0; left:0; right:0; width:100%; padding:7px 6px max(9px,env(safe-area-inset-bottom)); border:0; border-top:1px solid #e1e8ee; border-radius:0; background:rgba(255,255,255,.97); backdrop-filter:blur(16px); box-shadow:0 -3px 18px #224a6b08; }.platform .mobile-nav button { min-height:48px; display:flex; flex-direction:column; align-items:center; gap:5px; border:0; border-radius:9px; background:none; color:#94a2ae; }.platform .mobile-nav button span { font-size:10px; font-weight:600; }.platform .mobile-nav button.active { background:#edf4f8; color:#002c5f; }.platform .mobile-nav button::after,.platform .mobile-nav button::before { display:none; }.platform .mobile-nav button svg { width:20px; height:20px; }
   .platform .site-footer { padding:26px 0 calc(92px + env(safe-area-inset-bottom)); }.platform .site-footer .container { display:grid; gap:18px; }.platform .site-footer nav { display:flex; flex-wrap:wrap; gap:14px; }.platform .site-footer small { font-size:10px; }.platform .toast { bottom:calc(82px + env(safe-area-inset-bottom)); font-size:12px; }
   .workspace-heading { align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap; }.workspace-heading h1 { margin:8px 0; font-size:27px; letter-spacing:-1.3px; }.workspace-heading p { font-size:12px; line-height:1.65; }.workspace-heading > div > span { font-size:9px; }.workspace-heading-actions .button { min-height:39px; padding:10px 13px; font-size:12px; }.workspace-tabs { width:100%; margin:12px 0 19px; padding:4px; }.workspace-tabs button { flex:1; min-width:0; padding:0 8px; min-height:42px; font-size:12px; white-space:nowrap; }.feature-help { margin-bottom:10px; font-size:11px; }.feature-help summary { min-height:28px; }.workspace-section-title h2 { font-size:20px; }.workspace-section-title > div > span { font-size:9px; }.workspace-section-title > button { font-size:11px; }
@@ -150,3 +157,114 @@ textarea { font:inherit; }
 .platform .kakao-station-marker.active strong { font-size: 15px; }
 .platform .kakao-station-marker.active span { display: block; margin-top: 2px; font-size: 9px; color: #fff; }
 .platform .kakao-station-marker:focus-visible { outline: 3px solid #00aad2; outline-offset: 3px; }
+/* First-run and next-action surfaces: make the empty state useful without fabricating vehicle data. */
+.platform.mobility-shell .guest-start-panel,
+.platform.mobility-shell .next-action-panel { margin-top:14px; padding:20px 22px; border:1px solid #ffffff35; border-radius:18px; background:linear-gradient(120deg,#f5fbfcf5,#e9f5f8eb); color:#073250; box-shadow:0 12px 28px #00142618; }
+.platform.mobility-shell .guest-start-panel { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:center; }
+.platform.mobility-shell .guest-start-copy { min-width:0; }
+.platform.mobility-shell .guest-start-copy > span,
+.platform.mobility-shell .next-action-panel > div > span { color:#0089a8; font:700 9px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .guest-start-copy h2,
+.platform.mobility-shell .next-action-panel h2 { margin:7px 0 5px; color:#073250; font-size:18px; line-height:1.35; letter-spacing:-.04em; }
+.platform.mobility-shell .guest-start-copy p,
+.platform.mobility-shell .next-action-panel p { margin:0; color:#547082; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .guest-start-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.platform.mobility-shell .guest-start-actions .button { min-height:42px; white-space:nowrap; }
+.platform.mobility-shell .guest-demo-grid { grid-column:1/-1; display:grid; grid-template-columns:1.4fr repeat(3,1fr); gap:9px; padding-top:16px; border-top:1px solid #0a5b7020; }
+.platform.mobility-shell .guest-demo-grid > * { min-height:135px; padding:16px; display:flex; flex-direction:column; align-items:flex-start; gap:7px; border:1px solid #0a5b7026; border-radius:13px; background:#ffffffa8; color:#073250; text-align:left; }
+.platform.mobility-shell .guest-demo-grid article { background:linear-gradient(145deg,#073250,#0b6173); color:#fff; }
+.platform.mobility-shell .guest-demo-grid span { color:#5c7c8b; font-size:9px; line-height:1.4; }
+.platform.mobility-shell .guest-demo-grid article span { color:#a9e8ef; }
+.platform.mobility-shell .guest-demo-grid strong { font-size:16px; letter-spacing:-.035em; }
+.platform.mobility-shell .guest-demo-grid small { color:#668391; font-size:10px; line-height:1.5; }
+.platform.mobility-shell .guest-demo-grid article small { color:#d2eef2; }
+.platform.mobility-shell .guest-demo-grid button { margin-top:auto; width:100%; display:flex; align-items:center; gap:7px; border:0; background:none; color:#087f9d; font-size:10px; font-weight:750; cursor:pointer; }
+.platform.mobility-shell .guest-demo-grid article button { color:#c8f6f8; }
+.platform.mobility-shell .next-action-panel { display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:13px; align-items:center; background:#062e49ed; color:#fff; }
+.platform.mobility-shell .next-action-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:#a8ebf1; color:#073250; }
+.platform.mobility-shell .next-action-panel h2 { color:#fff; font-size:17px; }
+.platform.mobility-shell .next-action-panel p { color:#c3dce5; }
+.platform.mobility-shell .next-action-panel > button { min-height:42px; display:inline-flex; align-items:center; gap:7px; border:1px solid #a8ebf155; border-radius:9px; padding:0 12px; background:#a8ebf112; color:#d8f8fa; font-size:10px; font-weight:750; white-space:nowrap; cursor:pointer; }
+.platform.mobility-shell .data-freshness { margin:0 14px 10px; padding:8px 10px; display:flex; align-items:center; gap:7px; border:1px solid #dbe8ed; border-radius:8px; background:#f7fbfc; color:#506f7e; font-size:9px; }
+.platform.mobility-shell .data-freshness i { width:6px; height:6px; flex:0 0 auto; border-radius:50%; background:#1daf82; box-shadow:0 0 0 3px #1daf8220; }
+.platform.mobility-shell .data-freshness span { margin-left:auto; color:#879ba5; }
+@media(max-width:760px) {
+  .platform.mobility-shell .guest-start-panel { display:block; padding:18px 16px; }
+  .platform.mobility-shell .guest-start-actions { display:grid; grid-template-columns:1fr; margin-top:14px; }
+  .platform.mobility-shell .guest-start-actions .button { width:100%; justify-content:center; }
+  .platform.mobility-shell .guest-demo-grid { grid-template-columns:1fr 1fr; }
+  .platform.mobility-shell .guest-demo-grid > * { min-height:132px; padding:13px; }
+  .platform.mobility-shell .guest-demo-grid article { grid-column:1/-1; min-height:122px; }
+  .platform.mobility-shell .next-action-panel { grid-template-columns:36px minmax(0,1fr); padding:17px 16px; }
+  .platform.mobility-shell .next-action-icon { width:36px; height:36px; }
+  .platform.mobility-shell .next-action-panel > button { grid-column:1/-1; width:100%; justify-content:center; }
+  .platform.mobility-shell .data-freshness { align-items:flex-start; flex-wrap:wrap; margin-inline:10px; }
+  .platform.mobility-shell .data-freshness span { width:100%; margin-left:13px; }
+}
+/* Daily ownership loop: local checklist plus an honest data snapshot. */
+.platform.mobility-shell .departure-checklist,
+.platform.mobility-shell .care-summary-panel { margin-top:14px; padding:22px; border:1px solid #ffffff35; border-radius:18px; background:#f6fbfcf2; color:#073250; box-shadow:0 12px 28px #00142614; }
+.platform.mobility-shell .checklist-heading,
+.platform.mobility-shell .care-summary-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.platform.mobility-shell .checklist-heading > div > span,
+.platform.mobility-shell .care-summary-heading > div > span { color:#0089a8; font:700 9px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .checklist-heading h2,
+.platform.mobility-shell .care-summary-heading h2 { margin:7px 0 5px; color:#073250; font-size:20px; line-height:1.3; letter-spacing:-.04em; }
+.platform.mobility-shell .checklist-heading p,
+.platform.mobility-shell .care-summary-heading p { margin:0; color:#547082; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .checklist-heading > strong { display:flex; align-items:baseline; gap:4px; color:#0089a8; font-size:27px; line-height:1; }
+.platform.mobility-shell .checklist-heading > strong small { color:#68818e; font-size:10px; font-weight:650; }
+.platform.mobility-shell .checklist-items { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:18px; }
+.platform.mobility-shell .checklist-items button { min-height:72px; padding:12px 13px; display:flex; align-items:flex-start; gap:8px; border:1px solid #d7e6eb; border-radius:11px; background:#fff; color:#2f5266; text-align:left; cursor:pointer; }
+.platform.mobility-shell .checklist-items button:hover { border-color:#68c7d2; }
+.platform.mobility-shell .checklist-items button svg { flex:0 0 auto; color:#86a3af; }
+.platform.mobility-shell .checklist-items button.done { border-color:#55b89e; background:#effaf6; color:#176653; }
+.platform.mobility-shell .checklist-items button.done svg { color:#1a9d7d; }
+.platform.mobility-shell .checklist-more { margin-top:14px; display:inline-flex; align-items:center; gap:7px; border:0; background:none; color:#0089a8; font-size:10px; font-weight:750; cursor:pointer; }
+.platform.mobility-shell .care-summary-heading > button { min-height:39px; padding:0 11px; display:inline-flex; align-items:center; gap:6px; border:1px solid #9edfe7; border-radius:9px; background:#eefbfc; color:#087c96; font-size:10px; font-weight:750; white-space:nowrap; cursor:pointer; }
+.platform.mobility-shell .care-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:18px; }
+.platform.mobility-shell .care-summary-grid article { min-height:96px; padding:14px; border:1px solid #dbe8ed; border-radius:11px; background:#fff; }
+.platform.mobility-shell .care-summary-grid article > span { display:block; color:#66818f; font-size:10px; }
+.platform.mobility-shell .care-summary-grid article > strong { display:block; margin-top:10px; color:#073250; font-size:24px; line-height:1; letter-spacing:-.04em; }
+.platform.mobility-shell .care-summary-grid article > strong small { margin-left:3px; color:#587684; font-size:10px; font-weight:650; }
+.platform.mobility-shell .care-summary-grid article > small { display:block; margin-top:9px; color:#91a3ab; font-size:9px; }
+@media(max-width:760px) {
+  .platform.mobility-shell .departure-checklist,
+  .platform.mobility-shell .care-summary-panel { padding:18px 16px; }
+  .platform.mobility-shell .checklist-items,
+  .platform.mobility-shell .care-summary-grid { grid-template-columns:1fr; gap:8px; }
+  .platform.mobility-shell .checklist-items button { min-height:55px; align-items:center; }
+  .platform.mobility-shell .care-summary-heading { display:block; }
+  .platform.mobility-shell .care-summary-heading > button { margin-top:13px; width:100%; justify-content:center; }
+}
+/* A lightweight monthly report uses only owner-entered records, so it stays useful and trustworthy before partner APIs exist. */
+.platform.mobility-shell .journal-insights { margin-top:14px; padding:22px; border:1px solid #dbe8ed; border-radius:16px; background:linear-gradient(135deg,#f4fbfc,#eaf5f8); color:#073250; }
+.platform.mobility-shell .journal-insights-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.platform.mobility-shell .journal-insights-heading > div > span,
+.platform.mobility-shell .journal-insights.guest > div > span { color:#0089a8; font:700 9px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .journal-insights h2 { margin:7px 0 5px; color:#073250; font-size:20px; line-height:1.3; letter-spacing:-.04em; }
+.platform.mobility-shell .journal-insights p { margin:0; color:#547082; font-size:11px; line-height:1.65; }
+.platform.mobility-shell .journal-insights-heading > strong { display:flex; align-items:baseline; gap:4px; color:#0089a8; font-size:28px; line-height:1; }
+.platform.mobility-shell .journal-insights-heading > strong small { color:#66818e; font-size:10px; font-weight:650; }
+.platform.mobility-shell .journal-insights-content { display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:24px; margin-top:21px; }
+.platform.mobility-shell .journal-bars h3 { margin:0 0 12px; color:#204e64; font-size:12px; }
+.platform.mobility-shell .journal-bar-row + .journal-bar-row { margin-top:11px; }
+.platform.mobility-shell .journal-bar-row > div { display:flex; justify-content:space-between; gap:12px; color:#5e7b88; font-size:10px; }
+.platform.mobility-shell .journal-bar-row > div strong { color:#204e64; font-weight:750; }
+.platform.mobility-shell .journal-bar-row > i { display:block; height:8px; margin-top:6px; overflow:hidden; border-radius:99px; background:#d9e9ee; }
+.platform.mobility-shell .journal-bar-row > i b { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#08a0b6,#65d4d5); }
+.platform.mobility-shell .journal-insights-kpis { display:grid; align-content:start; gap:9px; }
+.platform.mobility-shell .journal-insights-kpis article { padding:14px; border:1px solid #d7e6eb; border-radius:11px; background:#ffffffb8; }
+.platform.mobility-shell .journal-insights-kpis article span { display:block; color:#66818e; font-size:10px; }
+.platform.mobility-shell .journal-insights-kpis article strong { display:block; margin-top:9px; color:#073250; font-size:18px; letter-spacing:-.04em; }
+.platform.mobility-shell .journal-insights-empty { min-height:92px; margin-top:18px; padding:17px; display:flex; align-items:center; gap:10px; border:1px dashed #a9cbd4; border-radius:11px; background:#ffffff8f; color:#66818e; }
+.platform.mobility-shell .journal-insights-empty svg { flex:0 0 auto; color:#1a9eb2; }
+.platform.mobility-shell .journal-insights-empty strong { color:#285b70; font-size:12px; }
+.platform.mobility-shell .journal-insights-empty p { margin-left:auto; }
+.platform.mobility-shell .journal-insights.guest .journal-insights-empty { margin-top:16px; }
+@media(max-width:760px) {
+  .platform.mobility-shell .journal-insights { padding:18px 16px; }
+  .platform.mobility-shell .journal-insights-content { grid-template-columns:1fr; gap:15px; }
+  .platform.mobility-shell .journal-insights-empty { align-items:flex-start; flex-wrap:wrap; }
+  .platform.mobility-shell .journal-insights-empty p { width:100%; margin:0 0 0 32px; }
+}

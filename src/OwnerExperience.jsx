@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
-import { loadJournal, createJournalEntry, changeJournalStatus } from './api';
+import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, CheckCircle2, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
+import { loadJournal, loadJournalReport, createJournalEntry, changeJournalStatus } from './api';
+import { demoJournalEntries } from './data';
 import './cinematic.css';
 import { FeatureImage, SceneControls } from './MobilityBackdrop';
 
@@ -10,6 +11,7 @@ const money = (value) => `${Number(value).toLocaleString('ko-KR')}원`;
 const dateKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 const metric = (value, unit) => value == null ? '연결 후 확인' : `${Number(value).toLocaleString('ko-KR')}${unit}`;
 const dateLabel = (date) => new Date(`${date}T12:00:00`).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+const CHECKLIST_STORAGE_KEY = 'life-pass:departure-checklist:v1';
 
 function vehicleBrief(vehicle) {
   if (!vehicle) return {
@@ -144,6 +146,64 @@ function TodayBrief({ vehicle, navigate, setModal }) {
   </section>;
 }
 
+function GuestStartPanel({ navigate, setModal }) {
+  const [open, setOpen] = useState(false);
+  return <section className="guest-start-panel" aria-labelledby="guest-start-title" data-reveal>
+    <div className="guest-start-copy"><span>먼저 둘러보기</span><h2 id="guest-start-title">차량을 연결하기 전에, 필요한 기능부터 확인해 보세요.</h2><p>샘플 차량은 이해를 돕기 위한 예시입니다. 실제 차량 정보는 현대 계정 연결 후에만 표시됩니다.</p></div>
+    <div className="guest-start-actions"><button className="button primary" type="button" onClick={() => setOpen((value) => !value)}>{open ? '샘플 닫기' : '샘플 차량으로 둘러보기'} <ArrowRight size={15} /></button><button className="button outline" type="button" onClick={() => navigate('charge')}>주변 충전소 먼저 보기</button></div>
+    {open && <div className="guest-demo-grid" role="region" aria-label="샘플 차량 체험">
+      <article><span>샘플 차량 · 실제 데이터 아님</span><strong>IONIQ 5</strong><small>배터리 78% · 주행 가능 312km</small><button type="button" onClick={() => setModal('connect')}>내 차 연결하기 <ArrowUpRight size={14} /></button></article>
+      <button type="button" onClick={() => navigate('care', 'status')}><ShieldCheck size={19} /><strong>차량 상태</strong><small>배터리·안전 신호 화면 보기</small><ArrowRight size={15} /></button>
+      <button type="button" onClick={() => navigate('care', 'centers')}><Wrench size={19} /><strong>정비 거점</strong><small>내 주변 블루핸즈 찾기</small><ArrowRight size={15} /></button>
+      <button type="button" onClick={() => navigate('drive', 'checklist')}><Check size={19} /><strong>출발 체크</strong><small>오늘의 간단한 체크리스트</small><ArrowRight size={15} /></button>
+    </div>}
+  </section>;
+}
+
+function NextActionPanel({ vehicle, tasks, navigate, setModal }) {
+  const next = vehicle?.warningCount > 0
+    ? { icon: ShieldCheck, label: '안전 신호 확인', detail: `확인이 필요한 신호 ${vehicle.warningCount}건이 있어요.`, action: '상태 확인', run: () => navigate('care', 'status') }
+    : vehicle?.batterySoc != null && Number(vehicle.batterySoc) <= 20
+      ? { icon: BatteryCharging, label: '충전 준비', detail: `배터리 ${vehicle.batterySoc}% · 출발 전에 충전소를 찾아보세요.`, action: '충전소 보기', run: () => navigate('charge') }
+      : tasks.length
+        ? { icon: CalendarDays, label: tasks[0].title, detail: `${dateLabel(tasks[0].entryDate)} 예정 · 기록에서 완료 여부를 관리하세요.`, action: '일정 열기', run: () => navigate('passport') }
+        : { icon: FileText, label: '첫 관리 기록 남기기', detail: '충전 비용이나 다음 점검일을 남겨 두면 다음 방문이 더 편해져요.', action: vehicle ? '기록 시작' : '내 차 연결', run: () => vehicle ? navigate('passport') : setModal('connect') };
+  const Icon = next.icon;
+  return <section className="next-action-panel" aria-labelledby="next-action-title" data-reveal><div className="next-action-icon"><Icon size={20} /></div><div><span>NEXT BEST ACTION</span><h2 id="next-action-title">{next.label}</h2><p>{next.detail}</p></div><button type="button" onClick={next.run}>{next.action}<ArrowRight size={15} /></button></section>;
+}
+
+function DepartureChecklist({ navigate }) {
+  const today = dateKey();
+  const [checked, setChecked] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) ?? '{}');
+      return saved.date === today && Array.isArray(saved.items) ? saved.items : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify({ date: today, items: checked })); } catch { /* device storage is optional */ }
+  }, [today, checked]);
+  const items = ['차량 주변에 장애물이 없는지 확인', '타이어와 외관에 이상이 없는지 확인', '오늘 목적지와 충전 여유를 확인'];
+  const toggle = (index) => setChecked((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index]);
+  return <section className="departure-checklist" aria-labelledby="departure-checklist-title" data-reveal><div className="checklist-heading"><div><span>DAILY DEPARTURE CHECK</span><h2 id="departure-checklist-title">오늘 출발 전 3분</h2><p>차량 신호와 별개로, 직접 확인할 항목을 매일 새로 시작해요.</p></div><strong>{checked.length}/{items.length}<small>완료</small></strong></div><div className="checklist-items">{items.map((item, index) => <button type="button" className={checked.includes(index) ? 'done' : ''} key={item} onClick={() => toggle(index)} aria-pressed={checked.includes(index)}><CheckCircle2 size={19} /><span>{item}</span></button>)}</div><button className="checklist-more" type="button" onClick={() => navigate('drive', 'checklist')}>전체 출발 체크리스트 보기 <ArrowRight size={15} /></button></section>;
+}
+
+function VehicleCareSummary({ vehicle, journal, navigate, setModal }) {
+  const doneCount = journal.entries.filter((item) => item.status === 'DONE').length;
+  const plannedCount = journal.entries.filter((item) => item.status === 'PLANNED').length;
+  const signalCount = vehicle ? [vehicle.batterySoc, vehicle.range, vehicle.odometer, vehicle.chargingState].filter((value) => value != null && value !== '').length : 0;
+  return <section className="care-summary-panel" aria-labelledby="care-summary-title" data-reveal><div className="care-summary-heading"><div><span>MY CARE SNAPSHOT</span><h2 id="care-summary-title">내 차 케어 요약</h2><p>{vehicle ? '차량에서 받은 신호와 내가 남긴 기록을 나눠서 보여드려요.' : '차량을 연결하거나 관리 기록을 시작하면 이 공간이 채워져요.'}</p></div><button type="button" onClick={() => vehicle ? navigate('care', 'status') : setModal('connect')}>{vehicle ? '상태 자세히' : '차량 연결'} <ArrowRight size={15} /></button></div><div className="care-summary-grid"><article><span>받은 차량 신호</span><strong>{vehicle ? `${signalCount}개` : '—'}</strong><small>{vehicle ? '마지막 수신 기준' : '연결 후 확인'}</small></article><article><span>예정된 관리</span><strong>{vehicle ? plannedCount : '—'}<small>건</small></strong><small>검사·정비·보험</small></article><article><span>완료한 기록</span><strong>{vehicle ? doneCount : '—'}<small>건</small></strong><small>직접 남긴 타임라인</small></article></div></section>;
+}
+
+function JournalInsights({ vehicle, report, loading, error, month }) {
+  if (!vehicle) return <section className="journal-insights guest" aria-labelledby="journal-insights-title"><div><span>CARE REPORT</span><h2 id="journal-insights-title">기록이 쌓이면 내 차의 흐름이 보여요.</h2><p>충전·정비·보험 비용을 직접 남기면 월별 관리 리포트로 정리할 수 있습니다.</p></div><div className="journal-insights-empty"><FileText size={22} /><strong>첫 기록부터 시작해 보세요</strong></div></section>;
+  if (loading) return <section className="journal-insights" aria-labelledby="journal-insights-title"><div className="journal-insights-empty" role="status"><RefreshCcw className="spin" size={22} /><strong>{month}월 리포트를 계산하고 있어요.</strong></div></section>;
+  if (error || !report) return <section className="journal-insights" aria-labelledby="journal-insights-title"><div className="journal-insights-empty" role="alert"><Wallet size={22} /><strong>월별 리포트를 불러오지 못했어요.</strong><p>{error || '잠시 후 다시 시도해 주세요.'}</p></div></section>;
+  const categoryTotals = report.categoryTotals ?? [];
+  const max = categoryTotals[0]?.totalAmount || 1;
+  return <section className="journal-insights" aria-labelledby="journal-insights-title"><div className="journal-insights-heading"><div><span>CARE REPORT</span><h2 id="journal-insights-title">이번 달 관리 흐름</h2><p>직접 남긴 완료 기록 중 금액이 입력된 항목만 지출로 계산합니다. 공식 정비 이력과는 별도로 관리돼요.</p></div><strong>{report.completedRecordCount}<small>건 완료</small></strong></div>{categoryTotals.length ? <div className="journal-insights-content"><div className="journal-bars" aria-label="분류별 지출"><h3>분류별 지출</h3>{categoryTotals.slice(0, 5).map((item) => <div className="journal-bar-row" key={item.category}><div><span>{categories[item.category] ?? item.category}</span><strong>{money(item.totalAmount)}</strong></div><i><b style={{ width: `${Math.max(8, (item.totalAmount / max) * 100)}%` }} /></i></div>)}</div><div className="journal-insights-kpis"><article><span>이번 달 합계</span><strong>{money(report.totalAmount)}</strong><small>{report.costRecordCount}건 금액 입력</small></article><article><span>기록당 평균</span><strong>{money(report.averageAmount)}</strong><small>{report.recordsWithoutAmount ? `금액 미입력 ${report.recordsWithoutAmount}건 제외` : '입력된 금액 기준'}</small></article></div></div> : <div className="journal-insights-empty"><Wallet size={22} /><strong>{month}월 비용 기록이 아직 없어요</strong><p>{report.completedRecordCount ? `완료 기록 ${report.completedRecordCount}건 중 금액이 입력된 기록이 없습니다.` : '충전이나 정비 후 금액을 남기면 다음 달과 비교할 수 있어요.'}</p></div>}</section>;
+}
+
 function OwnerValueHub({ vehicle, navigate, spent, journal }) {
   const recordedCost = journal.loading ? '불러오는 중…' : journal.error ? '확인 필요' : vehicle ? money(spent) : '연결 후 확인';
   const recordDetail = journal.loading
@@ -233,7 +293,7 @@ function HyundaiOwnerRail({ vehicle, navigate, setModal }) {
   </section>;
 }
 
-export function useVehicleJournal(vehicleId) {
+export function useVehicleJournal(vehicleId, demoMode = false) {
   const [state, setState] = useState({ vehicleId: null, entries: [], loading: false, error: '' });
   const requestId = useRef(0);
   const currentVehicle = useRef(vehicleId);
@@ -242,6 +302,12 @@ export function useVehicleJournal(vehicleId) {
     if (currentVehicle.current !== vehicleId) return;
     const id = ++requestId.current;
     if (!vehicleId) { setState({ vehicleId, entries: [], loading: false, error: '' }); return; }
+    if (demoMode) {
+      setState((old) => old.vehicleId === vehicleId && old.entries.length
+        ? { ...old, loading: false, error: '' }
+        : { vehicleId, entries: demoJournalEntries.map((entry) => ({ ...entry })), loading: false, error: '' });
+      return;
+    }
     setState((old) => ({ vehicleId, entries: old.vehicleId === vehicleId ? old.entries : [], loading: true, error: '' }));
     try {
       const entries = await loadJournal(vehicleId);
@@ -249,9 +315,34 @@ export function useVehicleJournal(vehicleId) {
     } catch (error) {
       if (id === requestId.current) setState((old) => ({ ...old, loading: false, error: error.message }));
     }
-  }, [vehicleId]);
+  }, [demoMode, vehicleId]);
   useEffect(() => { refresh(); return () => { requestId.current += 1; }; }, [refresh]);
-  return { entries: state.vehicleId === vehicleId ? state.entries : [], loading: Boolean(vehicleId) && (state.vehicleId !== vehicleId || state.loading), error: state.vehicleId === vehicleId ? state.error : '', refresh };
+  const createEntry = useCallback(async (entry) => {
+    if (!vehicleId) throw new Error('차량을 먼저 선택해 주세요.');
+    if (!demoMode) return createJournalEntry(vehicleId, entry);
+    const now = new Date().toISOString();
+    const created = { ...entry, id: `demo-entry-${Date.now()}`, vehicleId, createdAt: now, updatedAt: now };
+    setState((old) => ({ ...old, vehicleId, entries: [created, ...old.entries] }));
+    return created;
+  }, [demoMode, vehicleId]);
+  const changeStatus = useCallback(async (entryId, status) => {
+    if (!vehicleId) throw new Error('차량을 먼저 선택해 주세요.');
+    if (!demoMode) return changeJournalStatus(vehicleId, entryId, status);
+    setState((old) => ({ ...old, vehicleId, entries: old.entries.map((entry) => entry.id === entryId ? { ...entry, status: status === 'RESTORE' ? entry.archivedStatus ?? 'PLANNED' : status, archivedStatus: status === 'ARCHIVED' ? entry.status : entry.archivedStatus, updatedAt: new Date().toISOString() } : entry) }));
+    return true;
+  }, [demoMode, vehicleId]);
+  const loadReport = useCallback(async (month) => {
+    if (!vehicleId) return null;
+    if (!demoMode) return loadJournalReport(vehicleId, month);
+    const entries = state.vehicleId === vehicleId ? state.entries : demoJournalEntries;
+    const completed = entries.filter((entry) => entry.status === 'DONE' && entry.entryDate.startsWith(month));
+    const costEntries = completed.filter((entry) => Number.isFinite(Number(entry.amount)) && Number(entry.amount) >= 0);
+    const totals = costEntries.reduce((result, entry) => ({ ...result, [entry.category]: (result[entry.category] ?? 0) + Number(entry.amount) }), {});
+    const categoryTotals = Object.entries(totals).map(([category, totalAmount]) => ({ category, totalAmount, recordCount: costEntries.filter((entry) => entry.category === category).length })).sort((left, right) => right.totalAmount - left.totalAmount);
+    const totalAmount = costEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+    return { vehicleId, month, currency: 'KRW', source: 'DEMO', completedRecordCount: completed.length, costRecordCount: costEntries.length, recordsWithoutAmount: completed.length - costEntries.length, totalAmount, averageAmount: costEntries.length ? Math.round(totalAmount / costEntries.length) : 0, categoryTotals };
+  }, [demoMode, state.entries, state.vehicleId, vehicleId]);
+  return { entries: state.vehicleId === vehicleId ? state.entries : [], loading: Boolean(vehicleId) && (state.vehicleId !== vehicleId || state.loading), error: state.vehicleId === vehicleId ? state.error : '', refresh, createEntry, changeStatus, loadReport, demoMode };
 }
 
 export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy, journal, tour }) {
@@ -276,9 +367,13 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
+    {!vehicle && <GuestStartPanel navigate={navigate} setModal={setModal} />}
     <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
     <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
-    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
+    <NextActionPanel vehicle={vehicle} tasks={tasks} navigate={navigate} setModal={setModal} />
+    <DepartureChecklist navigate={navigate} />
+    <VehicleCareSummary vehicle={vehicle} journal={journal} navigate={navigate} setModal={setModal} />
+    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority={index < 2} /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
       <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
       <div className="workspace-section-title"><div><span>MY HYUNDAI</span><h2 id="home-car-heading">오늘의 내 차</h2></div><button onClick={() => navigate('care', 'status')}>자세히 보기 <ChevronRight size={15} /></button></div>
@@ -305,26 +400,41 @@ export function OwnershipPage({ vehicle, journal, notify, setModal, children }) 
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [report, setReport] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
+  const [reportRevision, setReportRevision] = useState(0);
   const [draft, setDraft] = useState(() => ({ category: 'MAINTENANCE', title: '', note: '', entryDate: dateKey(), amount: '', odometer: '', status: 'DONE' }));
   const active = journal.entries.filter((item) => item.status !== 'ARCHIVED');
-  const monthly = active.filter((item) => item.status === 'DONE' && item.entryDate.startsWith(month));
-  const total = monthly.reduce((sum, item) => sum + (item.amount ?? 0), 0);
   const upcoming = active.filter((item) => item.status === 'PLANNED');
   const records = journal.entries.filter((item) => (filter === 'archived' ? item.status === 'ARCHIVED' : item.status !== 'ARCHIVED') && (filter !== 'planned' || item.status === 'PLANNED') && (filter !== 'done' || item.status === 'DONE') && `${item.title} ${item.note} ${categories[item.category]}`.toLowerCase().includes(query.toLowerCase()));
   useEffect(() => { setFormOpen(false); setError(''); }, [vehicle?.databaseId]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!vehicle) {
+      setReport(null); setReportLoading(false); setReportError('');
+      return () => { cancelled = true; };
+    }
+    setReport(null); setReportLoading(true); setReportError('');
+    journal.loadReport(month)
+      .then((data) => { if (!cancelled) setReport(data); })
+      .catch((failure) => { if (!cancelled) setReportError(failure.message); })
+      .finally(() => { if (!cancelled) setReportLoading(false); });
+    return () => { cancelled = true; };
+  }, [journal.loadReport, month, reportRevision, vehicle?.databaseId]);
 
   const save = async (event) => {
     event.preventDefault();
     if (!vehicle || saving) return;
     setSaving(true); setError('');
     try {
-      await createJournalEntry(vehicle.databaseId, { ...draft, amount: draft.amount === '' ? null : Number(draft.amount), odometer: draft.odometer === '' ? null : Number(draft.odometer) });
-      await journal.refresh(); setFormOpen(false); setDraft({ category: 'MAINTENANCE', title: '', note: '', entryDate: dateKey(), amount: '', odometer: '', status: 'DONE' }); notify('내 차량의 관리 기록에 저장했습니다.');
+      await journal.createEntry({ ...draft, amount: draft.amount === '' ? null : Number(draft.amount), odometer: draft.odometer === '' ? null : Number(draft.odometer) });
+      await journal.refresh(); setReportRevision((revision) => revision + 1); setFormOpen(false); setDraft({ category: 'MAINTENANCE', title: '', note: '', entryDate: dateKey(), amount: '', odometer: '', status: 'DONE' }); notify('내 차량의 관리 기록에 저장했습니다.');
     } catch (failure) { setError(failure.message); } finally { setSaving(false); }
   };
   const change = async (item, status) => {
     setSaving(true); setError('');
-    try { await changeJournalStatus(vehicle.databaseId, item.id, status); await journal.refresh(); notify(status === 'ARCHIVED' ? '보관함으로 이동했습니다. 언제든 다시 꺼낼 수 있어요.' : '기록 상태를 변경했습니다.'); } catch (failure) { setError(failure.message); } finally { setSaving(false); }
+    try { await journal.changeStatus(item.id, status); await journal.refresh(); setReportRevision((revision) => revision + 1); notify(status === 'ARCHIVED' ? '보관함으로 이동했습니다. 언제든 다시 꺼낼 수 있어요.' : '기록 상태를 변경했습니다.'); } catch (failure) { setError(failure.message); } finally { setSaving(false); }
   };
   const exportRecords = () => {
     const escape = (value) => `"${String(value ?? '').replace(/^[=+@\-\t\r]/, "'$&").replaceAll('"', '""')}"`;
@@ -337,7 +447,8 @@ export function OwnershipPage({ vehicle, journal, notify, setModal, children }) 
     <nav className="workspace-tabs" aria-label="차량 기록 보기"><button className={view === 'records' ? 'active' : ''} aria-pressed={view === 'records'} onClick={() => setView('records')}>관리 기록</button><button className={view === 'passport' ? 'active' : ''} aria-pressed={view === 'passport'} onClick={() => setView('passport')}>차량에서 받은 기록</button></nav>
     {view === 'passport' ? <div className="embedded-passport">{children}</div> : <>
       {!vehicle && <div className="journal-connect"><CarFront size={28} /><div><strong>내 차와 함께 오래 남는 기록</strong><p>차량을 연결하면 같은 계정으로 다른 기기에서도 확인할 수 있어요.</p></div><button className="button primary" onClick={() => setModal('connect')}>내 차 연결 <ArrowRight size={16} /></button></div>}
-      <section className="journal-summary"><article><span>월별 지출 <input type="month" aria-label="지출 조회 월" value={month} onChange={(event) => setMonth(event.target.value)} /></span><strong>{vehicle && !journal.loading && !journal.error ? money(total) : '—'}</strong><small>직접 입력한 완료 기록 기준</small></article><article><span>예정된 일정</span><strong>{vehicle && !journal.loading && !journal.error ? upcoming.length : '—'}<small>건</small></strong><small>정비·검사·보험 갱신</small></article><article><span>쌓인 관리 기록</span><strong>{vehicle && !journal.loading && !journal.error ? active.length : '—'}<small>건</small></strong><small>내 차량에 저장한 기록</small></article></section>
+      <section className="journal-summary"><article><span>월별 지출 <input type="month" aria-label="지출 조회 월" value={month} onChange={(event) => setMonth(event.target.value)} /></span><strong>{vehicle && !journal.loading && !journal.error && !reportLoading && !reportError && report ? money(report.totalAmount) : '—'}</strong><small>직접 입력한 완료 기록 중 금액 입력 기준</small></article><article><span>예정된 일정</span><strong>{vehicle && !journal.loading && !journal.error ? upcoming.length : '—'}<small>건</small></strong><small>정비·검사·보험 갱신</small></article><article><span>쌓인 관리 기록</span><strong>{vehicle && !journal.loading && !journal.error ? active.length : '—'}<small>건</small></strong><small>내 차량에 저장한 기록</small></article></section>
+      {!journal.loading && !journal.error && <JournalInsights vehicle={vehicle} report={report} loading={reportLoading} error={reportError} month={month} />}
       {formOpen && vehicle && <form className="journal-form" onSubmit={save}><div className="journal-form-heading"><h2>새 기록 남기기</h2><button type="button" onClick={() => setFormOpen(false)} aria-label="기록 입력 닫기"><X size={19} /></button></div><div className="journal-form-grid">
         <label>분류<select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}>{Object.entries(categories).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <label>기록 상태<select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })}><option value="DONE">완료한 일</option><option value="PLANNED">예정된 일정</option></select></label>
