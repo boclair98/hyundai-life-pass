@@ -546,3 +546,51 @@
   .platform.mobility-shell .owner-value-links { padding-top:13px; }
   .platform.mobility-shell .owner-value-note { align-items:flex-start; font-size:9px; }
 }
+
+/* Hyundai-specific service rail: official ecosystem language without pretending to be the official app. */
+.platform.mobility-shell .hyundai-owner-rail {
+  grid-column:1 / -1;
+  min-width:0;
+  padding:22px 24px 24px;
+  border:1px solid #ffffff2f;
+  border-radius:22px;
+  background:linear-gradient(135deg,#061e38f2,#092f4be8 54%,#0a4254d9);
+  box-shadow:0 18px 42px #00142635;
+  color:#fff;
+}
+.platform.mobility-shell .hyundai-owner-rail-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.platform.mobility-shell .hyundai-owner-rail-heading > div { min-width:0; }
+.platform.mobility-shell .hyundai-owner-rail-heading > div > span { color:#8ddfea; font:700 8px 'DM Mono',monospace; letter-spacing:.15em; }
+.platform.mobility-shell .hyundai-owner-rail-heading h2 { margin:7px 0 5px; color:#fff; font-size:21px; line-height:1.28; letter-spacing:-.045em; }
+.platform.mobility-shell .hyundai-owner-rail-heading p { max-width:600px; margin:0; color:#bdd9e5; font-size:10px; line-height:1.65; }
+.platform.mobility-shell .hyundai-owner-rail-heading b { flex:0 0 auto; min-height:29px; padding:0 11px; display:inline-flex; align-items:center; border:1px solid #9ae8f03d; border-radius:999px; background:#9ae8f011; color:#b6f1f6; font:700 8px 'DM Mono',monospace; letter-spacing:.12em; }
+.platform.mobility-shell .hyundai-owner-rail-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:18px; }
+.platform.mobility-shell .hyundai-owner-rail-card { min-width:0; min-height:184px; padding:16px; display:flex; flex-direction:column; align-items:flex-start; border:1px solid #ffffff24; border-radius:15px; background:#ffffff0a; color:#fff; text-align:left; text-decoration:none; cursor:pointer; transition:transform .25s ease,background .25s ease,border-color .25s ease; }
+.platform.mobility-shell .hyundai-owner-rail-card:hover,.platform.mobility-shell .hyundai-owner-rail-card:focus-visible { transform:translateY(-3px); background:#ffffff15; border-color:#a9eaf155; }
+.platform.mobility-shell .hyundai-owner-rail-card.bluelink { background:linear-gradient(145deg,#0b57704f,#ffffff08); }
+.platform.mobility-shell .hyundai-owner-rail-card.members { background:linear-gradient(145deg,#1a43694c,#ffffff08); }
+.platform.mobility-shell .hyundai-owner-rail-card.bluehands { background:linear-gradient(145deg,#24545a4b,#ffffff08); }
+.platform.mobility-shell .hyundai-owner-rail-card.myhyundai { background:linear-gradient(145deg,#384b7142,#ffffff08); }
+.platform.mobility-shell .hyundai-owner-rail-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; color:#07314e; background:#b7eff4; }
+.platform.mobility-shell .hyundai-owner-rail-card.members .hyundai-owner-rail-icon { color:#24416e; background:#d4e2ff; }
+.platform.mobility-shell .hyundai-owner-rail-card.bluehands .hyundai-owner-rail-icon { color:#075d58; background:#b8f0da; }
+.platform.mobility-shell .hyundai-owner-rail-card.myhyundai .hyundai-owner-rail-icon { color:#543d70; background:#ead7ff; }
+.platform.mobility-shell .hyundai-owner-rail-kicker { margin-top:13px; color:#9ddfe9; font:700 8px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .hyundai-owner-rail-card strong { max-width:100%; margin-top:7px; color:#fff; font-size:14px; line-height:1.4; letter-spacing:-.035em; }
+.platform.mobility-shell .hyundai-owner-rail-card small { margin-top:6px; color:#bdd7e2; font-size:9px; line-height:1.6; }
+.platform.mobility-shell .hyundai-owner-rail-card em { min-height:37px; margin-top:auto; display:inline-flex; align-items:center; gap:5px; color:#d0f5fb; font-size:9px; font-style:normal; font-weight:750; }
+@media(max-width:760px) {
+  .platform.mobility-shell .hyundai-owner-rail { padding:19px 16px; border-radius:19px; }
+  .platform.mobility-shell .hyundai-owner-rail-heading { display:block; }
+  .platform.mobility-shell .hyundai-owner-rail-heading h2 { font-size:20px; }
+  .platform.mobility-shell .hyundai-owner-rail-heading p { font-size:10px; }
+  .platform.mobility-shell .hyundai-owner-rail-heading b { margin-top:12px; }
+  .platform.mobility-shell .hyundai-owner-rail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:15px; }
+  .platform.mobility-shell .hyundai-owner-rail-card { min-height:168px; padding:14px; border-radius:13px; }
+  .platform.mobility-shell .hyundai-owner-rail-card strong { font-size:13px; }
+  .platform.mobility-shell .hyundai-owner-rail-card small { font-size:9px; }
+}
+@media(max-width:390px) {
+  .platform.mobility-shell .hyundai-owner-rail-grid { grid-template-columns:1fr; }
+  .platform.mobility-shell .hyundai-owner-rail-card { min-height:134px; }
+}

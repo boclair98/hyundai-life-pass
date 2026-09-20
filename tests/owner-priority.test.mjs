@@ -105,6 +105,30 @@ test('owner value hub keeps monetization useful, official and transparent', () =
   assert.match(ownerSource, /<OwnerValueHub vehicle=\{vehicle\} navigate=\{navigate\} spent=\{spent\} journal=\{journal\} \/>/);
 });
 
+test('home is explicitly tailored to the Hyundai owner ecosystem', () => {
+  assert.match(appSource, /HYUNDAI OWNER CARE · CONCEPT/);
+  assert.match(ownerSource, /function HyundaiOwnerRail\(\{ vehicle, navigate, setModal \}\)/);
+  assert.match(ownerSource, /HYUNDAI ECOSYSTEM/);
+  assert.match(ownerSource, /BLUELINK/);
+  assert.match(ownerSource, /BLUE MEMBERS/);
+  assert.match(ownerSource, /BLUEHANDS/);
+  assert.match(ownerSource, /MYHYUNDAI/);
+  assert.match(ownerSource, /현대 통합계정 연결/);
+  assert.match(ownerSource, /service-membership\/bluemembers/);
+  assert.match(ownerSource, /myhyundai-information/);
+  assert.match(ownerSource, /<HyundaiOwnerRail vehicle=\{vehicle\} navigate=\{navigate\} setModal=\{setModal\} \/>/);
+  assert.match(ownerSource, /현대차 오너의<br \/><em>차량 라이프/);
+});
+
+test('Hyundai ecosystem rail participates in the cinematic reveal without breaking reduced motion', async () => {
+  const cinematicSource = await readFile(new URL('src/CinematicHome.jsx', root), 'utf8');
+  const cinematicCss = await readFile(new URL('src/cinematic.css', root), 'utf8');
+  assert.match(cinematicSource, /\.hyundai-owner-rail/);
+  assert.match(cinematicCss, /\.cinematic-home \.hyundai-owner-rail/);
+  assert.match(cinematicCss, /prefers-reduced-motion:reduce/);
+  assert.match(cinematicCss, /\.cinematic-home\[data-motion-ready=true\] \.hyundai-owner-rail/);
+});
+
 test('monetization plan separates product value from future revenue gates', () => {
   assert.match(monetizationPlanSource, /수익화는 목적이고, 신뢰받는 오너 경험이 먼저다/);
   assert.match(monetizationPlanSource, /공식 케어 제휴 수수료/);

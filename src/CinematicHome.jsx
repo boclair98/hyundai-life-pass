@@ -19,7 +19,7 @@ export function useGentleReveal(root) {
       observer?.disconnect();
       delete element.dataset.motionReady;
       if (preference.matches) return;
-      const cards = element.querySelectorAll('.home-car-section, .owner-lower-grid > section, .owner-value-hub, .owner-bottom-links');
+      const cards = element.querySelectorAll('.home-car-section, .hyundai-owner-rail, .owner-lower-grid > section, .owner-value-hub, .owner-bottom-links');
       observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
         if (entry.isIntersecting) { entry.target.classList.add('cinema-visible'); observer.unobserve(entry.target); }
       }), { threshold: .08 });
@@ -88,9 +88,9 @@ export function CinematicHero({ vehicle, actions, busy, setModal, navigate }) {
       <div className="cinema-shade" />
       <div className="cinema-orbit" aria-hidden="true"><i /><b /></div>
       <div className="cinema-copy">
-        <span className="cinema-eyebrow"><i /> 현대차 오너를 위한 차량 생활</span>
-        <h1 id="owner-title">내 차 생활,<br /><em>더 넓은 세계로.</em></h1>
-        <p>차량 상태부터 충전, 정비, 관리 기록까지.<br />내 차와 함께하는 모든 순간을 한곳에서.</p>
+        <span className="cinema-eyebrow"><i /> HYUNDAI OWNER CARE · CONCEPT</span>
+        <h1 id="owner-title">현대차 오너의<br /><em>차량 라이프.</em></h1>
+        <p>현대 통합계정으로 연결한 차량 상태부터<br />충전·블루핸즈·관리 기록까지 한곳에서.</p>
         <div className="cinema-actions"><button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button><button className="cinema-quick" onClick={() => navigate('charge')}>충전소 바로 찾기 <ArrowRight size={15} /></button></div>
       </div>
       <div className="cinema-bottom">

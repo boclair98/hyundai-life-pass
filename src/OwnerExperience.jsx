@@ -188,6 +188,51 @@ function OwnerValueHub({ vehicle, navigate, spent, journal }) {
   </section>;
 }
 
+function HyundaiOwnerRail({ vehicle, navigate, setModal }) {
+  const items = [
+    {
+      id: 'bluelink',
+      kicker: 'BLUELINK',
+      title: vehicle ? '내 차 상태 확인' : '현대 통합계정 연결',
+      detail: vehicle ? '현대차에서 받은 마지막 상태와 다음 확인을 이어가요.' : '동의한 범위 안에서 배터리·주행거리·안전 신호를 확인해요.',
+      icon: CarFront,
+      action: () => vehicle ? navigate('care', 'status') : setModal('connect'),
+      actionLabel: vehicle ? '상태 보기' : '차량 연결',
+    },
+    {
+      id: 'members',
+      kicker: 'BLUE MEMBERS',
+      title: '오너 혜택 확인',
+      detail: '포인트와 멤버십 혜택은 현대 공식 페이지에서 확인하세요.',
+      icon: Gift,
+      href: 'https://www.hyundai.com/kr/ko/service-membership/bluemembers',
+      actionLabel: '공식 혜택 보기',
+    },
+    {
+      id: 'bluehands',
+      kicker: 'BLUEHANDS',
+      title: '가까운 공식 케어',
+      detail: '현재 위치에서 가까운 블루핸즈를 찾고 전화·길찾기로 이어가요.',
+      icon: Wrench,
+      action: () => navigate('care', 'centers'),
+      actionLabel: '블루핸즈 찾기',
+    },
+    {
+      id: 'myhyundai',
+      kicker: 'MYHYUNDAI',
+      title: '현대차의 공식 생활 서비스',
+      detail: '차량관리·카라이프·현대샵 안내는 공식 서비스에서 확인하세요.',
+      icon: Sparkles,
+      href: 'https://www.hyundai.com/kr/ko/digital-customer-support/app/myhyundai/myhyundai-information',
+      actionLabel: '공식 서비스 보기',
+    },
+  ];
+  return <section className="hyundai-owner-rail" aria-labelledby="hyundai-owner-rail-title" data-reveal>
+    <div className="hyundai-owner-rail-heading"><div><span>HYUNDAI ECOSYSTEM</span><h2 id="hyundai-owner-rail-title">현대차 오너의 다음 행동</h2><p>현대차에서 시작해, 필요한 공식 서비스까지 한 흐름으로 이어보세요.</p></div><b>OWNER CARE</b></div>
+    <div className="hyundai-owner-rail-grid">{items.map(({ id, kicker, title, detail, icon: Icon, href, action, actionLabel }) => href ? <a className={`hyundai-owner-rail-card ${id}`} href={href} target="_blank" rel="noreferrer" key={id}><span className="hyundai-owner-rail-icon"><Icon size={17} /></span><span className="hyundai-owner-rail-kicker">{kicker}</span><strong>{title}</strong><small>{detail}</small><em>{actionLabel} <ExternalLink size={13} /></em></a> : <button type="button" className={`hyundai-owner-rail-card ${id}`} onClick={action} key={id}><span className="hyundai-owner-rail-icon"><Icon size={17} /></span><span className="hyundai-owner-rail-kicker">{kicker}</span><strong>{title}</strong><small>{detail}</small><em>{actionLabel} <ArrowUpRight size={13} /></em></button>)}</div>
+  </section>;
+}
+
 export function useVehicleJournal(vehicleId) {
   const [state, setState] = useState({ vehicleId: null, entries: [], loading: false, error: '' });
   const requestId = useRef(0);
@@ -225,9 +270,9 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
   return <div className="owner-home cinematic-home container" ref={homeRoot}>
     <div className="home-greeting"><div><span>MY CAR, MY EVERYDAY</span><p>{vehicle ? `${vehicle.name}와 함께하는 오늘` : '내 차를 위한 좋은 습관'}</p></div><button onClick={() => navigate('settings')}><CarFront size={17} />{vehicle ? '내 차 관리' : '차량 연결'}<ChevronRight size={14} /></button></div>
     <section className="mobility-welcome" aria-labelledby="owner-title">
-      <span className="mobility-eyebrow">MY CAR. MY SPACE.</span>
-      <h1 id="owner-title">내 차와 함께하는<br /><em>모든 순간.</em></h1>
-      <p>차량 상태, 가까운 충전소, 정비와 기록.<br />필요한 곳으로 이동해 보세요.</p>
+      <span className="mobility-eyebrow">HYUNDAI OWNER CARE · CONCEPT</span>
+      <h1 id="owner-title">현대차 오너의<br /><em>차량 라이프.</em></h1>
+      <p>현대 통합계정으로 연결한 차량 상태부터<br />충전·블루핸즈·관리 기록까지 한곳에서.</p>
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
@@ -242,6 +287,7 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       </div>
       <p className="owner-data-note">{vehicle ? `차량 정보는 마지막 수신 기준입니다. ${vehicle.updatedAt ? new Date(vehicle.updatedAt).toLocaleString('ko-KR') : ''}` : '내 차를 연결하면 차량에서 제공하는 상태를 이곳에 보여드려요.'}</p>
     </section>
+    <HyundaiOwnerRail vehicle={vehicle} navigate={navigate} setModal={setModal} />
     <div className="owner-lower-grid">
       <section className="owner-agenda"><div className="workspace-section-title"><div><span>MY SCHEDULE</span><h2>잊지 말아야 할 일</h2></div><button onClick={() => navigate('passport')}>일정 관리 <ChevronRight size={15} /></button></div><div className="agenda-list">{journal.loading ? <p>일정을 불러오고 있어요.</p> : journal.error ? <button onClick={journal.refresh}>일정을 불러오지 못했어요 · 다시 시도</button> : tasks.length ? tasks.map((item) => <button key={item.id} onClick={() => navigate('passport')}><span className="agenda-date">{dateLabel(item.entryDate)}</span><strong>{item.title}</strong><ChevronRight size={15} /></button>) : <div className="agenda-empty"><CalendarDays size={29} /><strong>다음 정비일을 기억해 둘까요?</strong><p>검사, 보험 갱신, 소모품 교체 일정을 남겨보세요.</p><button onClick={() => vehicle ? navigate('passport') : setModal('connect')}>일정 추가하기 <Plus size={15} /></button></div>}</div></section>
       <section className="owner-cost"><div className="workspace-section-title"><div><span>CAR LIFE COST</span><h2>이번 달 차량 지출</h2></div><Wallet size={22} /></div><strong>{journal.loading ? '불러오는 중…' : journal.error ? '기록 확인이 필요해요' : vehicle ? money(spent) : '기록부터 시작해요'}</strong><p>직접 남긴 충전·정비·주유 비용을 모아보세요.</p><button onClick={() => navigate('passport')}>지출 기록하기 <ArrowUpRight size={18} /></button></section>

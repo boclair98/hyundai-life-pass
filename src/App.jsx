@@ -525,7 +525,7 @@ function Header({ page, navigate, menuOpen, setMenuOpen, vehicle, vehicles, sele
       <div className="header-inner">
         <button className="brand" onClick={() => navigate('home')} aria-label="라이프패스 홈">
           <span className="life-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" /><path d="M13 13v18h11" /><path d="M25 31V13h5a6 6 0 0 1 0 12h-5" /><circle className="life-mark-dot" cx="35" cy="9" r="2.5" /></svg></span>
-          <span className="brand-copy"><strong>LIFE PASS<span>.</span></strong><small>현대차와 함께하는 일상</small></span>
+          <span className="brand-copy"><strong>LIFE PASS<span>.</span></strong><small>HYUNDAI OWNER CARE · CONCEPT</small></span>
         </button>
 
         <nav className="desktop-nav" aria-label="주요 메뉴">
