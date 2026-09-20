@@ -26,11 +26,19 @@ test('proposal and SDV lab screens are not part of the default consumer footer',
   assert.match(appSource, /labMode && <><button onClick=\{\(\) => navigate\('proposal'\)\}.*navigate\('canary'\)/s);
 });
 
-test('home shortcuts focus on charging, vehicle care, service and records', () => {
-  const match = ownerSource.match(/const shortcuts = \[([\s\S]*?)\n  \];/);
-  assert.ok(match, 'owner shortcuts should exist');
-  assert.deepEqual([...match[1].matchAll(/label: '([^']+)'/g)].map((item) => item[1]), ['충전소 찾기', '차량 상태', '정비소 찾기', '관리 기록']);
-  assert.doesNotMatch(match[1], /주행 계산|주차 위치/);
+test('home service market keeps the three owner jobs visible and actionable', () => {
+  assert.match(ownerSource, /function MobilityServiceMarket\(\{ vehicle, navigate, setModal, journal \}\)/);
+  assert.match(ownerSource, /MY MOBILITY, ONE PLACE/);
+  assert.match(ownerSource, /내 차에 필요한 서비스를 한눈에/);
+  assert.match(ownerSource, /id: 'charge', category: 'energy'/);
+  assert.match(ownerSource, /id: 'care', category: 'care'/);
+  assert.match(ownerSource, /id: 'passport', category: 'record'/);
+  assert.match(ownerSource, /navigate\('charge'\)/);
+  assert.match(ownerSource, /navigate\('care', vehicle \? 'status' : 'centers'\)/);
+  assert.match(ownerSource, /vehicle \? navigate\('passport'\) : setModal\('connect'\)/);
+  assert.match(ownerSource, /동의한 차량 데이터만/);
+  assert.match(ownerSource, /공식 서비스로 연결/);
+  assert.match(ownerSource, /<MobilityServiceMarket vehicle=\{vehicle\}/);
 });
 
 test('service-centre location follows the same consent-first behavior as charging', () => {

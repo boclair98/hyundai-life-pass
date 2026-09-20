@@ -594,3 +594,262 @@
   .platform.mobility-shell .hyundai-owner-rail-grid { grid-template-columns:1fr; }
   .platform.mobility-shell .hyundai-owner-rail-card { min-height:134px; }
 }
+
+/* Mobility service market: image-rich discovery with short, honest next actions. */
+.platform.mobility-shell .cinematic-home {
+  grid-template-columns:minmax(0,1fr);
+  gap:20px;
+}
+.platform.mobility-shell .mobility-welcome {
+  position:relative;
+  grid-column:1 / -1;
+  grid-row:auto;
+  min-width:0;
+  min-height:430px;
+  padding:58px 54px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  overflow:hidden;
+  border:1px solid #ffffff40;
+  border-radius:28px;
+  background:
+    linear-gradient(90deg,#03172df2 0%,#06213dc9 42%,#071c3352 70%,#04162d63 100%),
+    url('/mobility/mobility-hero-v1-1536.webp') 64% center / cover no-repeat;
+  box-shadow:0 24px 70px #0014254d;
+  isolation:isolate;
+}
+.platform.mobility-shell .mobility-welcome::after {
+  content:'';
+  position:absolute;
+  inset:auto -8% -46% 44%;
+  z-index:-1;
+  height:72%;
+  border:1px solid #9edfec2b;
+  border-radius:50%;
+  transform:rotate(-9deg);
+  pointer-events:none;
+}
+.platform.mobility-shell .mobility-welcome > * { position:relative; z-index:1; }
+.platform.mobility-shell .mobility-welcome h1 {
+  max-width:650px;
+  margin:14px 0 16px;
+  color:#fff;
+  font-size:clamp(44px,5vw,70px);
+  font-weight:680;
+  line-height:1.06;
+  letter-spacing:-.064em;
+}
+.platform.mobility-shell .mobility-welcome h1 em { color:#aee9f3; font-style:normal; }
+.platform.mobility-shell .mobility-welcome p { margin:0 0 25px; color:#c8dce8; font-size:14px; line-height:1.8; }
+.platform.mobility-shell .mobility-welcome .button { min-height:48px; padding-inline:20px; border-radius:11px; }
+.platform.mobility-shell .mobility-welcome .journey-controls { margin-top:18px; }
+
+.platform.mobility-shell .mobility-market {
+  grid-column:1 / -1;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #dce5eb;
+  border-radius:25px;
+  background:#f7f9fb;
+  box-shadow:0 20px 65px #01182b2e;
+  color:#10263a;
+}
+.platform.mobility-shell .mobility-market-trust {
+  min-height:48px;
+  padding:0 24px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:center;
+  gap:12px;
+  background:#031d36;
+  color:#d8eaf1;
+}
+.platform.mobility-shell .mobility-market-trust span { min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; font-size:10px; white-space:nowrap; }
+.platform.mobility-shell .mobility-market-trust svg { flex:0 0 auto; color:#76d8e6; }
+.platform.mobility-shell .mobility-market-heading {
+  padding:34px 34px 25px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:26px;
+}
+.platform.mobility-shell .mobility-market-heading > div { min-width:0; }
+.platform.mobility-shell .mobility-market-heading > div > span { color:#007fa8; font:700 9px 'DM Mono',monospace; letter-spacing:.14em; }
+.platform.mobility-shell .mobility-market-heading h2 { margin:8px 0 7px; color:#002c5f; font-size:clamp(25px,3.2vw,39px); line-height:1.18; letter-spacing:-.052em; }
+.platform.mobility-shell .mobility-market-heading p { max-width:660px; margin:0; color:#637989; font-size:11px; line-height:1.7; }
+.platform.mobility-shell .mobility-market-heading > button {
+  min-width:215px;
+  min-height:58px;
+  padding:0 15px;
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  border:1px solid #d5e1e8;
+  border-radius:13px;
+  background:#fff;
+  color:#123c5e;
+  text-align:left;
+  cursor:pointer;
+}
+.platform.mobility-shell .mobility-market-heading > button > svg:first-child { width:34px; height:34px; padding:8px; border-radius:10px; background:#e7f5f8; color:#007fa8; }
+.platform.mobility-shell .mobility-market-heading > button span { min-width:0; display:grid; gap:2px; }
+.platform.mobility-shell .mobility-market-heading > button small { color:#7d929f; font-size:8px; }
+.platform.mobility-shell .mobility-market-heading > button strong { overflow:hidden; color:#163d5b; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.platform.mobility-shell .mobility-market-filters {
+  min-height:62px;
+  margin:0 34px;
+  padding:8px 0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  overflow-x:auto;
+  border-top:1px solid #dfe7ec;
+  border-bottom:1px solid #dfe7ec;
+  scrollbar-width:none;
+}
+.platform.mobility-shell .mobility-market-filters::-webkit-scrollbar { display:none; }
+.platform.mobility-shell .mobility-market-filters > span { margin-right:5px; display:inline-flex; align-items:center; gap:6px; color:#526d80; font-size:10px; font-weight:700; white-space:nowrap; }
+.platform.mobility-shell .mobility-market-filters button {
+  min-height:40px;
+  padding:0 16px;
+  flex:0 0 auto;
+  border:1px solid #d7e1e7;
+  border-radius:999px;
+  background:#fff;
+  color:#486175;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.platform.mobility-shell .mobility-market-filters button.active { border-color:#002c5f; background:#002c5f; color:#fff; }
+.platform.mobility-shell .mobility-market-layout { padding:25px 34px 36px; display:grid; grid-template-columns:210px minmax(0,1fr); align-items:start; gap:24px; }
+.platform.mobility-shell .mobility-market-aside {
+  position:sticky;
+  top:92px;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #dce5ea;
+  border-radius:16px;
+  background:#fff;
+}
+.platform.mobility-shell .mobility-market-aside > div { padding:19px 17px 17px; border-bottom:1px solid #e4ebef; display:grid; gap:5px; }
+.platform.mobility-shell .mobility-market-aside > div span { color:#0085ad; font:700 8px 'DM Mono',monospace; letter-spacing:.11em; }
+.platform.mobility-shell .mobility-market-aside > div strong { color:#123952; font-size:14px; }
+.platform.mobility-shell .mobility-market-aside > div small { color:#81939f; font-size:9px; line-height:1.55; }
+.platform.mobility-shell .mobility-market-aside > button {
+  width:100%;
+  min-height:48px;
+  padding:0 15px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border:0;
+  border-bottom:1px solid #edf1f4;
+  background:#fff;
+  color:#4c6575;
+  font-size:10px;
+  text-align:left;
+  cursor:pointer;
+}
+.platform.mobility-shell .mobility-market-aside > button.active { background:#eaf5f7; color:#006d93; font-weight:750; }
+.platform.mobility-shell .mobility-market-aside > button b { width:22px; height:22px; display:grid; place-items:center; border-radius:50%; background:#eef3f6; color:#5f7787; font-size:8px; }
+.platform.mobility-shell .mobility-market-aside .mobility-market-connect { min-height:60px; justify-content:flex-start; border:0; background:#062a48; color:#fff; }
+.platform.mobility-shell .mobility-market-aside .mobility-market-connect span { min-width:0; flex:1; }
+.platform.mobility-shell .mobility-market-results { min-width:0; display:grid; gap:13px; }
+.platform.mobility-shell .mobility-market-count { min-height:28px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.platform.mobility-shell .mobility-market-count strong { color:#1d3d55; font-size:12px; }
+.platform.mobility-shell .mobility-market-count span { color:#8799a5; font-size:9px; }
+.platform.mobility-shell .mobility-service-row {
+  width:100%;
+  min-width:0;
+  min-height:236px;
+  padding:0;
+  display:grid;
+  grid-template-columns:minmax(360px,.95fr) minmax(260px,.8fr);
+  overflow:hidden;
+  border:1px solid #dae3e9;
+  border-radius:17px;
+  background:#fff;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:0 8px 24px #0c2a4110;
+  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+.platform.mobility-shell .mobility-service-row:hover,.platform.mobility-shell .mobility-service-row:focus-visible { transform:translateY(-3px); border-color:#86bfcc; box-shadow:0 16px 35px #0c2a411a; }
+.platform.mobility-shell .mobility-service-media { position:relative; min-width:0; min-height:236px; display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,.8fr); gap:3px; overflow:hidden; background:#092441; }
+.platform.mobility-shell .mobility-service-media::after { content:''; position:absolute; inset:0; background:linear-gradient(0deg,#03192b9e 0%,transparent 44%); pointer-events:none; }
+.platform.mobility-shell .mobility-service-media img { width:100%; height:100%; min-width:0; object-fit:cover; transition:transform .55s ease; }
+.platform.mobility-shell .mobility-service-media img:first-child { object-position:center; }
+.platform.mobility-shell .mobility-service-media img:last-of-type { object-position:64% center; }
+.platform.mobility-shell .mobility-service-row:hover .mobility-service-media img { transform:scale(1.035); }
+.platform.mobility-shell .mobility-service-media em { position:absolute; left:14px; bottom:13px; z-index:1; max-width:calc(100% - 28px); min-height:30px; padding:6px 10px; display:inline-flex; align-items:center; gap:6px; border:1px solid #ffffff3c; border-radius:999px; background:#031d35c7; color:#eefaff; font-size:8px; font-style:normal; line-height:1.35; backdrop-filter:blur(10px); }
+.platform.mobility-shell .mobility-service-copy { min-width:0; padding:24px; display:flex; flex-direction:column; align-items:flex-start; }
+.platform.mobility-shell .mobility-service-kicker { color:#0084a9; font:700 8px 'DM Mono',monospace; letter-spacing:.13em; }
+.platform.mobility-shell .mobility-service-copy > strong { margin-top:10px; color:#0b3555; font-size:20px; line-height:1.3; letter-spacing:-.042em; word-break:keep-all; }
+.platform.mobility-shell .mobility-service-copy > small { margin-top:8px; color:#6d8392; font-size:10px; line-height:1.7; word-break:keep-all; }
+.platform.mobility-shell .mobility-service-tags { margin-top:14px; display:flex; flex-wrap:wrap; gap:5px; }
+.platform.mobility-shell .mobility-service-tags i { min-height:26px; padding:0 8px; display:inline-flex; align-items:center; border-radius:7px; background:#edf4f6; color:#496b7b; font-size:8px; font-style:normal; }
+.platform.mobility-shell .mobility-service-copy > b { min-height:44px; margin-top:auto; padding-top:13px; display:inline-flex; align-items:center; gap:6px; color:#002c5f; font-size:10px; }
+
+.platform.mobility-shell .owner-overview-grid { grid-column:1 / -1; min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.platform.mobility-shell .owner-overview-grid > * { min-width:0; margin:0; grid-column:auto; grid-row:auto; }
+.platform.mobility-shell .owner-overview-grid > .guest-start-panel { grid-column:1 / -1; }
+.platform.mobility-shell .home-car-section { grid-column:1 / -1; grid-row:auto; }
+
+@media(max-width:1020px) {
+  .platform.mobility-shell .mobility-market-layout { grid-template-columns:180px minmax(0,1fr); gap:16px; }
+  .platform.mobility-shell .mobility-service-row { grid-template-columns:minmax(290px,.9fr) minmax(230px,.8fr); }
+  .platform.mobility-shell .mobility-service-copy { padding:20px; }
+}
+@media(max-width:760px) {
+  .platform.mobility-shell .cinematic-home { gap:14px; }
+  .platform.mobility-shell .mobility-welcome {
+    min-height:460px;
+    padding:35px 20px 28px;
+    justify-content:flex-end;
+    border-radius:0 0 24px 24px;
+    background-image:linear-gradient(0deg,#03162df5 0%,#03162dbb 42%,#061a323d 78%),url('/mobility/mobility-hero-v1-800.webp');
+    background-position:64% center;
+  }
+  .platform.mobility-shell .mobility-welcome h1 { max-width:92%; margin:11px 0 12px; font-size:clamp(36px,11vw,49px); }
+  .platform.mobility-shell .mobility-welcome p { max-width:92%; margin-bottom:19px; font-size:11px; line-height:1.72; }
+  .platform.mobility-shell .mobility-welcome .button { width:100%; justify-content:center; min-height:48px; }
+  .platform.mobility-shell .mobility-welcome .journey-controls { width:100%; }
+  .platform.mobility-shell .mobility-market { border-radius:21px; }
+  .platform.mobility-shell .mobility-market-trust { padding:9px 12px; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+  .platform.mobility-shell .mobility-market-trust span { min-height:28px; justify-content:flex-start; font-size:8px; }
+  .platform.mobility-shell .mobility-market-heading { padding:24px 17px 18px; display:grid; gap:17px; }
+  .platform.mobility-shell .mobility-market-heading h2 { font-size:27px; }
+  .platform.mobility-shell .mobility-market-heading p { font-size:10px; }
+  .platform.mobility-shell .mobility-market-heading > button { width:100%; min-width:0; min-height:56px; }
+  .platform.mobility-shell .mobility-market-filters { min-height:58px; margin:0 17px; }
+  .platform.mobility-shell .mobility-market-filters > span { display:none; }
+  .platform.mobility-shell .mobility-market-filters button { min-height:42px; padding-inline:15px; }
+  .platform.mobility-shell .mobility-market-layout { padding:18px 12px 24px; display:block; }
+  .platform.mobility-shell .mobility-market-aside { position:static; display:none; }
+  .platform.mobility-shell .mobility-market-results { gap:11px; }
+  .platform.mobility-shell .mobility-market-count { padding:0 5px; }
+  .platform.mobility-shell .mobility-service-row { min-height:0; grid-template-columns:1fr; border-radius:15px; }
+  .platform.mobility-shell .mobility-service-media { min-height:206px; height:206px; grid-template-columns:minmax(0,1.75fr) minmax(92px,.72fr); }
+  .platform.mobility-shell .mobility-service-copy { min-height:210px; padding:18px; }
+  .platform.mobility-shell .mobility-service-copy > strong { margin-top:8px; font-size:18px; }
+  .platform.mobility-shell .mobility-service-copy > small { font-size:10px; }
+  .platform.mobility-shell .mobility-service-copy > b { width:100%; justify-content:space-between; }
+  .platform.mobility-shell .owner-overview-grid { grid-template-columns:1fr; gap:12px; }
+  .platform.mobility-shell .owner-overview-grid > .guest-start-panel { grid-column:auto; }
+}
+@media(max-width:390px) {
+  .platform.mobility-shell .mobility-service-media { height:188px; min-height:188px; grid-template-columns:minmax(0,1.9fr) minmax(80px,.66fr); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .platform.mobility-shell .mobility-service-row,
+  .platform.mobility-shell .mobility-service-media img { transition:none; }
+  .platform.mobility-shell .mobility-service-row:hover,
+  .platform.mobility-shell .mobility-service-row:focus-visible,
+  .platform.mobility-shell .mobility-service-row:hover .mobility-service-media img { transform:none; }
+}

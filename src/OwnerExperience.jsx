@@ -248,6 +248,79 @@ function OwnerValueHub({ vehicle, navigate, spent, journal }) {
   </section>;
 }
 
+function MobilityServiceMarket({ vehicle, navigate, setModal, journal }) {
+  const [filter, setFilter] = useState('all');
+  const filters = [
+    { id: 'all', label: '전체 서비스' },
+    { id: 'energy', label: '충전' },
+    { id: 'care', label: '차량 케어' },
+    { id: 'record', label: '차량 기록' },
+  ];
+  const services = [
+    {
+      id: 'charge', category: 'energy', kicker: 'EV CHARGING', title: '내 위치에서 바로 찾는 충전',
+      detail: '현재 위치를 기준으로 가까운 충전소와 이용 가능한 충전기를 확인하고 길찾기까지 이어가요.',
+      status: '공공데이터 실시간 조회', icon: BatteryCharging, actionLabel: '충전소 찾기',
+      run: () => navigate('charge'), assets: ['/mobility/mobility-charge-v1', '/mobility/mobility-hero-v1'],
+      tags: ['현재 위치', '충전기 상태', '카카오 길찾기'],
+    },
+    {
+      id: 'care', category: 'care', kicker: 'VEHICLE CARE', title: '차량 신호부터 블루핸즈까지',
+      detail: '동의한 차량 신호를 먼저 확인하고, 필요한 경우 가까운 현대 서비스 거점으로 연결해요.',
+      status: vehicle ? (Number(vehicle.warningCount ?? 0) > 0 ? `확인 신호 ${vehicle.warningCount}건` : '수신한 경고 없음') : '차량 연결 전에도 거점 검색 가능',
+      icon: Wrench, actionLabel: vehicle ? '차량 상태 보기' : '블루핸즈 찾기',
+      run: () => navigate('care', vehicle ? 'status' : 'centers'), assets: ['/mobility/mobility-care-v1', '/mobility/mobility-charge-v1'],
+      tags: ['차량 상태', '정비 브리프', '공식 거점'],
+    },
+    {
+      id: 'passport', category: 'record', kicker: 'MOBILITY PASSPORT', title: '내 차의 시간을 신뢰 기록으로',
+      detail: '차량에서 받은 정보와 내가 남긴 정비·충전·지출 기록을 출처별로 나눠 오래 관리해요.',
+      status: vehicle ? `내가 남긴 기록 ${journal.entries.length}건` : '차량 연결 후 기록 시작',
+      icon: FileText, actionLabel: vehicle ? '차량 기록 열기' : '차량 연결하기',
+      run: () => vehicle ? navigate('passport') : setModal('connect'), assets: ['/mobility/mobility-passport-v1', '/mobility/mobility-hero-v1'],
+      tags: ['정비 이력', '지출 기록', '차량 여권'],
+    },
+  ];
+  const visible = filter === 'all' ? services : services.filter((service) => service.category === filter);
+  return <section className="mobility-market" aria-labelledby="mobility-market-title" data-reveal>
+    <div className="mobility-market-trust" aria-label="서비스 신뢰 원칙">
+      {['동의한 차량 데이터만', '현재 위치 기준', '공식 서비스로 연결', '기록 출처를 명확하게'].map((label) => <span key={label}><CheckCircle2 size={13} />{label}</span>)}
+    </div>
+    <div className="mobility-market-heading">
+      <div><span>MY MOBILITY, ONE PLACE</span><h2 id="mobility-market-title">내 차에 필요한 서비스를 한눈에</h2><p>찾고, 확인하고, 기록하는 현대차 오너의 이동 생활을 사진과 다음 행동 중심으로 정리했어요.</p></div>
+      <button type="button" onClick={() => vehicle ? navigate('care', 'status') : setModal('connect')}><CarFront size={17} /><span><small>{vehicle ? '연결된 현대차' : 'MY HYUNDAI'}</small><strong>{vehicle?.name ?? '내 차 연결하기'}</strong></span><ChevronRight size={16} /></button>
+    </div>
+    <div className="mobility-market-filters" role="group" aria-label="모빌리티 서비스 필터">
+      <span><Search size={15} />서비스 선택</span>
+      {filters.map((item) => <button type="button" key={item.id} className={filter === item.id ? 'active' : ''} aria-pressed={filter === item.id} onClick={() => setFilter(item.id)}>{item.label}</button>)}
+    </div>
+    <div className="mobility-market-layout">
+      <aside className="mobility-market-aside" aria-label="현대차 오너 서비스 분류">
+        <div><span>OWNER SERVICES</span><strong>현대차 오너 생활</strong><small>{vehicle ? '내 차 상태에 맞춰 확인하세요.' : '차량 연결 전에도 탐색할 수 있어요.'}</small></div>
+        {filters.slice(1).map((item) => <button type="button" key={item.id} className={filter === item.id ? 'active' : ''} onClick={() => setFilter(item.id)}><span>{item.label}</span><b>{services.filter((service) => service.category === item.id).length}</b></button>)}
+        <button type="button" className="mobility-market-connect" onClick={() => vehicle ? navigate('settings') : setModal('connect')}><ShieldCheck size={16} /><span>{vehicle ? '연결 정보 관리' : '현대 통합계정 연결'}</span><ArrowUpRight size={14} /></button>
+      </aside>
+      <div className="mobility-market-results">
+        <div className="mobility-market-count"><strong>{visible.length}개의 오너 서비스</strong><span>사진을 눌러 바로 이동하세요</span></div>
+        {visible.map((service, index) => {
+          const Icon = service.icon;
+          return <button type="button" className="mobility-service-row" onClick={service.run} key={service.id}>
+            <span className="mobility-service-media">
+              {service.assets.map((asset, assetIndex) => <img key={asset} src={`${asset}-800.webp`} srcSet={`${asset}-800.webp 800w, ${asset}-1536.webp 1536w`} sizes={assetIndex === 0 ? '(max-width:760px) 82vw, 390px' : '(max-width:760px) 38vw, 190px'} alt={assetIndex === 0 ? `${service.title} 모빌리티 콘셉트` : `${service.title} 보조 장면`} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />)}
+              <em><Icon size={15} />{service.status}</em>
+            </span>
+            <span className="mobility-service-copy">
+              <span className="mobility-service-kicker">{service.kicker}</span><strong>{service.title}</strong><small>{service.detail}</small>
+              <span className="mobility-service-tags">{service.tags.map((tag) => <i key={tag}>{tag}</i>)}</span>
+              <b>{service.actionLabel}<ArrowRight size={15} /></b>
+            </span>
+          </button>;
+        })}
+      </div>
+    </div>
+  </section>;
+}
+
 function HyundaiOwnerRail({ vehicle, navigate, setModal }) {
   const items = [
     {
@@ -352,12 +425,6 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
   const spent = journal.entries.filter((item) => item.status === 'DONE' && item.entryDate.startsWith(month)).reduce((sum, item) => sum + (item.amount ?? 0), 0);
   const checked = vehicle?.checkedWarnings ?? 0;
   const warnings = vehicle?.warningCount ?? 0;
-  const shortcuts = [
-    { label: '충전소 찾기', detail: '사용 가능한 곳', icon: BatteryCharging, page: 'charge', tone: 'cyan' },
-    { label: '차량 상태', detail: '배터리·안전 신호', icon: Activity, page: 'care', target: 'status', tone: 'blue' },
-    { label: '정비소 찾기', detail: '가까운 블루핸즈', icon: Wrench, page: 'care', target: 'centers', tone: 'blue' },
-    { label: '관리 기록', detail: '정비·지출·일정', icon: FileText, page: 'passport', tone: 'blue' },
-  ];
   return <div className="owner-home cinematic-home container" ref={homeRoot}>
     <div className="home-greeting"><div><span>MY CAR, MY EVERYDAY</span><p>{vehicle ? `${vehicle.name}와 함께하는 오늘` : '내 차를 위한 좋은 습관'}</p></div><button onClick={() => navigate('settings')}><CarFront size={17} />{vehicle ? '내 차 관리' : '차량 연결'}<ChevronRight size={14} /></button></div>
     <section className="mobility-welcome" aria-labelledby="owner-title">
@@ -367,13 +434,15 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
-    {!vehicle && <GuestStartPanel navigate={navigate} setModal={setModal} />}
-    <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
-    <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
-    <NextActionPanel vehicle={vehicle} tasks={tasks} navigate={navigate} setModal={setModal} />
-    <DepartureChecklist navigate={navigate} />
-    <VehicleCareSummary vehicle={vehicle} journal={journal} navigate={navigate} setModal={setModal} />
-    <nav className="owner-shortcuts" aria-label="자주 쓰는 기능">{shortcuts.map(({ label, detail, icon: Icon, page, target, tone }, index) => <button key={label} onClick={() => navigate(page, target)}><FeatureImage scene={['charge', 'battery', 'care', 'road', 'parking', 'journal'][index]} priority={index < 2} /><span className={`shortcut-icon ${tone}`}><Icon size={20} strokeWidth={1.6} /></span><span className="journey-card-copy"><strong>{label}</strong><small>{detail}</small></span><ArrowUpRight className="journey-card-arrow" size={17} /></button>)}</nav>
+    <MobilityServiceMarket vehicle={vehicle} navigate={navigate} setModal={setModal} journal={journal} />
+    <div className="owner-overview-grid">
+      {!vehicle && <GuestStartPanel navigate={navigate} setModal={setModal} />}
+      <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
+      <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
+      <NextActionPanel vehicle={vehicle} tasks={tasks} navigate={navigate} setModal={setModal} />
+      <DepartureChecklist navigate={navigate} />
+      <VehicleCareSummary vehicle={vehicle} journal={journal} navigate={navigate} setModal={setModal} />
+    </div>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
       <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
       <div className="workspace-section-title"><div><span>MY HYUNDAI</span><h2 id="home-car-heading">오늘의 내 차</h2></div><button onClick={() => navigate('care', 'status')}>자세히 보기 <ChevronRight size={15} /></button></div>

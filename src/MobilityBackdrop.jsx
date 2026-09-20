@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 
 export const mobilityScenes = [
-  { id: 'hero', asset: '/orbit/orbit-hero-v1', label: '일상 너머의 여정' },
+  { id: 'hero', asset: '/mobility/mobility-hero-v1', label: '도시와 이어지는 모빌리티' },
   { id: 'charge', asset: '/journey/charge-v2', label: '다음 여정을 채우다' },
   { id: 'road', asset: '/journey/road-v2', label: '새로운 길을 만나다' },
   { id: 'care', asset: '/journey/care-v2', label: '오래 함께할 준비' },

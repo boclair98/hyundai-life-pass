@@ -26,3 +26,17 @@ test('the eight active journey illustrations stay within a two megabyte combined
   assert.deepEqual(files.sort(), activeFiles.sort());
   assert.ok(activeFiles.reduce((bytes, name) => bytes + statSync(`${dir}/${name}`).size, 0) < 2_000_000);
 });
+
+test('mobility market has four distinct responsive WebP scenes within its delivery budget', () => {
+  const assets = ['mobility-hero-v1', 'mobility-charge-v1', 'mobility-care-v1', 'mobility-passport-v1'];
+  const dir = `${root}public/mobility`;
+  const expected = assets.flatMap((asset) => [800, 1536].map((width) => `${asset}-${width}.webp`));
+  assert.deepEqual(readdirSync(dir).filter((name) => name.endsWith('.webp')).sort(), expected.sort());
+  for (const name of expected) {
+    const bytes = readFileSync(`${dir}/${name}`);
+    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    assert.ok(bytes.length > 10_000);
+  }
+  assert.ok(expected.reduce((bytes, name) => bytes + statSync(`${dir}/${name}`).size, 0) < 1_000_000);
+});
