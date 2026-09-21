@@ -15,6 +15,7 @@ function idsFromDeclaration(source, name) {
 
 test('default navigation keeps the owner daily path visible', () => {
   assert.deepEqual(idsFromDeclaration(appSource, 'primaryNavigation'), ['home', 'charge', 'care', 'passport']);
+  assert.match(appSource, /id: 'charge', label: '이동'/);
   assert.deepEqual(idsFromDeclaration(appSource, 'secondaryNavigation'), ['drive', 'settings']);
   assert.match(appSource, /primaryNavigation\.map\(\(\{ id, label, icon: Icon \}\)/);
   assert.match(appSource, /mobile-drawer-label/);
@@ -49,13 +50,17 @@ test('home command center makes the trust loop the first owner decision', () => 
   assert.match(ownerSource, /차량 패스포트/);
   assert.match(ownerSource, /현대차에서 받은 값과 오너가 직접 남긴 기록을 구분/);
   assert.match(ownerSource, /home-secondary-details/);
+  assert.match(ownerSource, /today-command-metrics/);
+  assert.match(ownerSource, /연결된 차량 핵심 상태/);
+  assert.doesNotMatch(ownerSource, /<VehicleReadiness vehicle=\{vehicle\}/);
+  assert.doesNotMatch(ownerSource, /<VehicleCareSummary vehicle=\{vehicle\}/);
 });
 
 test('service-centre location follows the same consent-first behavior as charging', () => {
   assert.match(appSource, /navigator\.permissions\.query\(\{ name: 'geolocation' \}\)/g);
   assert.match(appSource, /if \(active && permission\.state === 'granted'\) findFromCurrentLocation\(\)/);
   assert.match(appSource, /if \(!navigator\.permissions\?\.query\) \{\s*\/\/ Safari on iOS does not expose Permissions API\. Ask for the real location[\s\S]*?findFromCurrentLocation\(\);/);
-  assert.match(appSource, /내 위치로 다시 찾기/);
+  assert.match(appSource, /현재 위치 사용/);
   assert.match(appSource, /finishReject\(\{ code: 3 \}\), 25000\)/);
 });
 
@@ -90,6 +95,8 @@ test('care can prepare an honest service handoff brief without inventing diagnos
   assert.match(appSource, /navigator\.clipboard\?\.writeText/);
   assert.match(appSource, /navigator\.share\(\{ title: `\$\{vehicle\.name\} 정비 방문 브리프`/);
   assert.match(appSource, /<ServiceHandoffBrief vehicle=\{vehicle\} notify=\{notify\} \/>/);
+  assert.match(appSource, /방문 기록 남기기/);
+  assert.match(appSource, /navigate\('passport'\)/);
 });
 
 test('care keeps a device-local vehicle signal timeline and compares only received values', () => {

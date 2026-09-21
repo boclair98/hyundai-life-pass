@@ -67,7 +67,7 @@ import './journey.css';
 // 주행 계산·주차 저장은 드라이브 도구, 계정 연결은 설정에서 보조적으로 제공합니다.
 const primaryNavigation = [
   { id: 'home', label: '오늘', icon: CarFront },
-  { id: 'charge', label: '충전소', icon: BatteryCharging },
+  { id: 'charge', label: '이동', icon: Route },
   { id: 'care', label: '케어', icon: Activity },
   { id: 'passport', label: '패스포트', icon: FileCheck2 },
 ];
@@ -640,16 +640,23 @@ function VehicleEnergyCard({ vehicle, onConnect }) {
   );
 }
 
-function ChargeHero({ availableCount, locationLabel, radiusKm, usingCurrentLocation, live, busy, onLocate }) {
+function ChargeHero({ availableCount, locationLabel, radiusKm, locationState, live, busy, onLocate }) {
+  const locationCopy = locationState === 'current'
+    ? '내 위치 기준'
+    : locationState === 'loading'
+      ? '위치 확인 중'
+      : locationState === 'denied'
+        ? '위치 권한 필요'
+        : '지역 예시 기준';
   return (
     <section className="charge-hero" aria-labelledby="charge-title">
       <div className="charge-hero-copy">
         <span><i /> {live ? '실시간 충전 현황' : '충전 현황 확인 중'}</span>
-        <h1 id="charge-title">가까운 충전소</h1>
+        <h1 id="charge-title">내 주변 이동</h1>
         <p><MapPin size={14} /> {locationLabel} · 반경 {Math.round(radiusKm)}km</p>
       </div>
-      <div className="charge-hero-count"><strong>{live ? availableCount : '—'}</strong><span>대 사용 가능</span><small>{usingCurrentLocation ? '내 위치 기준' : '서울 성수 기본 위치 기준'}</small></div>
-      <button onClick={onLocate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}<span><strong>{busy ? '위치 확인 중' : '내 위치로 다시 찾기'}</strong><small>위치는 저장하지 않아요</small></span><ChevronRight size={17} /></button>
+      <div className="charge-hero-count"><strong>{live ? availableCount : '—'}</strong><span>충전기 사용 가능</span><small>{locationCopy}</small></div>
+      <button onClick={onLocate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}<span><strong>{busy ? '위치 확인 중' : locationState === 'current' ? '현재 위치 새로고침' : '현재 위치 사용'}</strong><small>{locationState === 'denied' ? '권한을 허용하면 정확해져요' : '위치는 저장하지 않아요'}</small></span><ChevronRight size={17} /></button>
       <div className="charge-hero-symbol" aria-hidden="true"><Zap size={30} fill="currentColor" /><i /><i /></div>
     </section>
   );
@@ -659,10 +666,11 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
   const [chargerFeed, setChargerFeed] = useState(() => ({
     stations: platform.stations ?? [],
     provider: platform.providers?.find((provider) => provider.id === 'ev-charger') ?? null,
-    search: { latitude: 37.5446, longitude: 127.0559, locationLabel: '서울 성수 기본 위치', radiusKm: 30 },
+    search: { latitude: 37.5446, longitude: 127.0559, locationLabel: '서울 성수', radiusKm: 30 },
   }));
   const [locationBusy, setLocationBusy] = useState(false);
   const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
+  const [locationState, setLocationState] = useState('default');
   const [favoriteIds, setFavoriteIds] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) ?? '[]');
@@ -715,7 +723,7 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
     setChargerFeed({
       stations: platform.stations,
       provider: platform.providers?.find((provider) => provider.id === 'ev-charger') ?? null,
-      search: { latitude: 37.5446, longitude: 127.0559, locationLabel: '서울 성수 기본 위치', radiusKm: 30 },
+      search: { latitude: 37.5446, longitude: 127.0559, locationLabel: '서울 성수', radiusKm: 30 },
     });
   }, [platform.stations, platform.providers, usingCurrentLocation]);
 
@@ -725,14 +733,17 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
       return;
     }
     setLocationBusy(true);
+    setLocationState('loading');
     try {
       const result = await loadChargingStations({ latitude, longitude, radiusKm: 30 });
       setChargerFeed(result);
       setSelectedStation(null);
       setUsingCurrentLocation(true);
+      setLocationState('current');
       if (result.provider?.state === 'ERROR') notify(result.provider.message);
     } catch (error) {
       setUsingCurrentLocation(false);
+      setLocationState('default');
       notify(error.message || '현재 위치 주변 충전소를 불러오지 못했습니다.');
     } finally {
       setLocationBusy(false);
@@ -760,17 +771,19 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
     }
     const query = chargerFeed.search ?? { latitude: 37.5446, longitude: 127.0559, radiusKm: 30 };
     setLocationBusy(true);
+    setLocationState('loading');
     try {
       const result = await loadChargingStations({ latitude: query.latitude, longitude: query.longitude, radiusKm: query.radiusKm });
       setChargerFeed(result);
       setSelectedStation(null);
+      setLocationState(usingCurrentLocation ? 'current' : 'default');
       notify('충전소 상태를 새로고침했습니다.');
     } catch (error) {
       notify(error.message || '충전소 상태를 새로고침하지 못했습니다.');
     } finally {
       setLocationBusy(false);
     }
-  }, [chargerFeed.search, demoMode, notify]);
+  }, [chargerFeed.search, demoMode, notify, usingCurrentLocation]);
 
   const findFromCurrentLocation = useCallback(() => {
     if (demoMode) {
@@ -778,11 +791,13 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
       return;
     }
     setLocationBusy(true);
+    setLocationState('loading');
     getCurrentPosition()
       .then(({ coords }) => loadFromCoordinates({ latitude: coords.latitude, longitude: coords.longitude }))
       .catch((error) => {
         setLocationBusy(false);
         setUsingCurrentLocation(false);
+        setLocationState('denied');
         notify(locationErrorMessage(error));
       });
   }, [demoMode, loadFromCoordinates, notify]);
@@ -810,6 +825,7 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
     }
     navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
       if (active && permission.state === 'granted') findFromCurrentLocation();
+      else if (active && permission.state === 'denied') setLocationState('denied');
     }).catch(() => {
       // A permission lookup can fail even when geolocation itself is available.
       // Try the real browser location instead of leaving the default region active.
@@ -820,7 +836,7 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
 
   return (
     <div className="page container charge-page">
-      <ChargeHero availableCount={availableChargerCount} locationLabel={chargerFeed.search?.locationLabel ?? '서울 성수'} radiusKm={chargerFeed.search?.radiusKm ?? 30} usingCurrentLocation={usingCurrentLocation} live={chargerLive} busy={locationBusy} onLocate={findFromCurrentLocation} />
+      <ChargeHero availableCount={availableChargerCount} locationLabel={chargerFeed.search?.locationLabel ?? '서울 성수'} radiusKm={chargerFeed.search?.radiusKm ?? 30} locationState={locationState} live={chargerLive} busy={locationBusy} onLocate={findFromCurrentLocation} />
       <div className="charge-quick-filters" aria-label="충전소 빠른 필터">
         <div><span>빠른 조건</span><strong>{visibleStations.length}곳 비교 중</strong></div>
         <div>
@@ -1360,13 +1376,13 @@ function OfficialAssistanceCard() {
   </section>;
 }
 
-function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionTarget, demoMode = false }) {
+function CarePage({ vehicle, navigate, notify, setModal, platform, actions, busy, sectionTarget, demoMode = false }) {
   const [careTab, setCareTab] = useState(sectionTarget || (vehicle ? 'status' : 'centers'));
   useEffect(() => { if (sectionTarget) setCareTab(sectionTarget); }, [sectionTarget]);
   const [centerFeed, setCenterFeed] = useState({ centers: [], provider: null });
   const [centerBusy, setCenterBusy] = useState(true);
   const [centerError, setCenterError] = useState('');
-  const [centerLocation, setCenterLocation] = useState({ current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
+  const [centerLocation, setCenterLocation] = useState({ current: false, label: '서울 성수', latitude: null, longitude: null });
   const nextAction = vehicle?.warningCount > 0
     ? { title: '경고 항목부터 확인하세요', detail: `차량 경고 ${vehicle.warningCount}건이 현대 데이터에 보고되었습니다. 가까운 서비스 거점을 확인하고 상담을 준비할 수 있습니다.`, button: '서비스 거점 보기' }
     : vehicle?.nextServiceKm != null
@@ -1383,7 +1399,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
         label: '시연 위치',
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
-      } : { current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
+      } : { current: false, label: '서울 성수', latitude: null, longitude: null });
       return;
     }
     setCenterBusy(true);
@@ -1393,7 +1409,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       label: '현재 위치',
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-    } : { current: false, label: '서울 성수 기본 위치', latitude: null, longitude: null });
+    } : { current: false, label: '서울 성수', latitude: null, longitude: null });
     try {
       const result = await loadServiceCenters(coordinates);
       setCenterFeed(result);
@@ -1461,7 +1477,7 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       <section className="care-next-action panel reveal" data-reveal aria-label="다음 추천 행동">
         <div className="care-next-icon"><Route size={20} /></div>
         <div><span>NEXT BEST ACTION</span><strong>{nextAction.title}</strong><p>{nextAction.detail}</p></div>
-        <button className="button outline" onClick={() => setCareTab('centers')}>{nextAction.button} <ArrowRight size={15} /></button>
+        <div className="care-next-actions"><button className="button outline" onClick={() => setCareTab('centers')}>{nextAction.button} <ArrowRight size={15} /></button>{vehicle && <button className="button primary" onClick={() => navigate('passport')}>방문 기록 남기기 <FileCheck2 size={15} /></button>}</div>
       </section>
       <ServiceHandoffBrief vehicle={vehicle} notify={notify} />
       <OfficialAssistanceCard />
@@ -1480,11 +1496,11 @@ function CarePage({ vehicle, notify, setModal, platform, actions, busy, sectionT
       {careTab === 'centers' && <section className="section-sub service-center-section" id="service-centers">
         <div className="service-center-heading">
           <SectionHeading eyebrow="CARE NEAR YOU" title="가까운 블루핸즈" description="현재 위치에서 가까운 현대자동차 서비스 거점을 찾아보세요." />
-          <button className="button outline" onClick={findFromCurrentLocation} disabled={centerBusy}>{centerBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />} 내 위치로 다시 찾기</button>
+          <button className="button outline" onClick={findFromCurrentLocation} disabled={centerBusy}>{centerBusy ? <LoaderCircle className="spin" size={16} /> : <LocateFixed size={16} />} {centerLocation.current ? '현재 위치 새로고침' : '현재 위치 사용'}</button>
         </div>
         <section className={`location-status ${centerLocation.current ? 'current' : 'default'}`} aria-live="polite">
-          <div><MapPin size={18} /><span><small>{centerLocation.current ? '현재 위치 기준' : '기본 위치 기준'}</small><strong>{centerLocation.current ? `${centerLocation.label} · ${centerLocation.latitude.toFixed(4)}, ${centerLocation.longitude.toFixed(4)}` : centerLocation.label} · 반경 20km</strong></span></div>
-          <p>{centerLocation.current ? '현재 위치를 기준으로 가까운 순서로 보여드려요.' : '내 위치로 다시 찾기를 누르면 주변 순서가 바뀝니다.'}</p>
+          <div><MapPin size={18} /><span><small>{centerLocation.current ? '현재 위치 기준' : '지역 예시 기준'}</small><strong>{centerLocation.current ? `${centerLocation.label} · ${centerLocation.latitude.toFixed(4)}, ${centerLocation.longitude.toFixed(4)}` : `${centerLocation.label} · 위치 미허용` } · 반경 20km</strong></span></div>
+          <p>{centerLocation.current ? '현재 위치를 기준으로 가까운 순서로 보여드려요.' : '현재 위치 사용을 누르면 내 주변 순서로 다시 찾습니다.'}</p>
         </section>
         <div className={`provider-inline ${centerFeed.provider?.state === 'CONNECTED' || centerFeed.provider?.state === 'STALE' ? 'live' : 'sample'}`}>
           <span>{centerBusy ? '주변 거점 확인 중' : centerError ? '연결 지연' : centerFeed.provider?.state === 'CONNECTED' ? '지금 확인됨' : centerFeed.provider?.state === 'STALE' ? '최근 확인됨' : '확인 중'}</span>

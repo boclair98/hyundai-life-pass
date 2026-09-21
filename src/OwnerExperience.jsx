@@ -3,7 +3,7 @@ import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarF
 import { loadJournal, loadJournalReport, createJournalEntry, changeJournalStatus } from './api';
 import { demoJournalEntries } from './data';
 import './cinematic.css';
-import { FeatureImage, SceneControls } from './MobilityBackdrop';
+import { SceneControls } from './MobilityBackdrop';
 
 export const categories = { MAINTENANCE: '정비', CHARGE: '충전', FUEL: '주유', INSURANCE: '보험', WASH: '세차', PARKING: '주차', OTHER: '기타' };
 const categoryIcons = { MAINTENANCE: Wrench, CHARGE: BatteryCharging, FUEL: Fuel, INSURANCE: ShieldCheck, WASH: Sparkles, PARKING: MapPin, OTHER: FileText };
@@ -361,6 +361,13 @@ function TodayCommandCenter({ vehicle, navigate, setModal, journal, passport }) 
       </div>
     </div>
 
+    {vehicle && <div className="today-command-metrics" aria-label="연결된 차량 핵심 상태">
+      <div><BatteryCharging size={16} /><span>배터리</span><strong>{metric(vehicle.batterySoc, '%')}</strong></div>
+      <div><Navigation size={16} /><span>주행 가능</span><strong>{metric(vehicle.range, 'km')}</strong></div>
+      <div><ShieldCheck size={16} /><span>차량 경고</span><strong>{Number(vehicle.warningCount ?? 0) > 0 ? `${vehicle.warningCount}건 확인` : '이상 없음'}</strong></div>
+      <div><CircleGauge size={16} /><span>누적 주행</span><strong>{metric(vehicle.odometer, 'km')}</strong></div>
+    </div>}
+
     <div className="today-command-actions" aria-label="핵심 오너 기능">
       <button type="button" onClick={() => navigate('drive', 'plan')}><Navigation size={18} /><span><strong>트립 미션</strong><small>출발 가능 여부와 도착 여유 계산</small></span><ArrowUpRight size={15} /></button>
       <button type="button" onClick={() => navigate('care', vehicle ? 'status' : 'centers')}><Wrench size={18} /><span><strong>케어 센터</strong><small>{vehicle ? '경고·공기압·정비 브리프' : '내 주변 공식 거점 찾기'}</small></span><ArrowUpRight size={15} /></button>
@@ -472,32 +479,17 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
   const tasks = journal.entries.filter((item) => item.status === 'PLANNED').sort((a, b) => a.entryDate.localeCompare(b.entryDate)).slice(0, 3);
   const month = dateKey().slice(0, 7);
   const spent = journal.entries.filter((item) => item.status === 'DONE' && item.entryDate.startsWith(month)).reduce((sum, item) => sum + (item.amount ?? 0), 0);
-  const checked = vehicle?.checkedWarnings ?? 0;
-  const warnings = vehicle?.warningCount ?? 0;
   return <div className="owner-home cinematic-home container" ref={homeRoot}>
     <div className="home-greeting"><div><span>MY CAR, MY EVERYDAY</span><p>{vehicle ? `${vehicle.name}와 함께하는 오늘` : '내 차를 위한 좋은 습관'}</p></div><button onClick={() => navigate('settings')}><CarFront size={17} />{vehicle ? '내 차 관리' : '차량 연결'}<ChevronRight size={14} /></button></div>
     <section className="mobility-welcome" aria-labelledby="owner-title">
       <span className="mobility-eyebrow">HYUNDAI OWNER CARE · CONCEPT</span>
       <h1 id="owner-title">현대차 오너의<br /><em>차량 라이프.</em></h1>
-      <p>차량 상태를 확인하고, 오늘 필요한 행동을 정한 뒤<br />충전·케어·기록까지 한 흐름으로 이어가요.</p>
+      <p>차량 상태를 확인하고, 오늘 필요한 행동을 정한 뒤<br />이동·케어·기록까지 한 흐름으로 이어가요.</p>
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
     <TodayCommandCenter vehicle={vehicle} navigate={navigate} setModal={setModal} journal={journal} passport={passport} />
     <MobilityServiceMarket vehicle={vehicle} navigate={navigate} setModal={setModal} journal={journal} />
-    <div className="owner-overview-grid">
-      {!vehicle && <GuestStartPanel navigate={navigate} setModal={setModal} />}
-      <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
-      <VehicleCareSummary vehicle={vehicle} journal={journal} navigate={navigate} setModal={setModal} />
-    </div>
-    <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
-      <div className="journey-garage"><FeatureImage scene="care" /><span>내 차를 위한 나만의 공간</span></div>
-      <div className="workspace-section-title"><div><span>MY HYUNDAI</span><h2 id="home-car-heading">오늘의 내 차</h2></div><button onClick={() => navigate('care', 'status')}>자세히 보기 <ChevronRight size={15} /></button></div>
-      <div className="owner-vitals">
-        {[{ icon: BatteryCharging, label: '배터리 잔량', value: metric(vehicle?.batterySoc, '%'), className: 'battery' }, { icon: Navigation, label: '주행 가능 거리', value: metric(vehicle?.range, ' km') }, { icon: CircleGauge, label: '누적 주행거리', value: metric(vehicle?.odometer, ' km') }, { icon: ShieldCheck, label: '차량 경고', value: vehicle ? (checked ? (warnings ? `${warnings}건 확인 필요` : '수신한 경고 없음') : '수신 정보 없음') : '연결 후 확인' }].map(({ icon: Icon, label, value, className }) => <button key={label} className={`owner-vital ${className ?? ''}`} onClick={() => vehicle ? navigate('care', 'status') : setModal('connect')}><Icon size={20} /><span>{label}</span><strong className={!vehicle ? 'unconnected-value' : ''}>{value}</strong>{label === '배터리 잔량' && <i className="vital-battery"><b style={{ width: `${vehicle?.batterySoc ?? 0}%` }} /></i>}</button>)}
-      </div>
-      <p className="owner-data-note">{vehicle ? `차량 정보는 마지막 수신 기준입니다. ${vehicle.updatedAt ? new Date(vehicle.updatedAt).toLocaleString('ko-KR') : ''}` : '내 차를 연결하면 차량에서 제공하는 상태를 이곳에 보여드려요.'}</p>
-    </section>
     <details className="home-secondary-details">
       <summary><span><span>MORE OWNER TOOLS</span><strong>차량을 더 오래 잘 쓰는 기능</strong></span><ChevronRight size={18} /></summary>
       <HyundaiOwnerRail vehicle={vehicle} navigate={navigate} setModal={setModal} />
