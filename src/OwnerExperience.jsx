@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, CheckCircle2, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X } from 'lucide-react';
+import { Activity, ArrowRight, ArrowUpRight, BatteryCharging, CalendarDays, CarFront, Check, CheckCircle2, ChevronRight, CircleGauge, Download, ExternalLink, FileText, Fuel, Gift, MapPin, Navigation, Plus, RefreshCcw, Search, ShieldCheck, Sparkles, Wallet, Wrench, X, Zap } from 'lucide-react';
 import { loadJournal, loadJournalReport, createJournalEntry, changeJournalStatus } from './api';
 import { demoJournalEntries } from './data';
 import './cinematic.css';
 import { SceneControls } from './MobilityBackdrop';
+import { vehicleEnergyProfile } from './vehicleProfile';
 
 export const categories = { MAINTENANCE: '정비', CHARGE: '충전', FUEL: '주유', INSURANCE: '보험', WASH: '세차', PARKING: '주차', OTHER: '기타' };
 const categoryIcons = { MAINTENANCE: Wrench, CHARGE: BatteryCharging, FUEL: Fuel, INSURANCE: ShieldCheck, WASH: Sparkles, PARKING: MapPin, OTHER: FileText };
@@ -13,7 +14,7 @@ const metric = (value, unit) => value == null ? '연결 후 확인' : `${Number(
 const dateLabel = (date) => new Date(`${date}T12:00:00`).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 const CHECKLIST_STORAGE_KEY = 'life-pass:departure-checklist:v1';
 
-function vehicleBrief(vehicle) {
+function vehicleBrief(vehicle, tasks = []) {
   if (!vehicle) return {
     tone: 'idle',
     icon: CarFront,
@@ -32,12 +33,12 @@ function vehicleBrief(vehicle) {
     action: '안전 점검 보기',
     target: 'care',
   };
-  const battery = vehicle.batterySoc == null || vehicle.batterySoc === '' ? null : Number(vehicle.batterySoc);
-  if (Number.isFinite(battery) && battery <= 20) return {
+  const energy = vehicleEnergyProfile(vehicle);
+  if (energy.isElectric && Number.isFinite(energy.value) && energy.value <= 20) return {
     tone: 'charge',
     icon: BatteryCharging,
     kicker: 'ENERGY CHECK',
-    title: `배터리 ${battery}% · 충전을 준비해요`,
+    title: `${energy.label} ${energy.value}% · 충전을 준비해요`,
     detail: '현재 수신한 배터리 잔량을 기준으로 내 위치 주변 충전소를 찾아볼 수 있어요.',
     action: '충전소 찾기',
     target: 'charge',
@@ -52,7 +53,16 @@ function vehicleBrief(vehicle) {
     action: '서비스 거점 보기',
     target: 'care',
   };
-  const signalCount = [vehicle.batterySoc, vehicle.range, vehicle.odometer, vehicle.chargingState].filter((value) => value != null && value !== '').length;
+  if (tasks.length) return {
+    tone: 'care',
+    icon: CalendarDays,
+    kicker: 'NEXT CARE',
+    title: `${tasks[0].title} 일정이 있어요`,
+    detail: `${dateLabel(tasks[0].entryDate)} 예정 · 패스포트에서 완료 여부와 비용을 관리하세요.`,
+    action: '일정 확인',
+    target: 'passport',
+  };
+  const signalCount = [energy.value, vehicle.range, vehicle.odometer, vehicle.chargingState].filter((value) => value != null && value !== '').length;
   if (!signalCount) return {
     tone: 'waiting',
     icon: RefreshCcw,
@@ -89,15 +99,15 @@ function readinessModel(vehicle) {
   const warningCount = Number(vehicle.warningCount);
   const checkedWarnings = Number(vehicle.checkedWarnings);
   const hasWarningSignal = Number.isFinite(warningCount) && (warningCount > 0 || checkedWarnings >= 7 || (vehicle.healthChecks?.length > 0 && vehicle.healthChecks.every((check) => check.state !== 'UNAVAILABLE')));
-  const battery = vehicle.batterySoc == null || vehicle.batterySoc === '' ? null : Number(vehicle.batterySoc);
+  const energy = vehicleEnergyProfile(vehicle);
   const nextService = vehicle.nextServiceKm == null || vehicle.nextServiceKm === '' ? null : Number(vehicle.nextServiceKm);
   const pillars = [
     hasWarningSignal
       ? { id: 'safety', label: '안전', detail: warningCount > 0 ? `경고 ${warningCount}건 확인` : '수신한 경고 없음', state: warningCount > 0 ? 'ATTENTION' : 'READY', icon: ShieldCheck }
       : { id: 'safety', label: '안전', detail: '아직 확인되지 않음', state: 'WAITING', icon: ShieldCheck },
-    Number.isFinite(battery)
-      ? { id: 'energy', label: '에너지', detail: battery <= 20 ? `배터리 ${battery}% · 충전 권장` : `배터리 ${battery}%`, state: battery <= 20 ? 'ATTENTION' : 'READY', icon: BatteryCharging }
-      : { id: 'energy', label: '에너지', detail: '배터리 수신 대기', state: 'WAITING', icon: BatteryCharging },
+    Number.isFinite(energy.value)
+      ? { id: 'energy', label: '에너지', detail: energy.isElectric ? (energy.value <= 20 ? `배터리 ${energy.value}% · 충전 권장` : `배터리 ${energy.value}%`) : `${energy.label} ${energy.value}%`, state: energy.isElectric && energy.value <= 20 ? 'ATTENTION' : 'READY', icon: energy.isFuel ? Fuel : BatteryCharging }
+      : { id: 'energy', label: '에너지', detail: `${energy.label} 수신 대기`, state: 'WAITING', icon: energy.isFuel ? Fuel : BatteryCharging },
     Number.isFinite(nextService)
       ? { id: 'care', label: '케어', detail: nextService <= 1000 ? `${nextService.toLocaleString('ko-KR')}km 후 점검` : `점검까지 ${nextService.toLocaleString('ko-KR')}km`, state: nextService <= 1000 ? 'ATTENTION' : 'READY', icon: Wrench }
       : { id: 'care', label: '케어', detail: '점검 기준 미제공', state: 'WAITING', icon: Wrench },
@@ -250,19 +260,20 @@ function OwnerValueHub({ vehicle, navigate, spent, journal }) {
 
 function MobilityServiceMarket({ vehicle, navigate, setModal, journal }) {
   const [filter, setFilter] = useState('all');
+  const energy = vehicleEnergyProfile(vehicle);
   const filters = [
     { id: 'all', label: '전체 서비스' },
-    { id: 'energy', label: '충전' },
+    { id: 'energy', label: '에너지' },
     { id: 'care', label: '차량 케어' },
     { id: 'record', label: '차량 기록' },
   ];
   const services = [
     {
-      id: 'charge', category: 'energy', kicker: 'EV CHARGING', title: '내 위치에서 바로 찾는 충전',
-      detail: '현재 위치를 기준으로 가까운 충전소와 이용 가능한 충전기를 확인하고 길찾기까지 이어가요.',
-      status: '공공데이터 실시간 조회', icon: BatteryCharging, actionLabel: '충전소 찾기',
-      run: () => navigate('charge'), assets: ['/mobility/mobility-charge-v1', '/mobility/mobility-hero-v1'],
-      tags: ['현재 위치', '충전기 상태', '카카오 길찾기'],
+      id: 'charge', category: 'energy', kicker: vehicle && energy.isFuel ? 'MOBILITY ENERGY' : 'EV CHARGING', title: vehicle && energy.isFuel ? '오늘 이동에 필요한 에너지 계획' : vehicle ? '내 위치에서 바로 찾는 충전' : '충전·주유·이동을 한곳에서',
+      detail: vehicle && energy.isFuel ? '차량 종류에 맞는 에너지 상태와 이동 계획을 확인하고 필요한 케어로 이어가요.' : vehicle ? '현재 위치를 기준으로 가까운 충전소와 이용 가능한 충전기를 확인하고 길찾기까지 이어가요.' : '차량을 연결하면 충전·주유·주행 정보를 차량 종류에 맞춰 보여드려요.',
+      status: vehicle && energy.isFuel ? '차량 종류 맞춤 준비' : '공공데이터 실시간 조회', icon: vehicle && energy.isFuel ? Fuel : BatteryCharging, actionLabel: vehicle && energy.isFuel ? '이동 계획 보기' : '충전소 찾기',
+      run: () => navigate(vehicle && energy.isFuel ? 'drive' : 'charge', vehicle && energy.isFuel ? 'plan' : ''), assets: ['/mobility/mobility-charge-v1', '/mobility/mobility-hero-v1'],
+      tags: vehicle && energy.isFuel ? ['차량 종류 맞춤', '이동 계획', '공식 케어'] : ['현재 위치', '충전기 상태', '카카오 길찾기'],
     },
     {
       id: 'care', category: 'care', kicker: 'VEHICLE CARE', title: '차량 신호부터 블루핸즈까지',
@@ -322,13 +333,14 @@ function MobilityServiceMarket({ vehicle, navigate, setModal, journal }) {
 }
 
 function TodayCommandCenter({ vehicle, navigate, setModal, journal, passport }) {
-  const brief = vehicleBrief(vehicle);
-  const BriefIcon = brief.icon;
-  const readiness = readinessModel(vehicle);
   const upcoming = journal.entries
     .filter((item) => item.status === 'PLANNED')
     .sort((left, right) => left.entryDate.localeCompare(right.entryDate))[0];
+  const brief = vehicleBrief(vehicle, upcoming ? [upcoming] : []);
+  const BriefIcon = brief.icon;
+  const readiness = readinessModel(vehicle);
   const latestPassport = passport?.events?.[0];
+  const energy = vehicleEnergyProfile(vehicle);
   const action = brief.target
     ? () => navigate(brief.target, brief.target === 'care' ? 'status' : '')
     : () => setModal('connect');
@@ -362,7 +374,7 @@ function TodayCommandCenter({ vehicle, navigate, setModal, journal, passport }) 
     </div>
 
     {vehicle && <div className="today-command-metrics" aria-label="연결된 차량 핵심 상태">
-      <div><BatteryCharging size={16} /><span>배터리</span><strong>{metric(vehicle.batterySoc, '%')}</strong></div>
+      <div>{energy.isFuel ? <Fuel size={16} /> : energy.kind === 'UNKNOWN' ? <Zap size={16} /> : <BatteryCharging size={16} />}<span>{energy.shortLabel}</span><strong>{energy.value == null ? '미수신' : `${energy.value}%`}</strong></div>
       <div><Navigation size={16} /><span>주행 가능</span><strong>{metric(vehicle.range, 'km')}</strong></div>
       <div><ShieldCheck size={16} /><span>차량 경고</span><strong>{Number(vehicle.warningCount ?? 0) > 0 ? `${vehicle.warningCount}건 확인` : '이상 없음'}</strong></div>
       <div><CircleGauge size={16} /><span>누적 주행</span><strong>{metric(vehicle.odometer, 'km')}</strong></div>

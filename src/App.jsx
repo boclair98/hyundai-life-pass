@@ -17,6 +17,7 @@ import {
   CloudCog,
   ExternalLink,
   FileCheck2,
+  Fuel,
   Gauge,
   HeartHandshake,
   LocateFixed,
@@ -62,6 +63,7 @@ import './platform.css';
 import { MobilityBackdrop, useMobilityTour, FeatureImage } from './MobilityBackdrop';
 import './mobility.css';
 import './journey.css';
+import { vehicleEnergyProfile } from './vehicleProfile';
 
 // 오너가 매일 쓰는 핵심 흐름만 1차 메뉴에 둡니다.
 // 주행 계산·주차 저장은 드라이브 도구, 계정 연결은 설정에서 보조적으로 제공합니다.
@@ -613,34 +615,37 @@ function TirePressureCard({ vehicle, compact = false, onDetails }) {
 }
 
 function VehicleEnergyCard({ vehicle, onConnect }) {
-  const batterySoc = vehicle?.batterySoc == null ? null : Math.max(0, Math.min(100, Number(vehicle.batterySoc)));
+  const energy = vehicleEnergyProfile(vehicle);
+  const batterySoc = energy.isElectric ? energy.value : null;
+  const fuelLevel = energy.isFuel ? energy.value : null;
   const targetSoc = vehicle?.chargingTargetSoc == null ? null : Math.max(0, Math.min(100, Number(vehicle.chargingTargetSoc)));
   const charging = /charging|충전\s*중|급속\s*충전|완속\s*충전/i.test(vehicle?.chargingState ?? '');
+  const isFuel = energy.isFuel;
   return (
-    <section className={`vehicle-energy-card ${vehicle ? 'connected' : 'guest'} reveal`} data-reveal aria-label="내 차 충전 상태">
+    <section className={`vehicle-energy-card ${vehicle ? 'connected' : 'guest'} ${isFuel ? 'fuel-mode' : ''} reveal`} data-reveal aria-label={`내 차 ${energy.label}`}>
       <div className="feature-art energy-art"><FeatureImage scene="battery" /></div>
       <div className="energy-card-copy">
-        <span><i /> {vehicle ? 'MY EV ENERGY' : 'CONNECT MY HYUNDAI'}</span>
-        <h2>{vehicle ? `${vehicle.name} 충전 상태` : '내 차의 배터리를 한눈에'}</h2>
-        <p>{vehicle ? `${vehicle.chargingState || '현재 상태 확인 중'} · ${formatHyundaiTimestamp(vehicle.dataTimestamp)}` : '차량을 연결하면 배터리 잔량, 주행 가능 거리와 목표 충전까지 필요한 정보를 보여드려요.'}</p>
+        <span><i /> {vehicle ? (isFuel ? 'MY CAR ENERGY' : 'MY EV ENERGY') : 'CONNECT MY HYUNDAI'}</span>
+        <h2>{vehicle ? `${vehicle.name} ${isFuel ? '에너지 상태' : '충전 상태'}` : '내 차의 에너지 상태를 한눈에'}</h2>
+        <p>{vehicle ? `${energy.state} · ${formatHyundaiTimestamp(vehicle.dataTimestamp)}` : '차량을 연결하면 배터리·연료 잔량과 주행 가능 정보를 차량 종류에 맞춰 보여드려요.'}</p>
         {!vehicle && <button onClick={onConnect}>내 차 연결하기 <ArrowRight size={15} /></button>}
       </div>
       <div className="battery-visual-wrap">
-        <div className={`battery-visual ${charging ? 'charging' : ''}`} style={{ '--battery-level': `${batterySoc ?? 0}%`, '--target-level': `${targetSoc ?? 80}%` }}>
+        {isFuel ? <div className="energy-gauge fuel-gauge"><Fuel size={32} /><strong>{fuelLevel ?? '—'}<small>{fuelLevel == null ? '' : '%'}</small></strong><span>{fuelLevel == null ? '연료 정보 미수신' : '현재 연료 잔량'}</span></div> : <div className={`battery-visual ${charging ? 'charging' : ''}`} style={{ '--battery-level': `${batterySoc ?? 0}%`, '--target-level': `${targetSoc ?? 80}%` }}>
           <div className="battery-terminal" />
           <div className="battery-shell"><div className="battery-liquid"><i /><i /><i /></div><div className="battery-target" /><div className="battery-readout"><strong>{batterySoc ?? '—'}<small>{batterySoc == null ? '' : '%'}</small></strong><span>{batterySoc == null ? '차량 연결 필요' : charging ? '충전 중' : '현재 배터리'}</span></div></div>
-        </div>
+        </div>}
       </div>
       <div className="energy-card-stats">
         <div><Navigation size={17} /><span>주행 가능</span><strong>{formatMetric(vehicle?.range, 'km')}</strong></div>
-        <div><Zap size={17} /><span>목표 충전</span><strong>{formatMetric(targetSoc, '%')}</strong></div>
-        <div><Clock3 size={17} /><span>남은 시간</span><strong>{formatMetric(vehicle?.chargingRemainingMinutes, '분')}</strong></div>
+        <div>{isFuel ? <Fuel size={17} /> : <Zap size={17} />}<span>{isFuel ? '연료 잔량' : '목표 충전'}</span><strong>{isFuel ? (fuelLevel == null ? '미수신' : `${fuelLevel}%`) : formatMetric(targetSoc, '%')}</strong></div>
+        <div><Clock3 size={17} /><span>{isFuel ? '다음 관리' : '남은 시간'}</span><strong>{isFuel ? formatMetric(vehicle?.nextServiceKm, 'km') : formatMetric(vehicle?.chargingRemainingMinutes, '분')}</strong></div>
       </div>
     </section>
   );
 }
 
-function ChargeHero({ availableCount, locationLabel, radiusKm, locationState, live, busy, onLocate }) {
+function ChargeHero({ availableCount, locationLabel, radiusKm, locationState, live, busy, onLocate, energyMode = 'electric' }) {
   const locationCopy = locationState === 'current'
     ? '내 위치 기준'
     : locationState === 'loading'
@@ -651,11 +656,11 @@ function ChargeHero({ availableCount, locationLabel, radiusKm, locationState, li
   return (
     <section className="charge-hero" aria-labelledby="charge-title">
       <div className="charge-hero-copy">
-        <span><i /> {live ? '실시간 충전 현황' : '충전 현황 확인 중'}</span>
-        <h1 id="charge-title">내 주변 이동</h1>
+        <span><i /> {energyMode === 'fuel' ? '이동 에너지 안내' : live ? '실시간 충전 현황' : '충전 현황 확인 중'}</span>
+        <h1 id="charge-title">{energyMode === 'fuel' ? '내 주변 에너지 거점' : '내 주변 이동'}</h1>
         <p><MapPin size={14} /> {locationLabel} · 반경 {Math.round(radiusKm)}km</p>
       </div>
-      <div className="charge-hero-count"><strong>{live ? availableCount : '—'}</strong><span>충전기 사용 가능</span><small>{locationCopy}</small></div>
+      <div className="charge-hero-count"><strong>{live ? availableCount : '—'}</strong><span>충전기 사용 가능</span><small>{energyMode === 'fuel' ? '충전소 데이터는 EV 기준' : locationCopy}</small></div>
       <button onClick={onLocate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}<span><strong>{busy ? '위치 확인 중' : locationState === 'current' ? '현재 위치 새로고침' : '현재 위치 사용'}</strong><small>{locationState === 'denied' ? '권한을 허용하면 정확해져요' : '위치는 저장하지 않아요'}</small></span><ChevronRight size={17} /></button>
       <div className="charge-hero-symbol" aria-hidden="true"><Zap size={30} fill="currentColor" /><i /><i /></div>
     </section>
@@ -663,6 +668,7 @@ function ChargeHero({ availableCount, locationLabel, radiusKm, locationState, li
 }
 
 function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
+  const energy = vehicleEnergyProfile(vehicle);
   const [chargerFeed, setChargerFeed] = useState(() => ({
     stations: platform.stations ?? [],
     provider: platform.providers?.find((provider) => provider.id === 'ev-charger') ?? null,
@@ -836,7 +842,7 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
 
   return (
     <div className="page container charge-page">
-      <ChargeHero availableCount={availableChargerCount} locationLabel={chargerFeed.search?.locationLabel ?? '서울 성수'} radiusKm={chargerFeed.search?.radiusKm ?? 30} locationState={locationState} live={chargerLive} busy={locationBusy} onLocate={findFromCurrentLocation} />
+      <ChargeHero availableCount={availableChargerCount} locationLabel={chargerFeed.search?.locationLabel ?? '서울 성수'} radiusKm={chargerFeed.search?.radiusKm ?? 30} locationState={locationState} live={chargerLive} busy={locationBusy} onLocate={findFromCurrentLocation} energyMode={energy.isFuel ? 'fuel' : 'electric'} />
       <div className="charge-quick-filters" aria-label="충전소 빠른 필터">
         <div><span>빠른 조건</span><strong>{visibleStations.length}곳 비교 중</strong></div>
         <div>
@@ -874,7 +880,7 @@ function ChargePage({ vehicle, notify, platform, setModal, demoMode = false }) {
         </aside>
       </div>
       <section className="charge-vehicle-section">
-        <div className="charge-section-heading"><span>MY EV</span><h2>충전소를 정했다면, 내 차 잔량도 확인하세요.</h2></div>
+        <div className="charge-section-heading"><span>{vehicle && energy.isFuel ? 'MY CAR' : 'MY EV'}</span><h2>{vehicle && energy.isFuel ? '내 차 에너지 상태와 다음 관리를 확인하세요.' : '충전소를 정했다면, 내 차 잔량도 확인하세요.'}</h2>{vehicle && energy.isFuel && <p>현재 주유소 데이터는 연결되어 있지 않아 충전소 화면은 EV 기준으로 안내합니다. 차량 관리와 이동 계획은 계속 이용할 수 있어요.</p>}</div>
         <VehicleEnergyCard vehicle={vehicle} onConnect={() => setModal('connect')} />
       </section>
       <div className="charge-plan-grid">

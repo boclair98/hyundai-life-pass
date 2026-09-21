@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const appSource = await readFile(new URL('src/App.jsx', root), 'utf8');
 const ownerSource = await readFile(new URL('src/OwnerExperience.jsx', root), 'utf8');
+const vehicleProfileSource = await readFile(new URL('src/vehicleProfile.js', root), 'utf8');
 const monetizationPlanSource = await readFile(new URL('docs/MONETIZATION_PLAN.md', root), 'utf8');
 
 function idsFromDeclaration(source, name) {
@@ -56,6 +57,19 @@ test('home command center makes the trust loop the first owner decision', () => 
   assert.doesNotMatch(ownerSource, /<VehicleCareSummary vehicle=\{vehicle\}/);
 });
 
+test('latest owner flow adapts energy copy to vehicle type and promotes the next scheduled task', () => {
+  assert.match(vehicleProfileSource, /export function vehiclePowertrain\(vehicle\)/);
+  assert.match(vehicleProfileSource, /return 'HYBRID'/);
+  assert.match(vehicleProfileSource, /return 'EV'/);
+  assert.match(vehicleProfileSource, /return 'ICE'/);
+  assert.match(ownerSource, /const energy = vehicleEnergyProfile\(vehicle\)/);
+  assert.match(ownerSource, /if \(tasks\.length\) return/);
+  assert.match(ownerSource, /NEXT CARE/);
+  assert.match(ownerSource, /차량 종류 맞춤 준비/);
+  assert.match(appSource, /fuel-mode/);
+  assert.match(appSource, /현재 주유소 데이터는 연결되어 있지 않아 충전소 화면은 EV 기준/);
+});
+
 test('service-centre location follows the same consent-first behavior as charging', () => {
   assert.match(appSource, /navigator\.permissions\.query\(\{ name: 'geolocation' \}\)/g);
   assert.match(appSource, /if \(active && permission\.state === 'granted'\) findFromCurrentLocation\(\)/);
@@ -83,7 +97,7 @@ test('home readiness translates only received signals into a next action', () =>
   assert.match(ownerSource, /score: null/);
   assert.match(ownerSource, /현대차를 연결하면 출발 준비도를 확인할 수 있어요/);
   assert.match(ownerSource, /warningCount > 0 \? `경고 \$\{warningCount\}건 확인`/);
-  assert.match(ownerSource, /배터리 \$\{battery\}% · 충전 권장/);
+  assert.match(ownerSource, /배터리 \$\{energy\.value\}% · 충전 권장/);
   assert.match(ownerSource, /점검 기준 미제공/);
   assert.match(ownerSource, /현대차에서 받은 신호 기준/);
 });
