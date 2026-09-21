@@ -41,6 +41,16 @@ test('home service market keeps the three owner jobs visible and actionable', ()
   assert.match(ownerSource, /<MobilityServiceMarket vehicle=\{vehicle\}/);
 });
 
+test('home command center makes the trust loop the first owner decision', () => {
+  assert.match(ownerSource, /function TodayCommandCenter\(\{ vehicle, navigate, setModal, journal, passport \}\)/);
+  assert.match(ownerSource, /오늘 내 차에 필요한 한 가지/);
+  assert.match(ownerSource, /트립 미션/);
+  assert.match(ownerSource, /케어 센터/);
+  assert.match(ownerSource, /차량 패스포트/);
+  assert.match(ownerSource, /현대차에서 받은 값과 오너가 직접 남긴 기록을 구분/);
+  assert.match(ownerSource, /home-secondary-details/);
+});
+
 test('service-centre location follows the same consent-first behavior as charging', () => {
   assert.match(appSource, /navigator\.permissions\.query\(\{ name: 'geolocation' \}\)/g);
   assert.match(appSource, /if \(active && permission\.state === 'granted'\) findFromCurrentLocation\(\)/);

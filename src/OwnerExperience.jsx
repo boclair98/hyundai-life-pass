@@ -321,6 +321,55 @@ function MobilityServiceMarket({ vehicle, navigate, setModal, journal }) {
   </section>;
 }
 
+function TodayCommandCenter({ vehicle, navigate, setModal, journal, passport }) {
+  const brief = vehicleBrief(vehicle);
+  const BriefIcon = brief.icon;
+  const readiness = readinessModel(vehicle);
+  const upcoming = journal.entries
+    .filter((item) => item.status === 'PLANNED')
+    .sort((left, right) => left.entryDate.localeCompare(right.entryDate))[0];
+  const latestPassport = passport?.events?.[0];
+  const action = brief.target
+    ? () => navigate(brief.target, brief.target === 'care' ? 'status' : '')
+    : () => setModal('connect');
+
+  return <section className="today-command-center" aria-labelledby="today-command-title" data-reveal>
+    <div className="today-command-heading">
+      <div>
+        <span>TODAY · TRUST LOOP</span>
+        <h2 id="today-command-title">오늘 내 차에 필요한 한 가지</h2>
+        <p>차량 상태를 읽고, 다음 행동을 정하고, 처리한 일을 기록으로 남겨요.</p>
+      </div>
+      <span className={`today-command-state ${brief.tone}`}><i />{vehicle ? '차량 신호 기준' : '차량 연결 전'}</span>
+    </div>
+
+    <div className="today-command-main">
+      <article className={`today-command-primary ${brief.tone}`}>
+        <span className="today-command-primary-icon"><BriefIcon size={22} /></span>
+        <div className="today-command-primary-copy">
+          <span>{brief.kicker}</span>
+          <h3>{brief.title}</h3>
+          <p>{brief.detail}</p>
+        </div>
+        <button type="button" onClick={action}>{brief.action}<ArrowRight size={15} /></button>
+      </article>
+
+      <div className="today-command-facts" aria-label="오늘의 차량 요약">
+        <div><span>출발 준비도</span><strong>{readiness.score == null ? '—' : `${readiness.score}`}<small>{readiness.score == null ? '연결 필요' : '점'}</small></strong><p>{readiness.summary}</p></div>
+        <div><span>다음 관리</span><strong>{upcoming?.title ?? (vehicle ? '예정된 일정 없음' : '차량 연결 필요')}</strong><p>{upcoming ? `${dateLabel(upcoming.entryDate)} 예정` : '패스포트에서 일정을 관리해요.'}</p></div>
+        <div><span>최근 신뢰 기록</span><strong>{latestPassport?.title ?? (vehicle ? '첫 기록을 준비하세요' : '차량 연결 후 시작')}</strong><p>{latestPassport ? latestPassport.occurredAt : '차량 상태·정비·충전 기록'}</p></div>
+      </div>
+    </div>
+
+    <div className="today-command-actions" aria-label="핵심 오너 기능">
+      <button type="button" onClick={() => navigate('drive', 'plan')}><Navigation size={18} /><span><strong>트립 미션</strong><small>출발 가능 여부와 도착 여유 계산</small></span><ArrowUpRight size={15} /></button>
+      <button type="button" onClick={() => navigate('care', vehicle ? 'status' : 'centers')}><Wrench size={18} /><span><strong>케어 센터</strong><small>{vehicle ? '경고·공기압·정비 브리프' : '내 주변 공식 거점 찾기'}</small></span><ArrowUpRight size={15} /></button>
+      <button type="button" onClick={() => vehicle ? navigate('passport') : setModal('connect')}><FileText size={18} /><span><strong>차량 패스포트</strong><small>차량의 시간을 출처별로 관리</small></span><ArrowUpRight size={15} /></button>
+    </div>
+    <div className="today-command-proof"><CheckCircle2 size={15} /><span>현대차에서 받은 값과 오너가 직접 남긴 기록을 구분해 보여드립니다.</span><button type="button" onClick={() => navigate('guide')}>서비스 원칙 보기 <ArrowRight size={13} /></button></div>
+  </section>;
+}
+
 function HyundaiOwnerRail({ vehicle, navigate, setModal }) {
   const items = [
     {
@@ -418,7 +467,7 @@ export function useVehicleJournal(vehicleId, demoMode = false) {
   return { entries: state.vehicleId === vehicleId ? state.entries : [], loading: Boolean(vehicleId) && (state.vehicleId !== vehicleId || state.loading), error: state.vehicleId === vehicleId ? state.error : '', refresh, createEntry, changeStatus, loadReport, demoMode };
 }
 
-export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy, journal, tour }) {
+export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy, journal, passport, tour }) {
   const homeRoot = useRef(null);
   const tasks = journal.entries.filter((item) => item.status === 'PLANNED').sort((a, b) => a.entryDate.localeCompare(b.entryDate)).slice(0, 3);
   const month = dateKey().slice(0, 7);
@@ -430,17 +479,15 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
     <section className="mobility-welcome" aria-labelledby="owner-title">
       <span className="mobility-eyebrow">HYUNDAI OWNER CARE · CONCEPT</span>
       <h1 id="owner-title">현대차 오너의<br /><em>차량 라이프.</em></h1>
-      <p>현대 통합계정으로 연결한 차량 상태부터<br />충전·블루핸즈·관리 기록까지 한곳에서.</p>
+      <p>차량 상태를 확인하고, 오늘 필요한 행동을 정한 뒤<br />충전·케어·기록까지 한 흐름으로 이어가요.</p>
       <button className="button light" disabled={busy} onClick={vehicle ? actions.syncHyundai : () => setModal('connect')}>{vehicle ? <RefreshCcw size={16} /> : <Plus size={16} />}{vehicle ? '차량 상태 새로고침' : '내 현대차 연결하기'}<ArrowRight size={16} /></button>
       <SceneControls tour={tour} />
     </section>
+    <TodayCommandCenter vehicle={vehicle} navigate={navigate} setModal={setModal} journal={journal} passport={passport} />
     <MobilityServiceMarket vehicle={vehicle} navigate={navigate} setModal={setModal} journal={journal} />
     <div className="owner-overview-grid">
       {!vehicle && <GuestStartPanel navigate={navigate} setModal={setModal} />}
-      <TodayBrief vehicle={vehicle} navigate={navigate} setModal={setModal} />
       <VehicleReadiness vehicle={vehicle} navigate={navigate} setModal={setModal} actions={actions} busy={busy} />
-      <NextActionPanel vehicle={vehicle} tasks={tasks} navigate={navigate} setModal={setModal} />
-      <DepartureChecklist navigate={navigate} />
       <VehicleCareSummary vehicle={vehicle} journal={journal} navigate={navigate} setModal={setModal} />
     </div>
     <section className="home-car-section" id="owner-tools" tabIndex={-1} aria-labelledby="home-car-heading">
@@ -451,13 +498,16 @@ export function OwnerHome({ vehicle, navigate, setModal, platform, actions, busy
       </div>
       <p className="owner-data-note">{vehicle ? `차량 정보는 마지막 수신 기준입니다. ${vehicle.updatedAt ? new Date(vehicle.updatedAt).toLocaleString('ko-KR') : ''}` : '내 차를 연결하면 차량에서 제공하는 상태를 이곳에 보여드려요.'}</p>
     </section>
-    <HyundaiOwnerRail vehicle={vehicle} navigate={navigate} setModal={setModal} />
-    <div className="owner-lower-grid">
+    <details className="home-secondary-details">
+      <summary><span><span>MORE OWNER TOOLS</span><strong>차량을 더 오래 잘 쓰는 기능</strong></span><ChevronRight size={18} /></summary>
+      <HyundaiOwnerRail vehicle={vehicle} navigate={navigate} setModal={setModal} />
+      <div className="owner-lower-grid">
       <section className="owner-agenda"><div className="workspace-section-title"><div><span>MY SCHEDULE</span><h2>잊지 말아야 할 일</h2></div><button onClick={() => navigate('passport')}>일정 관리 <ChevronRight size={15} /></button></div><div className="agenda-list">{journal.loading ? <p>일정을 불러오고 있어요.</p> : journal.error ? <button onClick={journal.refresh}>일정을 불러오지 못했어요 · 다시 시도</button> : tasks.length ? tasks.map((item) => <button key={item.id} onClick={() => navigate('passport')}><span className="agenda-date">{dateLabel(item.entryDate)}</span><strong>{item.title}</strong><ChevronRight size={15} /></button>) : <div className="agenda-empty"><CalendarDays size={29} /><strong>다음 정비일을 기억해 둘까요?</strong><p>검사, 보험 갱신, 소모품 교체 일정을 남겨보세요.</p><button onClick={() => vehicle ? navigate('passport') : setModal('connect')}>일정 추가하기 <Plus size={15} /></button></div>}</div></section>
       <section className="owner-cost"><div className="workspace-section-title"><div><span>CAR LIFE COST</span><h2>이번 달 차량 지출</h2></div><Wallet size={22} /></div><strong>{journal.loading ? '불러오는 중…' : journal.error ? '기록 확인이 필요해요' : vehicle ? money(spent) : '기록부터 시작해요'}</strong><p>직접 남긴 충전·정비·주유 비용을 모아보세요.</p><button onClick={() => navigate('passport')}>지출 기록하기 <ArrowUpRight size={18} /></button></section>
-    </div>
-    <OwnerValueHub vehicle={vehicle} navigate={navigate} spent={spent} journal={journal} />
-    <div className="owner-bottom-links"><button onClick={() => navigate('drive', 'checklist')}><ShieldCheck size={22} /><span><strong>출발 전, 한 번 더 확인</strong><small>타이어부터 차량 주변까지 오늘의 체크리스트</small></span><ArrowRight size={17} /></button><button onClick={() => navigate('drive')}><Navigation size={22} /><span><strong>주행 도구 열기</strong><small>거리 계산·주차 위치처럼 필요할 때만 쓰는 기능</small></span><ArrowRight size={17} /></button></div>
+      </div>
+      <OwnerValueHub vehicle={vehicle} navigate={navigate} spent={spent} journal={journal} />
+      <div className="owner-bottom-links"><button onClick={() => navigate('drive', 'checklist')}><ShieldCheck size={22} /><span><strong>출발 전, 한 번 더 확인</strong><small>타이어부터 차량 주변까지 오늘의 체크리스트</small></span><ArrowRight size={17} /></button><button onClick={() => navigate('drive')}><Navigation size={22} /><span><strong>주행 도구 열기</strong><small>거리 계산·주차 위치처럼 필요할 때만 쓰는 기능</small></span><ArrowRight size={17} /></button></div>
+    </details>
   </div>;
 }
 

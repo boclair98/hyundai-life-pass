@@ -66,10 +66,10 @@ import './journey.css';
 // 오너가 매일 쓰는 핵심 흐름만 1차 메뉴에 둡니다.
 // 주행 계산·주차 저장은 드라이브 도구, 계정 연결은 설정에서 보조적으로 제공합니다.
 const primaryNavigation = [
-  { id: 'home', label: '내 차', icon: CarFront },
-  { id: 'charge', label: '충전', icon: BatteryCharging },
-  { id: 'care', label: '정비·점검', icon: Activity },
-  { id: 'passport', label: '관리 기록', icon: FileCheck2 },
+  { id: 'home', label: '오늘', icon: CarFront },
+  { id: 'charge', label: '충전소', icon: BatteryCharging },
+  { id: 'care', label: '케어', icon: Activity },
+  { id: 'passport', label: '패스포트', icon: FileCheck2 },
 ];
 
 const secondaryNavigation = [
